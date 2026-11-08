@@ -1,0 +1,5 @@
+# librerie: si rifanno con npm install su ogni PC
+node_modules/
+# la build: la rifà vite build
+dist/
+.wrangler/
