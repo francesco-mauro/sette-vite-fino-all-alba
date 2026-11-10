@@ -42,3 +42,24 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** lasciare l'errore.
 - **Perché:** la console senza errori è il punto di partenza di ogni prova. Alla tappa 1b una prova automatica controllerà proprio questo.
 - **Cosa comporta:** un file in più in `CREDITS.md`. Se il disegno del gatto cambia, l'icona si rifà.
+
+## 2026-11-10 · La misura dietro `?misura`
+- **Contesto:** la tappa 1a chiede di sapere presto se Phaser 4 regge tanti sprite sul telefono di prova, prima di costruirci sopra il gioco.
+- **Scelta:** una scena in più, che si accende solo con `?misura` nell'indirizzo e gira sopra quella del gioco. Gli sprite finti stanno in un gruppo con la fisica Arcade, come staranno i nemici. Il pannello dei numeri è HTML. I tempi si prendono con `performance.now()`, dall'inizio del fotogramma alla fine del disegno.
+- **Alternative scartate:** una pagina di prova separata dal gioco, che misurerebbe un'altra cosa; il contatore di fotogrammi di Phaser, che è una media smussata e nasconde i buchi; un pannello disegnato dentro il gioco, che aggiungerebbe lavoro a quello che si misura.
+- **Perché:** si misura il gioco vero, con lo stesso motore, la stessa scena e la stessa fisica, e lo strumento pesa il meno possibile.
+- **Cosa comporta:** la fisica Arcade è accesa già adesso nella configurazione del gioco. Senza `?misura` il gioco parte come prima. La misura resta nel progetto e potrà servire di nuovo alla tappa 4, con i nemici veri.
+
+## 2026-11-10 · Vitest adesso, e il test prima del codice
+- **Contesto:** i test erano previsti alla tappa 1b. Ma il contatore dei fotogrammi è logica pura, e dai suoi numeri dipende una decisione: se Phaser 4 regge.
+- **Scelta:** Vitest entra adesso. La logica pura sta in `src/logic/`, senza Phaser, e si scrive con il test prima: il test si guarda fallire, poi si scrive il codice che lo fa passare.
+- **Alternative scartate:** provare il contatore a mano e aggiungere i test alla tappa 1b.
+- **Perché:** uno strumento di misura sbagliato porta a decisioni sbagliate. E un test scritto dopo passa subito, senza dimostrare di saper trovare un errore.
+- **Cosa comporta:** `npm test`, con 18 test. Alla tappa 1b restano il lint, il controllo prima del commit, GitHub Actions, la prova nel browser, la rotta `/api/ping`, la pubblicazione automatica e la prova con un test rotto apposta.
+
+## 2026-11-10 · Il joystick di phaser4-rex-plugins
+- **Contesto:** sul telefono serve un joystick virtuale. La tappa 1a chiede solo di sapere se il plugin scelto funziona con Phaser 4.2.1.
+- **Scelta:** `phaser4-rex-plugins` 4.2.0, da cui si importa solo il joystick. Per ora sta fermo in basso a sinistra e non muove il gatto: il pannello della misura mostra forza e angolo.
+- **Alternative scartate:** scriverlo da zero; farlo già comparire dove si appoggia il dito, che è una prova della tappa 2.
+- **Perché:** si importa, passa il controllo dei tipi e risponde al tocco anche con l'ingrandimento calcolato a mano. Il dubbio sulla compatibilità con Phaser 4 si chiude adesso.
+- **Cosa comporta:** `npm audit` segnala 2 avvisi di gravità bassa in `i18next-http-backend`, una dipendenza del pacchetto che il gioco non usa e che non entra nella build. Il pacchetto pesa circa 164 MB in `node_modules`, ma la misura e il joystick insieme aggiungono alla build 15 kB, contati prima della compressione.

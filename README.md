@@ -12,7 +12,9 @@ In costruzione, alla tappa 1a: il progetto è online su GitHub e mostra il gatto
 - TypeScript in modalità `strict`
 - [Vite](https://vite.dev) per lo sviluppo e la build
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo: la configurazione c'è, la prima pubblicazione è il prossimo passo
-- In arrivo: Vitest e Playwright per i test
+- [phaser4-rex-plugins](https://github.com/rexrainbow/phaser3-rex-notes) per il joystick virtuale
+- [Vitest](https://vitest.dev) per i test della logica
+- In arrivo: Playwright per la prova nel browser
 
 ## Provarlo in locale
 Serve Node.js.
@@ -22,7 +24,9 @@ npm install
 npm run dev
 ```
 
-Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare.
+Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare. `npm test` lancia i test.
+
+Con `?misura` in fondo all'indirizzo si accende la misura: sprite finti che si muovono, un contatore dei fotogrammi e il joystick virtuale. Come si legge è scritto nel [diario della tappa](docs/tappe/tappa-1a.md).
 
 ## Documentazione
 - [DECISIONI.md](DECISIONI.md): ogni scelta del progetto, con le alternative scartate e il perché
