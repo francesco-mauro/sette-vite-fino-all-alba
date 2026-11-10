@@ -1,0 +1,14 @@
+// La configurazione di Cloudflare Workers: dice a Wrangler cosa pubblicare e con quale nome.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Il nome del Worker. Finisce nell'indirizzo pubblico: <nome>.<sottodominio dell'account>.workers.dev
+  "name": "sette-vite-fino-all-alba",
+  // Le regole di Cloudflare con cui gira il Worker, fissate a una data:
+  // così un loro aggiornamento non cambia da solo il comportamento del gioco.
+  "compatibility_date": "2026-11-03",
+  // Solo file statici: la cartella che prepara `npm run build`.
+  // Nessun codice sul server per ora, le rotte /api arrivano alla tappa 1b.
+  "assets": {
+    "directory": "./dist"
+  }
+}

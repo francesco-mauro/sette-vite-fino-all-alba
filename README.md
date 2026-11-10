@@ -11,7 +11,8 @@ In costruzione, alla tappa 1a: il progetto è online su GitHub e mostra il gatto
 - [Phaser 4](https://phaser.io), il motore del gioco
 - TypeScript in modalità `strict`
 - [Vite](https://vite.dev) per lo sviluppo e la build
-- In arrivo: Cloudflare Workers per pubblicarlo, Vitest e Playwright per i test
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo: la configurazione c'è, la prima pubblicazione è il prossimo passo
+- In arrivo: Vitest e Playwright per i test
 
 ## Provarlo in locale
 Serve Node.js.
@@ -21,11 +22,12 @@ npm install
 npm run dev
 ```
 
-Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`.
+Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare.
 
 ## Documentazione
 - [DECISIONI.md](DECISIONI.md): ogni scelta del progetto, con le alternative scartate e il perché
 - [CREDITS.md](CREDITS.md): autori e licenze di grafica, caratteri e suoni
+- [docs/tappe/tappa-1a.md](docs/tappe/tappa-1a.md): il diario della tappa in corso, con le tecnologie usate e il perché
 
 ## Licenza
 [MIT](LICENSE)

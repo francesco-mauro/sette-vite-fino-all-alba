@@ -10,6 +10,7 @@ Autori e licenze di tutto quello che nel gioco non è codice. Si aggiorna ogni v
 | `public/assets/tombino.png` | il tombino | idem | MIT |
 | `public/assets/foglie.png` | le foglie di platano | idem | MIT |
 | `public/assets/lampione.png` | il lampione con la pozza di luce | idem | MIT |
+| `public/favicon.png` | l'icona della scheda del browser, 64×64 | il gatto fermo di `gatto.png`, ingrandito 4 volte | MIT |
 
 ## Caratteri
 Nessuno nel gioco per ora. In arrivo Jersey 10 e Silkscreen da Google Fonts: la licenza si legge e si scrive qui quando entrano.
