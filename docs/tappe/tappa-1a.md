@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: un progetto vero, pubblico e online, con il minimo indispensabile. Sullo schermo c'è solo il gatto fermo sui sampietrini, ma intorno c'è già tutto quello che serve per pubblicarlo.
 
-**Stato: in corso.** Fatti il progetto, il repository pubblico, la licenza, il Worker di Cloudflare pronto, la misura con gli sprite finti e il joystick, provati sul computer. Mancano la prima pubblicazione e la misura sul telefono.
+**Stato: in corso.** Il gioco è online su <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/> e la misura sul telefono è fatta: Phaser 4 regge. Mancano la ripubblicazione con l'ingrandimento corretto, da guardare sul telefono, il diario della tappa 0 e la lista degli asset.
 
 ## Contenuti
 - Cosa c'è di nuovo, giorno per giorno
@@ -21,6 +21,7 @@ L'obiettivo della tappa: un progetto vero, pubblico e online, con il minimo indi
 - **9 novembre 2026.** La licenza MIT, i crediti della grafica, un README minimo.
 - **10 novembre 2026, il Worker.** La configurazione di Cloudflare Workers (`wrangler.jsonc`), i comandi per provarlo in locale e per pubblicarlo, la prova della build servita dal Worker in locale. L'icona della scheda, il gatto, nata da un errore trovato proprio in quella prova.
 - **10 novembre 2026, la misura.** Con `?misura` in fondo all'indirizzo si accende una scena in più: 200 sprite finti che si muovono, un pannello con i numeri dei fotogrammi e il joystick virtuale. I primi test del progetto, 18, sulla logica del contatore.
+- **10 novembre 2026, online e sul telefono.** La prima pubblicazione su Cloudflare. La misura sul telefono di prova, a 200, 500 e 1000 sprite. Il joystick provato col dito. E una correzione nata proprio dalle schermate del telefono: a tutto schermo la scena era ingrandita 3 volte invece di 4. Il calcolo dell'ingrandimento ora sta in `src/logic/zoom.ts`, con 8 test suoi.
 
 ## Le tecnologie di questa tappa, e perché
 | Strumento | Versione | Cosa fa qui | Perché questo |
@@ -39,7 +40,7 @@ Ogni pacchetto ha la versione esatta in `package.json`, senza il segno `^`: sui 
 1. **Vite fa due lavori.** Mentre si sviluppa è un server che ricarica la pagina appena si salva un file. Con la build impacchetta tutto in `dist/`: una pagina, un file JavaScript, le immagini. Sono file statici, cioè uguali per tutti, da consegnare così come sono.
 2. **TypeScript strict.** Il compilatore controlla i tipi in modo severo. Un valore che può mancare, per esempio, va controllato prima di usarlo. La build fa prima questo controllo (`tsc --noEmit`) e solo dopo chiama Vite.
 3. **Come parte un gioco Phaser.** In `src/main.ts` si crea il gioco con la sua configurazione: misura della scena, `pixelArt: true`, elenco delle scene. Ogni scena ha `preload`, che carica le immagini, e `create`, che costruisce la scena una volta sola.
-4. **L'ingrandimento intero nei pixel veri.** La scena è piccola, 480×270, e va ingrandita. Se l'ingrandimento non è un numero intero, i pixel del gioco vengono di misure diverse tra loro. Quindi si calcola quante volte la scena entra nei pixel veri dello schermo e si arrotonda per difetto.
+4. **L'ingrandimento intero nei pixel veri.** La scena è piccola, 480×270, e va ingrandita. Se l'ingrandimento non è un numero intero, i pixel del gioco vengono di misure diverse tra loro. Quindi si calcola quante volte la scena entra nei pixel veri dello schermo e si arrotonda per difetto. C'è un'insidia: il browser dichiara le misure della finestra in pixel CSS interi e taglia i decimali, quindi su uno schermo con densità non intera i pixel veri vanno stimati con un po' di tolleranza (vedi «Cosa è stato difficile»).
 5. **Cos'è un Worker.** Un piccolo programma che gira sui server di Cloudflare, senza un server nostro da tenere acceso. Per ora non ha nemmeno codice: gli si indica la cartella `dist/` e lui la serve. Se arriva la richiesta di un file che non c'è, risponde 404.
 6. **Provare in locale, poi pubblicare.** Wrangler si porta dietro `workerd`, il motore dei Worker. `wrangler dev` lo accende sul PC e serve il gioco come lo servirebbe Cloudflare, senza pubblicare niente. `wrangler deploy` carica i file e li pubblica a un indirizzo del tipo `<nome>.<sottodominio>.workers.dev`.
 7. **La data di compatibilità.** Cloudflare aggiorna il suo motore di continuo. La riga `compatibility_date` dice al Worker di comportarsi come a quella data, così un loro aggiornamento non cambia da solo il comportamento del gioco. Qui è il 3 novembre 2026, la data del motore che arriva con Wrangler 4.157.0. Si alza a mano, quando si aggiorna Wrangler, e la data nuova vale dalla pubblicazione successiva.
@@ -74,6 +75,7 @@ Sul telefono: girarlo in orizzontale, aprire l'indirizzo pubblico con `?misura`,
 - **Un errore che un tipo di prova non vedeva.** La pagina servita dal Worker sembrava a posto in un browser senza finestra. In un browser normale è uscito un errore in console: mancava l'icona della scheda, e il browser chiedeva `/favicon.ico` trovando un 404. Il browser senza finestra l'icona non la chiede proprio. Da qui l'icona con il gatto, e una regola: la prova si fa anche in un browser vero.
 - **L'ultima versione non è sempre quella giusta.** Il giorno dell'installazione l'ultimo Wrangler, il 4.159.0, era uscito da meno di un giorno. È stata scelta la 4.157.0, uscita sette giorni prima, il 3 novembre (vedi `DECISIONI.md`).
 - **Un blocco che non era del gioco.** Nel browser di prova con la finestra, la pagina della misura sembrava bloccarsi per decine di secondi. Prima di toccare il codice si è cercata la causa. La pila delle chiamate, letta mettendo in pausa la pagina, mostrava il normale giro del gioco. E una pagina vuota, senza gioco, nello stesso browser perdeva fotogrammi allo stesso modo: 435 in 30 secondi, con buchi fino a 5,6 secondi. La causa stava fuori dal gioco: una pagina vuota non ha motivo di perdere fotogrammi. Negli stessi minuti il PC aveva 3,7 GB di memoria liberi su 31,7, e la spiegazione più probabile, non misurata, è che fosse impegnato in altro. Il codice del gioco non è stato cambiato. Ne è uscita una modifica al pannello: accanto al calcolo più lungo ora c'è quello medio, perché su un PC che ha altro da fare il numero più lungo, da solo, inganna.
+- **Due pixel che mancavano.** Sul telefono di prova, a tutto schermo, la scena era ingrandita 3 volte e non 4. Il pannello mostrava la densità arrotondata, 2,88. Quella vera, dedotta dalla schermata (2424 pixel di larghezza per 843 pixel CSS dichiarati), è circa 2,875. Lo schermo è alto 1080 pixel veri, che a densità 2,875 sono 375,65 pixel CSS. Il browser ne dichiara 375, e 375 per 2,875 fa 1078: due pixel meno di 1080, e il calcolo scendeva a 3. Ora il pannello mostra la densità con tre decimali. La simulazione sul computer non l'aveva visto, perché lì la densità era stata scritta come 2,88, il numero arrotondato, e i conti tornavano. Prima della correzione è stato scritto un test con le misure vere del telefono, che falliva dando 3. Ora, con una densità non intera, il calcolo considera che la finestra può essere fino a un pixel CSS più grande di quanto dichiarato. Con una densità intera le misure sono esatte e non cambia niente.
 
 ## Cosa abbiamo misurato
 - **La build.** Un solo file JavaScript, quasi tutto Phaser. Prima della misura pesava 1.368,77 kB, circa 358 kB compresso con gzip secondo Vite. Con la misura e il joystick pesa 1.383,82 kB, cioè 15 kB in più, e circa 363 kB compresso.
@@ -90,8 +92,19 @@ Sul telefono: girarlo in orizzontale, aprire l'indirizzo pubblico con `?misura`,
   A 120 fotogrammi al secondo il gioco ha 8,3 millisecondi per fotogramma: con 1000 sprite ne usa in media meno di 2, e 3,4 nel fotogramma più lungo. Il calcolo conta il lavoro del processore, non quello della scheda grafica. Sono numeri presi in un momento buono: nella stessa mattina, prima di questa prova, lo stesso browser perdeva fotogrammi anche su una pagina vuota.
 - **Con le misure dello schermo del telefono**, simulate sul computer (842×375 a densità 2,88): l'ingrandimento scelto è 4, come nella prova della tappa 0. Il joystick risponde anche lì, dove l'ingrandimento in pixel CSS non è intero: forza 0,71 e angolo -47°, contro i -45° attesi.
 - **Il joystick**, provato con il mouse: trascinato in alto a destra di 12 pixel per lato dà forza 0,71 e angolo -45°, oltre il bordo dà forza 1,00, rilasciato torna fermo.
-- **I test.** 18, tutti verdi, in tre file: il contatore dei fotogrammi, il parametro `?misura`, le righe del pannello.
-- **Sul telefono.** Non ancora: arriva con la prima pubblicazione.
+- **I test.** 26, tutti verdi, in quattro file: il contatore dei fotogrammi, il parametro `?misura`, le righe del pannello, l'ingrandimento.
+- **La misura sul telefono**, il 10 novembre 2026, dall'indirizzo pubblico. Il browser del telefono a tutto schermo, finestra dichiarata 843×375 a densità circa 2,875, ingrandimento 3 (la correzione è arrivata dopo). Il telefono disegnava 120 fotogrammi al secondo. Una prima serie di schermate non valeva: erano state prese subito dopo il tasto, e il contatore, che riparte da zero a ogni cambio di numero, mostrava i fotogrammi di meno di un secondo (43 e 37 a 500 sprite, 8 e 1 a 1000). La serie buona, sette schermate prese aspettando:
+
+| Sprite | Schermate | Fotogrammi al secondo | Buco più lungo | Calcolo medio | Calcolo più lungo |
+|---|---|---|---|---|---|
+| 200 | 2 | 120 | 10 ms | 1,8 ms | da 4,3 a 8,7 ms |
+| 500 | 2 | 121 | da 10 a 17 ms | da 1,2 a 2,1 ms | da 2,7 a 9,9 ms |
+| 1000 | 3 | 120 | da 10 a 15 ms | da 2,4 a 2,5 ms | da 4,8 a 5,8 ms |
+
+  Con 1000 sprite il telefono usa in media 2,5 millisecondi degli 8,3 che ha per ogni fotogramma. Un buco di 15 o 17 millisecondi è al massimo un fotogramma saltato nei cinque secondi che il pannello guarda. Alla domanda della tappa la risposta è sì: Phaser 4 regge sul telefono di prova. I limiti di questa misura: sono sprite finti che rimbalzano sui bordi senza urtarsi fra loro, il calcolo conta il lavoro del processore e non quello della scheda grafica, e l'ingrandimento era 3. La prova con i nemici veri è quella di carico, alla tappa 4.
+- **Con la barra del browser**, senza tutto schermo, lo stesso telefono disegnava 60 fotogrammi al secondo con 200 sprite (finestra 735×295, due schermate). A 500 e 1000 con la barra non c'è una lettura buona: quelle schermate sono della prima serie.
+- **Il joystick sul telefono.** Provato col dito: muovendolo, il pannello mostra forza e angolo.
+- **L'ingrandimento dopo la correzione**, simulato sul computer con le misure del telefono (843×375 a densità 2,875): 4, cioè 1920×1080 pixel veri. Con la barra del browser (735×295) resta 3, che è il massimo che entra. Sul telefono va ancora guardato, dopo la ripubblicazione.
 
 ## La domanda da colloquio
 **«Come è fatto il progetto e dove gira?»**
@@ -107,9 +120,11 @@ Un'idea, non ancora un testo: raccontare perché la prima cosa fatta è stata me
 - [x] Repository pubblico su GitHub
 - [x] README minimo, `DECISIONI.md`, `LICENSE`, `CREDITS.md`
 - [x] Worker di Cloudflare configurato e provato in locale
-- [ ] Prima pubblicazione: `npx wrangler login`, poi `npm run deploy`. L'indirizzo pubblico va nel README
+- [x] Prima pubblicazione, con l'indirizzo pubblico nel README
 - [x] La misura: sprite finti che si muovono, con il contatore dei fotogrammi, provata sul computer
-- [x] Il joystick di phaser4-rex-plugins importato e provato con il mouse
-- [ ] La misura sul telefono, dall'indirizzo pubblico, con i numeri scritti in questa pagina
+- [x] Il joystick di phaser4-rex-plugins importato e provato con il mouse, poi col dito sul telefono
+- [x] La misura sul telefono, dall'indirizzo pubblico, con i numeri scritti in questa pagina
+- [x] L'ingrandimento a tutto schermo sul telefono corretto, con il suo test
+- [ ] Ripubblicare con `npm run deploy` e guardare sul telefono che a tutto schermo il pannello dica `scala ×4` e che ai bordi non manchi niente
 - [ ] Il diario della tappa 0 e la lista degli asset dentro `docs/`
 - [ ] Caratteri del gioco: quando entra il primo testo, leggere le licenze e scriverle in `CREDITS.md`

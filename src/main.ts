@@ -1,6 +1,7 @@
 // Sette vite fino all'alba: il punto di partenza. Qui si crea il gioco Phaser e si sceglie come sta nello schermo.
 import Phaser from "phaser";
 import { parseMeasureParam } from "./logic/measureParam";
+import { integerZoom } from "./logic/zoom";
 import { GameScene } from "./scenes/GameScene";
 import { MeasureScene } from "./scenes/MeasureScene";
 
@@ -31,11 +32,12 @@ const game = new Phaser.Game({
 });
 
 // L'ingrandimento intero nei pixel VERI dello schermo, non in quelli CSS.
-// Sul telefono di prova (densità 2,88) 480x270 entra 4 volte esatte: 1920x1080 pixel veri.
-// Phaser.Scale.MAX_ZOOM conta i pixel CSS e lì darebbe 1, quindi il calcolo lo facciamo a mano.
+// Sul telefono di prova (densità 2,875) 480x270 entra 4 volte esatte a tutto schermo: 1920x1080 pixel veri.
+// Phaser.Scale.MAX_ZOOM conta i pixel CSS e lì darebbe 1, quindi il calcolo lo facciamo a mano,
+// in src/logic/zoom.ts, che tiene conto anche delle misure arrotondate dal browser.
 function adatta() {
   const dpr = window.devicePixelRatio || 1;
-  const volte = Math.max(1, Math.floor(Math.min((innerWidth * dpr) / WIDTH, (innerHeight * dpr) / HEIGHT)));
+  const volte = integerZoom(innerWidth, innerHeight, dpr, WIDTH, HEIGHT);
   game.scale.setZoom(volte / dpr);
 }
 addEventListener("resize", adatta);

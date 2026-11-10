@@ -168,6 +168,6 @@ export class MeasureScene extends Phaser.Scene {
     const dpr = window.devicePixelRatio || 1;
     const zoom = Math.round(this.scale.zoom * dpr);
     const renderer = this.game.renderer.type === Phaser.WEBGL ? "WebGL" : "Canvas";
-    return `${this.count} sprite · scala ×${zoom} · ${renderer} · ${window.innerWidth}×${window.innerHeight} dpr ${dpr.toFixed(2)}`;
+    return `${this.count} sprite · scala ×${zoom} · ${renderer} · ${window.innerWidth}×${window.innerHeight} dpr ${dpr.toFixed(3)}`; // tre decimali: 2,875 e 2,88 danno ingrandimenti diversi
   }
 }

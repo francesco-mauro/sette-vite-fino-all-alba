@@ -5,13 +5,13 @@ Un gatto randagio, Roma di notte, ondate di nemici: resisti fino all'alba. Gioco
 Un progetto mio, sviluppato con l'aiuto del mio agente AI.
 
 ## A che punto è
-In costruzione, alla tappa 1a: il progetto è online su GitHub e mostra il gatto fermo sui sampietrini, sotto un lampione. Il link per giocare arriva con la prima pubblicazione.
+In costruzione, alla tappa 1a: per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
 
 ## Lo stack
 - [Phaser 4](https://phaser.io), il motore del gioco
 - TypeScript in modalità `strict`
 - [Vite](https://vite.dev) per lo sviluppo e la build
-- [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo: la configurazione c'è, la prima pubblicazione è il prossimo passo
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo
 - [phaser4-rex-plugins](https://github.com/rexrainbow/phaser3-rex-notes) per il joystick virtuale
 - [Vitest](https://vitest.dev) per i test della logica
 - In arrivo: Playwright per la prova nel browser
