@@ -5,7 +5,7 @@ Un gatto randagio, Roma di notte, ondate di nemici: resisti fino all'alba. Gioco
 Un progetto mio, sviluppato con l'aiuto del mio agente AI.
 
 ## A che punto è
-In costruzione, alla tappa 1a: per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
+In costruzione. Chiusa la tappa 1a, la prossima è la 1b: per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
 
 ## Lo stack
 - [Phaser 4](https://phaser.io), il motore del gioco
@@ -31,7 +31,9 @@ Con `?misura` in fondo all'indirizzo si accende la misura: sprite finti che si m
 ## Documentazione
 - [DECISIONI.md](DECISIONI.md): ogni scelta del progetto, con le alternative scartate e il perché
 - [CREDITS.md](CREDITS.md): autori e licenze di grafica, caratteri e suoni
-- [docs/tappe/tappa-1a.md](docs/tappe/tappa-1a.md): il diario della tappa in corso, con le tecnologie usate e il perché
+- [docs/ASSET.md](docs/ASSET.md): la lista degli asset, con il budget e la palette
+- [docs/tappe/tappa-0.md](docs/tappe/tappa-0.md): il diario della tappa 0, stile e asset
+- [docs/tappe/tappa-1a.md](docs/tappe/tappa-1a.md): il diario della tappa 1a, il gioco online, con le tecnologie usate e il perché
 
 ## Licenza
 [MIT](LICENSE)

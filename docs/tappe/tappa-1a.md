@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: un progetto vero, pubblico e online, con il minimo indispensabile. Sullo schermo c'è solo il gatto fermo sui sampietrini, ma intorno c'è già tutto quello che serve per pubblicarlo.
 
-**Stato: in corso.** Il gioco è online su <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/> e la misura sul telefono è fatta: Phaser 4 regge. L'ingrandimento corretto è ripubblicato e visto sul telefono. Mancano il diario della tappa 0 e la lista degli asset.
+**Stato: chiusa il 10 novembre 2026.** Il gioco è online su <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/> e la misura sul telefono è fatta: Phaser 4 regge. L'ingrandimento corretto è ripubblicato e visto sul telefono. Nel repository ci sono anche il [diario della tappa 0](tappa-0.md) e la [lista degli asset](../ASSET.md).
 
 ## Contenuti
 - Cosa c'è di nuovo, giorno per giorno
@@ -21,6 +21,7 @@ L'obiettivo della tappa: un progetto vero, pubblico e online, con il minimo indi
 - **9 novembre 2026.** La licenza MIT, i crediti della grafica, un README minimo.
 - **10 novembre 2026, il Worker.** La configurazione di Cloudflare Workers (`wrangler.jsonc`), i comandi per provarlo in locale e per pubblicarlo, la prova della build servita dal Worker in locale. L'icona della scheda, il gatto, nata da un errore trovato proprio in quella prova.
 - **10 novembre 2026, la misura.** Con `?misura` in fondo all'indirizzo si accende una scena in più: 200 sprite finti che si muovono, un pannello con i numeri dei fotogrammi e il joystick virtuale. I primi test del progetto, 18, sulla logica del contatore.
+- **10 novembre 2026, la documentazione della tappa 0.** Il diario della tappa 0 e la lista degli asset, che fino a qui stavano negli appunti, entrano nel repository.
 - **10 novembre 2026, online e sul telefono.** La prima pubblicazione su Cloudflare. La misura sul telefono di prova, a 200, 500 e 1000 sprite. Il joystick provato col dito. E una correzione nata proprio dalle schermate del telefono: a tutto schermo la scena era ingrandita 3 volte invece di 4. Il calcolo dell'ingrandimento ora sta in `src/logic/zoom.ts`, con 8 test suoi.
 
 ## Le tecnologie di questa tappa, e perché
@@ -127,5 +128,6 @@ Un'idea, non ancora un testo: raccontare perché la prima cosa fatta è stata me
 - [x] La misura sul telefono, dall'indirizzo pubblico, con i numeri scritti in questa pagina
 - [x] L'ingrandimento a tutto schermo sul telefono corretto, con il suo test
 - [x] Ripubblicato con `npm run deploy` e guardato sul telefono: a tutto schermo il pannello dice `scala ×4` e ai bordi non manca niente
-- [ ] Il diario della tappa 0 e la lista degli asset dentro `docs/`
-- [ ] Caratteri del gioco: quando entra il primo testo, leggere le licenze e scriverle in `CREDITS.md`
+- [x] Il diario della tappa 0 e la lista degli asset dentro `docs/`
+
+Passa più avanti, alla tappa in cui entra il primo testo: leggere le licenze dei caratteri e scriverle in `CREDITS.md`.
