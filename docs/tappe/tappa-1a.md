@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: un progetto vero, pubblico e online, con il minimo indispensabile. Sullo schermo c'è solo il gatto fermo sui sampietrini, ma intorno c'è già tutto quello che serve per pubblicarlo.
 
-**Stato: in corso.** Il gioco è online su <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/> e la misura sul telefono è fatta: Phaser 4 regge. Mancano la ripubblicazione con l'ingrandimento corretto, da guardare sul telefono, il diario della tappa 0 e la lista degli asset.
+**Stato: in corso.** Il gioco è online su <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/> e la misura sul telefono è fatta: Phaser 4 regge. L'ingrandimento corretto è ripubblicato e visto sul telefono. Mancano il diario della tappa 0 e la lista degli asset.
 
 ## Contenuti
 - Cosa c'è di nuovo, giorno per giorno
@@ -104,7 +104,8 @@ Sul telefono: girarlo in orizzontale, aprire l'indirizzo pubblico con `?misura`,
   Con 1000 sprite il telefono usa in media 2,5 millisecondi degli 8,3 che ha per ogni fotogramma. Un buco di 15 o 17 millisecondi è al massimo un fotogramma saltato nei cinque secondi che il pannello guarda. Alla domanda della tappa la risposta è sì: Phaser 4 regge sul telefono di prova. I limiti di questa misura: sono sprite finti che rimbalzano sui bordi senza urtarsi fra loro, il calcolo conta il lavoro del processore e non quello della scheda grafica, e l'ingrandimento era 3. La prova con i nemici veri è quella di carico, alla tappa 4.
 - **Con la barra del browser**, senza tutto schermo, lo stesso telefono disegnava 60 fotogrammi al secondo con 200 sprite (finestra 735×295, due schermate). A 500 e 1000 con la barra non c'è una lettura buona: quelle schermate sono della prima serie.
 - **Il joystick sul telefono.** Provato col dito: muovendolo, il pannello mostra forza e angolo.
-- **L'ingrandimento dopo la correzione**, simulato sul computer con le misure del telefono (843×375 a densità 2,875): 4, cioè 1920×1080 pixel veri. Con la barra del browser (735×295) resta 3, che è il massimo che entra. Sul telefono va ancora guardato, dopo la ripubblicazione.
+- **L'ingrandimento dopo la correzione**, simulato sul computer con le misure del telefono (843×375 a densità 2,875): 4, cioè 1920×1080 pixel veri. Con la barra del browser (735×295) resta 3, che è il massimo che entra.
+- **L'ingrandimento sul telefono**, dopo la ripubblicazione, in una schermata a tutto schermo: il pannello dice `scala ×4` e `dpr 2.875`, quindi la densità dedotta era giusta. La scena occupa tutti i 1080 pixel veri dell'altezza e il disegno dei sampietrini parte dalla sua prima riga, quindi in alto e in basso non è tagliato niente. Ogni pixel del gioco è un quadrato netto di 4 pixel veri. Con 200 sprite: 120 fotogrammi al secondo, buco più lungo 16 ms, calcolo medio 1,1 ms. A 500 e 1000 sprite con l'ingrandimento 4 la misura non è stata rifatta.
 
 ## La domanda da colloquio
 **«Come è fatto il progetto e dove gira?»**
@@ -125,6 +126,6 @@ Un'idea, non ancora un testo: raccontare perché la prima cosa fatta è stata me
 - [x] Il joystick di phaser4-rex-plugins importato e provato con il mouse, poi col dito sul telefono
 - [x] La misura sul telefono, dall'indirizzo pubblico, con i numeri scritti in questa pagina
 - [x] L'ingrandimento a tutto schermo sul telefono corretto, con il suo test
-- [ ] Ripubblicare con `npm run deploy` e guardare sul telefono che a tutto schermo il pannello dica `scala ×4` e che ai bordi non manchi niente
+- [x] Ripubblicato con `npm run deploy` e guardato sul telefono: a tutto schermo il pannello dice `scala ×4` e ai bordi non manca niente
 - [ ] Il diario della tappa 0 e la lista degli asset dentro `docs/`
 - [ ] Caratteri del gioco: quando entra il primo testo, leggere le licenze e scriverle in `CREDITS.md`
