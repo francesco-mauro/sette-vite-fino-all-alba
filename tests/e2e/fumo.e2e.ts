@@ -33,8 +33,23 @@ for (const { name, path } of pages) {
   test(`${name} si apre senza errori`, async ({ page }) => {
     const errors = watchErrors(page);
     await page.goto(path);
-    // GameScene mette questo segno sul canvas alla fine di create(): immagini caricate, scena costruita.
+    // Il titolo (o la scena ferma della misura) mette questo segno sul canvas: immagini caricate, scena costruita.
     await expect(page.locator("#gioco canvas")).toHaveAttribute("data-scena", "pronta");
     expect(errors).toEqual([]);
   });
 }
+
+test("dal titolo parte la partita, senza errori", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  const canvas = page.locator("#gioco canvas");
+  await expect(canvas).toHaveAttribute("data-scena", "pronta");
+  // il titolo accetta lo spazio dopo un attimo: si riprova finché la partita non parte
+  await expect(async () => {
+    await page.keyboard.press("Space");
+    await expect(canvas).toHaveAttribute("data-scena", "partita", { timeout: 500 });
+  }).toPass({ timeout: 5000 });
+  // qualche secondo di partita: i piccioni arrivano e le armi partono
+  await page.waitForTimeout(3000);
+  expect(errors).toEqual([]);
+});

@@ -6,3 +6,5 @@ dist/
 # la prova di fumo di Playwright: registrazioni delle prove fallite e rapporto
 test-results/
 playwright-report/
+# le copie compilate che Python crea da solo quando si importa uno script di art/
+__pycache__/

@@ -7,12 +7,12 @@ Un gatto randagio, Roma di notte, ondate di nemici: resisti fino all'alba. Gioco
 Un progetto mio, sviluppato con l'aiuto del mio agente AI.
 
 ## A che punto è
-In costruzione. Chiuse la tappa 1a e la 1b: a ogni push ripartono lint, tipi e test e, solo se sono verdi, il gioco si pubblica da solo. Con le tappe 2 e 3a il gatto si muove nella notte, i piccioni lo inseguono, le armi partono da sole e le crocchette fanno salire di livello: a ogni livello si sceglie una carta tra tre. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
+In costruzione. Chiuse la tappa 1a e la 1b: a ogni push ripartono lint, tipi e test e, solo se sono verdi, il gioco si pubblica da solo. Con la tappa 3b si gioca una notte intera, la prima versione da mostrare: dal titolo all'alba, dopo 15 minuti, con sette vite. Il gatto si muove nella notte, i piccioni arrivano sempre più fitti, le armi partono da sole e le crocchette fanno salire di livello: a ogni livello si sceglie una carta tra tre. Il record resta salvato nel browser. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
 
 È fatto per installarsi sul telefono come un'app: si apre a tutto schermo dall'icona, gira anche senza rete e si aggiorna da solo quando esce una versione nuova. Provato nel browser del computer e su un telefono Android.
 
 ## Come si gioca
-Si muove solo il gatto: attacca da solo. Sul computer frecce o WASD; sul telefono, in orizzontale, si appoggia il pollice nella metà sinistra dello schermo e compare il joystick. Quando si sale di livello si tocca una delle tre carte (sul computer 1, 2, 3). Con `?seme=123` la partita estrae sempre gli stessi numeri. Con `?debug` in fondo all'indirizzo si accende il pannello per provare: fotogrammi al secondo, nemici vivi, invincibilità, piccioni in più, velocità doppia.
+Si muove solo il gatto: attacca da solo. Sul computer frecce o WASD; sul telefono, in orizzontale, si appoggia il pollice nella metà sinistra dello schermo e compare il joystick. Quando si sale di livello si tocca una delle tre carte (sul computer 1, 2, 3). Finita la barra rossa il gatto perde una delle sette vite e riparte; all'alba si vince. La pausa è il pulsante in alto a destra, o Esc, e scatta da sola se si cambia app. Per provare: `?corta` fa durare la notte 3 minuti, `?seme=123` estrae sempre gli stessi numeri, `?debug` accende il pannello (fotogrammi al secondo, nemici vivi, invincibilità, piccioni in più, velocità quadrupla).
 
 ## Lo stack
 - [Phaser 4](https://phaser.io), il motore del gioco
@@ -47,6 +47,7 @@ Con `?misura` in fondo all'indirizzo si accende la misura: sprite finti che si m
 - [docs/tappe/tappa-1b.md](docs/tappe/tappa-1b.md): il diario della tappa 1b, qualità e pubblicazione automatica
 - [docs/tappe/tappa-2.md](docs/tappe/tappa-2.md): il diario della tappa 2, il gatto e il primo nemico
 - [docs/tappe/tappa-3a.md](docs/tappe/tappa-3a.md): il diario della tappa 3a, crescere
+- [docs/tappe/tappa-3b.md](docs/tappe/tappa-3b.md): il diario della tappa 3b, la versione presentabile
 
 ## Licenza
 [MIT](LICENSE)

@@ -3,9 +3,10 @@
 
 export const CAT = {
   speed: 80,
+  // il gatto ha sette vite: questa è la barra di una vita
   maxHealth: 100,
   // dopo un colpo, per quanto i colpi non contano (il gatto lampeggia)
-  invulnerabilityMs: 800,
+  invulnerabilityMs: 1000,
 };
 
 export interface EnemyKind {
@@ -22,7 +23,8 @@ export const PIGEON: EnemyKind = {
   key: "piccione",
   speed: 35,
   health: 10,
-  damage: 10,
+  // provvisorio per la demo: con 10 la prima barra finiva in meno di mezzo minuto; si bilancia alla tappa 4
+  damage: 6,
   body: { width: 12, height: 10 },
 };
 
@@ -87,12 +89,28 @@ export const FALLBACK = {
   points: 100,
 };
 
+// La notte: quanto dura, quante vite ha il gatto, e la partita corta per le prove (?corta nell'indirizzo).
+export const RUN = {
+  durationMs: 15 * 60_000,
+  shortDurationMs: 3 * 60_000,
+  lives: 7,
+  // dopo una vita persa il gatto riparte con la vita piena e un attimo di invulnerabilità più lungo
+  respawnInvulnerabilityMs: 1500,
+  // i primi secondi, in basso, la riga che spiega come si gioca
+  hintMs: 30_000,
+};
+
+// Le ondate: dall'inizio all'alba l'intervallo tra i gruppi scende e i gruppi crescono.
+export const WAVES = {
+  startIntervalMs: 2500,
+  endIntervalMs: 700,
+  startGroup: 3,
+  endGroup: 7,
+};
+
 export const SPAWN = {
-  // ogni quanto arriva un gruppo di piccioni, e quanti sono
-  intervalMs: 2500,
-  groupSize: 3,
   // quanto lontano, fuori dallo schermo, nascono
   margin: 32,
   // il tetto dei nemici vivi insieme: il pool non cresce oltre
-  maxEnemies: 200,
+  maxEnemies: 300,
 };

@@ -7,6 +7,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Tappa 1b, 12 novembre 2026: oxlint, il controllo prima del commit, GitHub Actions, il gioco installabile, la prova di fumo con Playwright, `/api/ping` nel Worker
 - Tappa 2, 12 novembre 2026: il joystick sotto il pollice, Silkscreen come carattere
 - Tappa 3a, 12 novembre 2026: carte e crescita come dati, la scelta in una scena sopra la partita
+- Tappa 3b, 12 novembre 2026: la notte intera, sette vite, punteggio condiviso, record, pausa
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -139,3 +140,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** le carte disegnate dentro la scena di gioco, che mescola due cose diverse; `Math.random` per le carte, che non si riproduce; le 12 icone disegnate adesso, rimandate.
 - **Perché:** bilanciare vuol dire cambiare un numero, e la parte che decide si prova con Vitest in un secondo.
 - **Cosa comporta:** le armi hanno come icona un fotogramma del loro effetto, i passivi nessuna icona per ora. Le statistiche si ricalcolano da zero dai livelli delle carte a ogni scelta.
+
+## 2026-11-12 · La notte intera: sette vite, punteggio condiviso, record nel browser, pausa da sola
+- **Contesto:** la tappa 3b chiede una partita intera da mostrare, con l'alba, la fine con il punteggio, il record, la pausa, il titolo e il caricamento. Le sette vite sono la sua preferenza del 7 novembre, da confermare alla tappa 3a.
+- **Scelta:** le scene `Boot` (caricamento), `Title`, `Game`, `LevelUp` e `Pause` sopra la partita, `End`. Le sette vite: finita la barra il gatto perde una vita e 250 punti, e riparte dallo stesso punto con la barra piena e 1,5 secondi di invulnerabilità. Il punteggio sta in `src/shared/score.ts`, condiviso con il Worker della tappa 6. Il record va in `localStorage`, con lettura e scrittura protette. La pausa scatta anche da sola con l'evento `HIDDEN`. Le ondate sono una salita dritta (`src/logic/waves.ts`). Sfondi del titolo e della fine presi interi dalle tavole. `?corta` dura 3 minuti, «veloce» del pannello va a quattro volte. Danno del piccione provvisorio a 6, invulnerabilità a 1 secondo.
+- **Alternative scartate:** sette cuori al posto della barra, l'altra strada del 7 novembre; il punteggio calcolato nella scena, che il Worker non potrebbe riusare; un salvataggio senza protezioni, che in una finestra privata farebbe fermare il gioco; la tabella delle ondate minuto per minuto, che è della tappa 4.
+- **Perché:** è il traguardo minimo del progetto: se il tempo finisce qui, il gioco è già da mostrare.
+- **Cosa comporta:** le sette vite sono applicate come preferite da lui; si cambiano se alla prova non gli piacciono. Gif e post restano da fare con lui.

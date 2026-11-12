@@ -15,6 +15,10 @@ Autori e licenze di tutto quello che nel gioco non è codice. Si aggiorna ogni v
 | `public/assets/crocchetta.png` | la crocchetta a pesciolino, ferma e che brilla, 16×16 | idem | MIT |
 | `public/assets/coda.png` | la coda a frusta, tre fotogrammi, 32×32 | idem | MIT |
 | `public/assets/pelo.png` | il pelo che vola, tre fotogrammi, 32×32 | idem | MIT |
+| `public/assets/vita.png` | il cuore delle sette vite, 9×8 | disegnato per questo gioco con uno strumento di disegno con l'IA, preso intero dalle tavole con `art/sprite_dalle_tavole.py` | MIT |
+| `public/assets/uccisioni.png` | l'icona dei piccioni presi, 16×16 | idem | MIT |
+| `public/assets/titolo.png` | lo sfondo del titolo: Roma di notte, 480×270 | idem | MIT |
+| `public/assets/alba.png` | lo sfondo della fine: l'alba su Roma, 480×270 | idem | MIT |
 | `public/favicon.png` | l'icona della scheda del browser, 64×64 | il gatto fermo di `gatto.png`, ingrandito 4 volte | MIT |
 
 ## Caratteri

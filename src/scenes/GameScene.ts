@@ -1,26 +1,27 @@
-// La scena di gioco. Il gatto si muove nella notte, i piccioni lo inseguono, le armi partono da sole
-// (graffio, coda a frusta, pelo che vola), i piccioni lasciano crocchette, le crocchette fanno salire
-// di livello e a ogni livello si sceglie una carta tra tre (LevelUpScene).
+// La scena di gioco: la notte intera. Il gatto si muove, i piccioni arrivano sempre più fitti, le armi partono
+// da sole (graffio, coda a frusta, pelo che vola), le crocchette fanno salire di livello e a ogni livello si sceglie
+// una carta (LevelUpScene). Il gatto ha sette vite; all'alba, dopo 15 minuti, si vince (EndScene).
 // Le regole stanno in src/logic/ e sono testate; i numeri in src/data/; qui si disegna e si collega.
 //
 // Contenuti:
-// - campi e preload: lo stato della partita e le immagini
+// - campi: lo stato della partita
 // - create, createStill, createPlay: la scena ferma della misura o la partita
-// - createAnimations, makeStreetTexture, createInput: animazioni, strada infinita, tastiera e joystick
-// - update e moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld: un fotogramma di gioco
+// - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita, comandi, interfaccia
+// - update e moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup: i piccioni da fuori dello schermo
-// - le armi: fireWeapons, scratch, tail, fur, damageEnemy, killEnemy
+// - le armi: fireWeapons, scratch, tail, fur, furHit, damageEnemy, killEnemy
 // - crescere: collect, openLevelUp, applyCard
-// - la vita: onTouch, gameOver, restart
+// - vite, pausa e fine: onTouch, loseLife, openPause, endRun
 // - l'interfaccia: drawHud, drawJoystick, createDebug, updateDebug
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
-  CARD_WEIGHTS, CAT, FALLBACK, FUR_LEVELS, KIBBLE, PIGEON, SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
+  CARD_WEIGHTS, CAT, FALLBACK, FUR_LEVELS, KIBBLE, PIGEON, RUN, SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
 } from "../data/balance";
 import { TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
 import { drawCards } from "../logic/cards";
+import { formatClock } from "../logic/clock";
 import { createHealth, heal, isDead, takeHit, type Health } from "../logic/health";
 import { chase, joystickVector, keyboardVector, type Vec } from "../logic/movement";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
@@ -28,6 +29,8 @@ import { createRng, type Rng } from "../logic/rng";
 import { spawnPoint } from "../logic/spawn";
 import { computeStats, type Stats } from "../logic/stats";
 import { nearestIndex } from "../logic/targeting";
+import { spawnPlan } from "../logic/waves";
+import type { EndData } from "./EndScene";
 import type { LevelUpData } from "./LevelUpScene";
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
@@ -40,6 +43,8 @@ const SAFE = 12;
 // Il lampione si ripete ogni tanto, in un punto diverso di ogni riquadro di strada.
 const LAMP_CHUNK = { width: 320, height: 240 };
 const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
+// Il pulsante della pausa, in alto a destra: grande abbastanza per il pollice.
+const PAUSE_SIZE = 18;
 
 export class GameScene extends Phaser.Scene {
   private cat!: Sprite;
@@ -50,11 +55,17 @@ export class GameScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
   private lamps: Phaser.GameObjects.Image[] = [];
   private hud!: Phaser.GameObjects.Graphics;
+  private hearts: Phaser.GameObjects.Image[] = [];
   private levelText!: Phaser.GameObjects.Text;
+  private clockText!: Phaser.GameObjects.Text;
+  private killsText!: Phaser.GameObjects.Text;
+  private hintText: Phaser.GameObjects.Text | null = null;
   private joystickGfx!: Phaser.GameObjects.Graphics;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
 
   private health: Health = createHealth(CAT.maxHealth);
+  private lives = RUN.lives;
+  private livesLost = 0;
   private xp: XpState = { level: 1, xp: 0 };
   // a che livello è ogni carta presa, per id
   private levels: Record<string, number> = {};
@@ -64,6 +75,10 @@ export class GameScene extends Phaser.Scene {
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
   private facing = 0;
   private nextFire = { scratch: 0, tail: 0, fur: 0 };
+  // il tempo di notte passato, in millisecondi di gioco: si ferma con la pausa e con la scelta delle carte
+  private elapsed = 0;
+  private duration = RUN.durationMs;
+  private nextSpawnAt = 0;
   private points = 0;
   private kills = 0;
   private joystick: { pointerId: number; start: Vec; current: Vec } | null = null;
@@ -75,44 +90,36 @@ export class GameScene extends Phaser.Scene {
     super("Game");
   }
 
-  // preload: carica le immagini prima che la scena parta.
-  preload() {
-    this.load.image("casella", "assets/casella.png");
-    this.load.image("tombino", "assets/tombino.png");
-    this.load.image("foglie", "assets/foglie.png");
-    this.load.image("lampione", "assets/lampione.png");
-    // strisce di fotogrammi in fila
-    this.load.spritesheet("gatto", "assets/gatto.png", { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("piccione", "assets/piccione.png", { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("crocchetta", "assets/crocchetta.png", { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("graffio", "assets/graffio.png", { frameWidth: 32, frameHeight: 32 });
-    this.load.spritesheet("coda", "assets/coda.png", { frameWidth: 32, frameHeight: 32 });
-    this.load.spritesheet("pelo", "assets/pelo.png", { frameWidth: 32, frameHeight: 32 });
-  }
-
   // create: costruisce la scena, una volta per partita.
   create() {
     this.over = false;
     this.health = createHealth(CAT.maxHealth);
+    this.lives = RUN.lives;
+    this.livesLost = 0;
     this.xp = { level: 1, xp: 0 };
     this.levels = {};
     this.stats = computeStats({});
     this.pendingLevels = 0;
     this.facing = 0;
+    this.elapsed = 0;
+    this.nextSpawnAt = 0;
     this.points = 0;
     this.kills = 0;
     this.joystick = null;
     this.lamps = [];
+    this.hearts = [];
     this.debugText = null;
+    this.hintText = null;
+    this.invincible = false;
 
     if (this.registry.get("misura")) {
       this.createStill();
+      // Un segno sul canvas per la prova di fumo (tests/e2e): la scena ferma è costruita.
+      this.game.canvas.dataset.scena = "pronta";
     } else {
       this.createPlay();
+      this.game.canvas.dataset.scena = "partita";
     }
-
-    // Un segno sul canvas per la prova di fumo (tests/e2e): la scena è costruita.
-    this.game.canvas.dataset.scena = "pronta";
   }
 
   // La scena ferma della tappa 1a, per la misura con ?misura: il gatto sotto il lampione e niente altro.
@@ -127,15 +134,18 @@ export class GameScene extends Phaser.Scene {
 
   private createPlay() {
     const { width, height } = this.scale;
+    const params = new URLSearchParams(location.search);
     this.createAnimations();
     // Il seme: con ?seme=123 nell'indirizzo la partita estrae sempre le stesse carte e le stesse nascite.
-    const seedParam = new URLSearchParams(location.search).get("seme");
+    const seedParam = params.get("seme");
     this.rng = createRng(seedParam ? Number(seedParam) : Date.now());
+    // La partita corta, per provare: con ?corta la notte dura 3 minuti invece di 15.
+    this.duration = params.has("corta") ? RUN.shortDurationMs : RUN.durationMs;
 
     // Il terreno: una striscia di strada con tombino e foglie, ripetuta all'infinito.
     // È fisso sullo schermo e scorre il disegno, invece di muoversi: così la strada non finisce mai.
     this.ground = this.add.tileSprite(0, 0, width, height, this.makeStreetTexture()).setOrigin(0, 0).setScrollFactor(0);
-    for (let i = 0; i < 9; i++) this.lamps.push(this.add.image(0, 0, "lampione"));
+    for (let i = 0; i < 9; i++) this.lamps.push(this.add.image(0, 0, "lampione").setDepth(1));
 
     this.cat = this.physics.add.sprite(0, 0, "gatto", 0);
     this.cat.setSize(10, 10).setDepth(10);
@@ -151,19 +161,17 @@ export class GameScene extends Phaser.Scene {
     this.physics.add.overlap(this.cat, this.enemies, (_c, enemy) => this.onTouch(enemy as Sprite));
     this.physics.add.overlap(this.cat, this.kibbles, (_c, kibble) => this.collect(kibble as Sprite));
     this.physics.add.overlap(this.furs, this.enemies, (fur, enemy) => this.furHit(fur as Sprite, enemy as Sprite));
-
-    this.time.addEvent({ delay: SPAWN.intervalMs, loop: true, callback: () => this.spawnGroup(SPAWN.groupSize) });
-    this.spawnGroup(SPAWN.groupSize);
     this.nextFire = { scratch: 0, tail: 0, fur: 0 };
 
     this.events.off("card-picked");
     this.events.on("card-picked", (id: string) => this.applyCard(id));
+    // quando la scheda o l'app passano in secondo piano, la partita si mette in pausa da sola
+    this.game.events.on(Phaser.Core.Events.HIDDEN, this.openPause, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.HIDDEN, this.openPause, this));
 
     this.createInput();
-    this.hud = this.add.graphics().setScrollFactor(0).setDepth(100);
-    this.levelText = this.add.text(SAFE + 64, SAFE - 1, "", FONT).setScrollFactor(0).setDepth(100);
-    this.drawHud();
-    if (new URLSearchParams(location.search).has("debug")) this.createDebug();
+    this.createHud();
+    if (params.has("debug")) this.createDebug();
   }
 
   private createAnimations() {
@@ -201,8 +209,10 @@ export class GameScene extends Phaser.Scene {
       this.keys = kb.addKeys({
         up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D",
       }) as typeof this.keys;
+      kb.on("keydown-ESC", this.openPause, this);
+      kb.on("keydown-P", this.openPause, this);
     }
-    // Due dita insieme: uno sul joystick, l'altro libero per i pulsanti.
+    // Due dita insieme: uno sul joystick, l'altro libero per la pausa.
     this.input.addPointer(1);
     this.joystickGfx = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
@@ -219,18 +229,57 @@ export class GameScene extends Phaser.Scene {
     this.input.on("pointerupoutside", release);
   }
 
-  update() {
+  // L'interfaccia, tutta lontana dagli angoli: vita, esperienza, livello e cuori a sinistra; l'orologio in alto
+  // al centro; pausa e piccioni presi a destra; la riga dei primi secondi in basso.
+  private createHud() {
+    const { width, height } = this.scale;
+    // un fondo scuro mezzo trasparente: barre e livello si leggono anche sopra la luce di un lampione
+    this.add.rectangle(SAFE - 4, SAFE - 4, 96, 34, 0x0e0c16, 0.55).setOrigin(0, 0).setScrollFactor(0).setDepth(99);
+    this.hud = this.add.graphics().setScrollFactor(0).setDepth(100);
+    this.levelText = this.add.text(SAFE + 64, SAFE - 1, "", FONT).setScrollFactor(0).setDepth(100);
+    for (let i = 0; i < RUN.lives; i++) {
+      this.hearts.push(this.add.image(SAFE + 5 + i * 11, SAFE + 21, "vita").setScrollFactor(0).setDepth(100));
+    }
+    this.clockText = this.add.text(width / 2, SAFE, "00:00", { ...FONT, fontSize: "16px" }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
+
+    const px = width - SAFE - PAUSE_SIZE;
+    const pause = this.add.rectangle(px, SAFE, PAUSE_SIZE, PAUSE_SIZE, 0x0e0c16, 0.7).setOrigin(0, 0).setStrokeStyle(1, 0xcfe0ff).setScrollFactor(0).setDepth(100).setInteractive();
+    this.add.rectangle(px + 6, SAFE + 5, 2, 8, 0xffffff).setOrigin(0, 0).setScrollFactor(0).setDepth(101);
+    this.add.rectangle(px + 10, SAFE + 5, 2, 8, 0xffffff).setOrigin(0, 0).setScrollFactor(0).setDepth(101);
+    pause.on("pointerdown", (_p: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
+      event.stopPropagation();
+      this.openPause();
+    });
+    this.add.image(width - SAFE - 6, SAFE + PAUSE_SIZE + 12, "uccisioni").setScrollFactor(0).setDepth(100);
+    this.killsText = this.add.text(width - SAFE - 16, SAFE + PAUSE_SIZE + 8, "0", FONT).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+
+    this.hintText = this.add.text(width / 2, height - SAFE - 8, TEXTS.hint, { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(100);
+    this.drawHud();
+  }
+
+  update(_time: number, delta: number) {
     if (!this.cat || this.over) return;
-    // L'orologio della scena, non quello del gioco: si ferma durante la scelta delle carte e corre doppio
+    // L'orologio della scena, non quello del gioco: si ferma durante la scelta delle carte e la pausa e corre doppio
     // con «veloce», quindi armi, invulnerabilità e ciuffi restano d'accordo tra loro.
     const time = this.time.now;
+    this.elapsed += delta * this.time.timeScale;
+    if (this.elapsed >= this.duration) {
+      this.endRun(true);
+      return;
+    }
     this.moveCat(time);
     this.moveEnemies();
     this.moveKibbles();
     this.expireFur(time);
     this.fireWeapons(time);
+    this.spawnOnSchedule();
     this.scrollWorld();
     this.drawJoystick();
+    this.clockText.setText(formatClock(this.elapsed));
+    if (this.hintText && this.elapsed > RUN.hintMs) {
+      this.hintText.destroy();
+      this.hintText = null;
+    }
     if (this.debugText) this.updateDebug();
   }
 
@@ -312,6 +361,14 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // Le ondate: quando arriva il momento nasce un gruppo, e il prossimo si fissa secondo quanta notte è passata.
+  private spawnOnSchedule() {
+    if (this.elapsed < this.nextSpawnAt) return;
+    const plan = spawnPlan(this.elapsed / this.duration);
+    this.spawnGroup(plan.groupSize);
+    this.nextSpawnAt = this.elapsed + plan.intervalMs;
+  }
+
   private spawnGroup(size: number) {
     if (this.over) return;
     const cam = this.cameras.main;
@@ -323,7 +380,7 @@ export class GameScene extends Phaser.Scene {
       this.rng,
     );
     for (let i = 0; i < size; i++) {
-      const enemy = this.enemies.get(center.x + (i % 2) * 14, center.y + Math.floor(i / 2) * 12, PIGEON.key) as Sprite | null;
+      const enemy = this.enemies.get(center.x + (i % 3) * 14, center.y + Math.floor(i / 3) * 12, PIGEON.key) as Sprite | null;
       if (!enemy) return;
       enemy.enableBody(true, enemy.x, enemy.y, true, true);
       enemy.setSize(PIGEON.body.width, PIGEON.body.height).setAlpha(1).setDepth(5);
@@ -421,6 +478,7 @@ export class GameScene extends Phaser.Scene {
     const { x, y } = enemy;
     enemy.disableBody(true, true);
     this.kills++;
+    this.killsText.setText(String(this.kills));
     const k = this.kibbles.get(x, y, "crocchetta") as Sprite | null;
     if (!k) return;
     k.enableBody(true, x, y, true, true);
@@ -440,6 +498,7 @@ export class GameScene extends Phaser.Scene {
 
   // Si sale di livello: la partita si ferma e sopra compare la scelta tra tre carte.
   private openLevelUp() {
+    if (this.over) return;
     this.pendingLevels--;
     this.joystick = null;
     this.joystickGfx.clear();
@@ -472,11 +531,55 @@ export class GameScene extends Phaser.Scene {
     const { health, hit } = takeHit(this.health, PIGEON.damage, this.time.now, CAT.invulnerabilityMs);
     if (!hit) return;
     this.health = health;
+    if (isDead(this.health)) this.loseLife();
     this.drawHud();
-    if (isDead(this.health)) this.gameOver();
   }
 
-  // In alto a sinistra, lontano dall'angolo: la barra della vita, quella dell'esperienza e il livello.
+  // Finita la barra il gatto perde una vita e riparte dallo stesso punto della notte, con la barra piena
+  // e un attimo di invulnerabilità. Senza più vite, la partita finisce.
+  private loseLife() {
+    this.lives--;
+    this.livesLost++;
+    if (this.lives <= 0) {
+      this.endRun(false);
+      return;
+    }
+    this.health = { ...this.health, current: this.health.max, invulnerableUntil: this.time.now + RUN.respawnInvulnerabilityMs };
+    const { width, height } = this.scale;
+    const note = this.add.text(width / 2, height / 2 - 28, TEXTS.lifeLost, { ...FONT, color: "#e23a4f", backgroundColor: "#0e0c16" }).setOrigin(0.5).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
+    this.time.delayedCall(1200, () => note.destroy());
+  }
+
+  // La pausa: la partita si ferma e sopra compare PauseScene. Non si apre sopra la scelta delle carte.
+  private openPause() {
+    if (this.over || !this.scene.isActive() || this.scene.isActive("LevelUp") || this.scene.isActive("Pause")) return;
+    this.joystick = null;
+    this.joystickGfx.clear();
+    this.scene.pause();
+    this.scene.launch("Pause");
+  }
+
+  // La fine: all'alba (dawn) o senza più vite. Il punteggio e il record li fa EndScene.
+  private endRun(dawn: boolean) {
+    if (this.over) return;
+    this.over = true;
+    this.time.timeScale = 1;
+    this.physics.world.timeScale = 1;
+    this.anims.globalTimeScale = 1;
+    const result: EndData = {
+      survivedMs: Math.min(this.elapsed, this.duration),
+      kills: this.kills,
+      points: this.points,
+      livesLost: this.livesLost,
+      dawn,
+      level: this.xp.level,
+    };
+    this.scene.stop("LevelUp");
+    this.scene.stop("Pause");
+    this.scene.start("End", result);
+  }
+
+  // In alto a sinistra, lontano dall'angolo: la barra della vita, quella dell'esperienza, il livello e i cuori.
   private drawHud() {
     const g = this.hud;
     const w = 60;
@@ -488,6 +591,7 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(0x0e0c16, 1).fillRect(SAFE, SAFE + 8, w, 4);
     g.fillStyle(0xa6f05a, 1).fillRect(SAFE + 1, SAFE + 9, exp, 2);
     this.levelText.setText(`${TEXTS.level} ${this.xp.level}`);
+    this.hearts.forEach((h, i) => h.setAlpha(i < this.lives ? 1 : 0.2));
   }
 
   private drawJoystick() {
@@ -500,36 +604,12 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(0xffffff, 0.35).fillCircle(start.x + v.x * JOYSTICK_RADIUS, start.y + v.y * JOYSTICK_RADIUS, 9);
   }
 
-  private gameOver() {
-    this.over = true;
-    this.joystick = null;
-    this.joystickGfx.clear();
-    this.physics.pause();
-    this.cat.anims.stop();
-    this.cat.setAlpha(1);
-    const { width, height } = this.scale;
-    this.add.rectangle(0, 0, width, height, 0x0e0c16, 0.6).setOrigin(0, 0).setScrollFactor(0).setDepth(200);
-    this.add.text(width / 2, height / 2 - 12, TEXTS.gameOverTitle, { ...FONT, fontSize: "16px" }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
-    this.add.text(width / 2, height / 2 + 12, TEXTS.gameOverRetry, FONT).setOrigin(0.5).setScrollFactor(0).setDepth(201);
-    // un attimo prima di accettare il tocco, così un dito ancora sullo schermo non riparte subito
-    this.time.delayedCall(600, () => {
-      this.input.once("pointerdown", () => this.restart());
-      this.input.keyboard?.once("keydown-SPACE", () => this.restart());
-    });
-  }
-
-  private restart() {
-    this.physics.resume();
-    this.time.timeScale = 1;
-    this.physics.world.timeScale = 1;
-    this.anims.globalTimeScale = 1;
-    this.scene.restart();
-  }
-
   // Il pannello di debug, con ?debug nell'indirizzo: fotogrammi, nemici, e tre pulsanti per provare in fretta.
+  // Sta sotto la pausa e i piccioni presi, sul lato destro.
   private createDebug() {
     const { width } = this.scale;
-    this.debugText = this.add.text(width - SAFE, SAFE, "", { ...FONT, align: "right" }).setOrigin(1, 0).setScrollFactor(0).setDepth(150);
+    const top = SAFE + PAUSE_SIZE + 24;
+    this.debugText = this.add.text(width - SAFE, top, "", { ...FONT, align: "right" }).setOrigin(1, 0).setScrollFactor(0).setDepth(150);
     const button = (label: string, y: number, onTap: () => void) => {
       const t = this.add.text(width - SAFE, y, label, { ...FONT, backgroundColor: "#2c3550" }).setOrigin(1, 0).setPadding(3, 2, 3, 2).setScrollFactor(0).setDepth(150).setInteractive();
       t.on("pointerdown", (_p: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
@@ -538,25 +618,25 @@ export class GameScene extends Phaser.Scene {
       });
       return t;
     };
-    const inv = button(TEXTS.debugInvincible, SAFE + 34, () => {
+    const inv = button(TEXTS.debugInvincible, top + 22, () => {
       this.invincible = !this.invincible;
       inv.setColor(this.invincible ? "#ffc85a" : "#ffffff");
     });
-    button(TEXTS.debugSpawn, SAFE + 50, () => {
+    button(TEXTS.debugSpawn, top + 38, () => {
       for (let i = 0; i < 7; i++) this.spawnGroup(3);
     });
-    const fast = button(TEXTS.debugFast, SAFE + 66, () => {
+    const fast = button(TEXTS.debugFast, top + 54, () => {
       const on = this.time.timeScale === 1;
       // Arcade conta il contrario: timeScale 0,5 vuol dire fisica due volte più veloce
-      this.time.timeScale = on ? 2 : 1;
-      this.physics.world.timeScale = on ? 0.5 : 1;
-      this.anims.globalTimeScale = on ? 2 : 1;
+      this.time.timeScale = on ? 4 : 1;
+      this.physics.world.timeScale = on ? 0.25 : 1;
+      this.anims.globalTimeScale = on ? 4 : 1;
       fast.setColor(on ? "#ffc85a" : "#ffffff");
     });
   }
 
   private updateDebug() {
     const alive = this.enemies.countActive(true);
-    this.debugText?.setText(`${Math.round(this.game.loop.actualFps)} fps\n${alive} nemici\n${this.kills} presi`);
+    this.debugText?.setText(`${Math.round(this.game.loop.actualFps)} fps\n${alive} nemici`);
   }
 }

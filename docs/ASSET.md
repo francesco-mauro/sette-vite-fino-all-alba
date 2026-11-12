@@ -52,7 +52,11 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `graffio.png` | 96×32 | Tre fotogrammi da 32×32: parte, colpisce, svanisce (tappa 2) |
 | `crocchetta.png` | 32×16 | Due fotogrammi da 16×16: ferma e che brilla (pronta per la tappa 3a) |
 | `coda.png` | 96×32 | Tre fotogrammi da 32×32 della coda a frusta (pronta per la tappa 3a) |
-| `pelo.png` | 96×32 | Tre fotogrammi da 32×32 del pelo che vola (pronto per la tappa 3a) |
+| `pelo.png` | 96×32 | Tre fotogrammi da 32×32 del pelo che vola (tappa 3a) |
+| `vita.png` | 9×8 | Il cuore delle sette vite (tappa 3b) |
+| `uccisioni.png` | 16×16 | L'icona dei piccioni presi (tappa 3b) |
+| `titolo.png` | 480×270 | Lo sfondo del titolo, Roma di notte (tappa 3b) |
+| `alba.png` | 480×270 | Lo sfondo della fine, l'alba su Roma (tappa 3b) |
 
 In più `public/favicon.png`, 64×64: il gatto fermo ingrandito 4 volte, per la scheda del browser. Dalla tappa 2 gli sprite nuovi escono dalle tavole con `art/sprite_dalle_tavole.py`, che controlla anche i colori: il 12 novembre 2026 tutti dentro i 24 della palette, senza pixel semitrasparenti.
 
@@ -74,9 +78,9 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Coda a frusta | 32×32 | 3 | 3a | nel repository |
 | Pelo che vola | 32×32 | 3 | 3a | nel repository |
 | Icone delle carte: 4 armi, 8 passivi | 16×16 | 1 | 3a | da fare: 12. Per ora le armi usano un fotogramma del loro effetto |
-| Icona della vita | 9×8 | 1 | 3a | quasi: da riguardare |
-| Icona delle uccisioni | 16×16 | 1 | 3b | pronta |
-| Sfondi del titolo (Roma di notte) e della fine (l'alba) | 480×270 | 1 | 3b | riferimento: alla 3b si decide se usarli interi |
+| Icona della vita | 9×8 | 1 | 3a | nel repository dalla tappa 3b, presa così com'è |
+| Icona delle uccisioni | 16×16 | 1 | 3b | nel repository |
+| Sfondi del titolo (Roma di notte) e della fine (l'alba) | 480×270 | 1 | 3b | nel repository, usati interi |
 | Zanzara | 16×16 | 2: ali su, ali giù | 4 | pronta |
 | Pantegana | 16×16 | 2: corsa | 4 | pronta |
 | Cornacchia grigia | 16×16 | 2: in volo, in picchiata | 4 | pronta |
@@ -93,7 +97,7 @@ Alla tappa 0 si è visto che il testo disegnato dal browser ha sempre i bordi sf
 ## I conti
 - **Immagini fino alla tappa 4:** 5 del gatto, 8 dei nemici, 4 dei capi, 4 degli oggetti, 12 degli attacchi, 3 caselle, 3 pezzi del lampione, 12 icone delle carte, 2 icone dell'interfaccia. In tutto **53**.
 - **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 ci sono due ritocchi: il gabbiano reale e l'icona della vita. I due sfondi delle schermate sono fuori dal conto.
-- **Nel repository:** 10 file, che valgono 21 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, i 2 del piccione, i 2 della crocchetta e i 9 di graffio, coda a frusta e pelo che vola), più il lampione intero.
+- **Nel repository:** 14 file. Valgono 23 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, i 2 del piccione, i 2 della crocchetta, i 9 di graffio, coda a frusta e pelo che vola, le icone della vita e delle uccisioni), più il lampione intero e i due sfondi delle schermate, che stanno fuori dal conto.
 
 ## Cosa manca
 1. Le 12 icone delle carte, per la tappa 3a.

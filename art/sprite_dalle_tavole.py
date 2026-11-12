@@ -12,6 +12,7 @@ all'angolo in alto a sinistra, più un'ombra fatta con gli stessi quattro colori
   I buchi chiusi dentro un corpo restano pieni, come per il gatto.
 - Per gli effetti (gli attacchi), che non hanno contorno: diventa trasparente ogni pixel
   con un colore dei sampietrini, ovunque sia.
+- Le icone dell'interfaccia e gli sfondi delle schermate (titolo, alba) si prendono interi.
 
 Uso:  python art/sprite_dalle_tavole.py "<percorso>/Gatto a Roma — stile visivo 2.html"
 Esce con 1 se una didascalia non si trova. Serve Pillow.
@@ -35,6 +36,11 @@ SPRITE = {
     "crocchetta.png": ("corpo", ["Crocchetta a forma di pesce", "Crocchetta che brilla"]),
     "coda.png": ("effetto", ["Coda a frusta, fotogramma 1", "Coda a frusta, fotogramma 2", "Coda a frusta, fotogramma 3"]),
     "pelo.png": ("effetto", ["Pelo che vola, fotogramma 1", "Pelo che vola, fotogramma 2", "Pelo che vola, fotogramma 3"]),
+    # tappa 3b: le icone dell'interfaccia hanno già lo sfondo trasparente, gli sfondi delle schermate sono interi
+    "vita.png": ("intero", ["Vita"]),
+    "uccisioni.png": ("intero", ["Uccisioni"]),
+    "titolo.png": ("intero", ["Roma di notte: cupola, pini, muraglione del Tevere, un lampione, un motorino e il gatto"]),
+    "alba.png": ("intero", ["L'alba su Roma: il sole sorge dietro i tetti, il gatto accanto al motorino"]),
 }
 
 CASELLA = "Casella di sampietrini"
@@ -82,6 +88,8 @@ def pulisci(img, casella, modo):
     colori = {casella.getpixel((x, y)) for x in range(casella.width) for y in range(casella.height)}
     px = img.load()
     vuoto = (0, 0, 0, 0)
+    if modo == "intero":
+        return img
     if modo == "effetto":
         for y in range(h):
             for x in range(w):
