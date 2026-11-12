@@ -3,26 +3,9 @@
 // Sul telefono si tocca la carta; sul computer anche 1, 2, 3, oppure frecce e invio.
 // Il tocco vale solo se il dito si appoggia sulla carta dopo che è comparsa (src/logic/tap.ts).
 import * as Phaser from "phaser";
-import { CARDS } from "../data/cards";
-import { CARD_TEXTS, TEXTS } from "../data/texts";
+import { TEXTS } from "../data/texts";
 import { createTapGuard, type TapGuard } from "../logic/tap";
-
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
-const CARD_W = 128;
-const CARD_H = 132;
-const COLORS = { common: 0xcfe0ff, rare: 0xffc85a, fallback: 0xa6f05a, selected: 0xffffff };
-// le armi hanno come icona un fotogramma del loro effetto; i potenziamenti le icone provvisorie di art/icone_carte.py
-const ICONS: Record<string, { key: string; frame: number }> = {
-  scratch: { key: "graffio", frame: 1 },
-  tail: { key: "coda", frame: 1 },
-  fur: { key: "pelo", frame: 0 },
-  speed: { key: "carte", frame: 0 },
-  health: { key: "carte", frame: 1 },
-  damage: { key: "carte", frame: 2 },
-  magnet: { key: "carte", frame: 3 },
-  heal: { key: "crocchetta", frame: 0 },
-  points: { key: "crocchetta", frame: 1 },
-};
+import { CARD_W, FONT, drawCard } from "./cardView";
 
 export interface LevelUpData {
   choices: string[];
@@ -75,23 +58,8 @@ export class LevelUpScene extends Phaser.Scene {
   }
 
   private drawCard(id: string, x: number, y: number, index: number) {
-    const def = CARDS.find((c) => c.id === id);
-    const rarity = def ? def.rarity : "fallback";
-    const color = COLORS[rarity];
-    // il graffio c'è dall'inizio, al livello 1: la sua prima carta lo porta al 2
-    const start = id === "scratch" ? 1 : 0;
-    const taken = this.levels[id] ?? 0;
-    const level = start + taken + 1;
-    const text = CARD_TEXTS[id];
-
-    const frame = this.add.rectangle(x, y, CARD_W, CARD_H, 0x1c2133, 1).setStrokeStyle(2, color);
+    const { frame } = drawCard(this, id, x, y, this.levels);
     this.frames.push(frame);
-    const icon = ICONS[id];
-    if (icon) this.add.image(x, y - 36, icon.key, icon.frame);
-    this.add.text(x, y - 12, text.name, { ...FONT, color: `#${color.toString(16).padStart(6, "0")}`, align: "center", wordWrap: { width: CARD_W - 12 } }).setOrigin(0.5, 0);
-    if (def) this.add.text(x, y + 2, `${TEXTS.level} ${level}`, FONT).setOrigin(0.5, 0);
-    this.add.text(x, y + 18, start + taken === 0 ? text.first : text.more, { ...FONT, color: "#cfe0ff", align: "center", wordWrap: { width: CARD_W - 16 } }).setOrigin(0.5, 0);
-    if (rarity === "rare") this.add.text(x, y + CARD_H / 2 - 14, TEXTS.rare, { ...FONT, color: "#ffc85a" }).setOrigin(0.5, 0);
 
     frame.setInteractive();
     frame.on("pointerover", () => {

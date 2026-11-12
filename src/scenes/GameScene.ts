@@ -1,18 +1,18 @@
 // La scena di gioco: la notte intera. Il gatto si muove, i piccioni arrivano sempre più fitti, le armi partono
 // da sole (graffio, coda a frusta, pelo che vola), le crocchette fanno salire di livello e a ogni livello si sceglie
-// una carta (LevelUpScene). Il gatto ha sette vite; all'alba, dopo la durata scelta nel titolo (5, 10 o 15 minuti),
+// una carta (LevelUpScene); le casse del tesoro mostrano le carte vinte (ChestScene). Il gatto ha sette vite; all'alba, dopo la durata scelta nel titolo (5, 10 o 15 minuti),
 // si vince (EndScene).
 // Le regole stanno in src/logic/ e sono testate; i numeri in src/data/; qui si disegna e si collega.
 //
 // Contenuti:
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
-// - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita, comandi, interfaccia
+// - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita con erba e tombino, comandi, interfaccia
 // - update e regenerate, moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup: i piccioni da fuori dello schermo
 // - le armi: fireWeapons, scratch, tail, fur, furHit, damageEnemy, killEnemy
 // - crescere: collect, openLevelUp, pullAllKibbles, applyCard, gainCard
-// - casse e mappa: spawnChestOnSchedule, takeChest, drawMinimap, openMap
+// - casse e mappa: spawnChestOnSchedule, takeChest, onChestClosed, drawMinimap, openMap
 // - vite, pausa e fine: onTouch, loseLife, onResume, openPause, endRun
 // - l'interfaccia: drawHud, drawJoystick, createDebug, updateDebug
 import * as Phaser from "phaser";
@@ -20,7 +20,7 @@ import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
   CARD_WEIGHTS, CAT, CHEST, FALLBACK, FUR_LEVELS, KIBBLE, PIGEON, RUN, SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
 } from "../data/balance";
-import { CARD_TEXTS, TEXTS } from "../data/texts";
+import { TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
 import { drawCards } from "../logic/cards";
 import { chestPoint, chestTimes, openChest } from "../logic/chest";
@@ -35,6 +35,7 @@ import { spawnPoint } from "../logic/spawn";
 import { computeStats, type Stats } from "../logic/stats";
 import { nearestIndex } from "../logic/targeting";
 import { spawnPlan } from "../logic/waves";
+import type { ChestData } from "./ChestScene";
 import type { EndData } from "./EndScene";
 import type { LevelUpData } from "./LevelUpScene";
 import type { MapData } from "./MapScene";
@@ -154,7 +155,7 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.add.tileSprite(0, 0, width, height, "casella").setOrigin(0, 0);
     for (const [x, y] of [[96, 64], [352, 176], [224, 224]]) this.add.image(x, y, "tombino").setOrigin(0, 0);
-    for (const [x, y] of [[48, 192], [416, 48], [304, 96]]) this.add.image(x, y, "foglie").setOrigin(0, 0);
+    for (const [x, y] of [[48, 192], [416, 48], [304, 96]]) this.add.image(x, y, "erba").setOrigin(0, 0);
     this.add.image(width / 2 + 16, height / 2 - 16, "lampione");
     this.add.sprite(width / 2, height / 2, "gatto", 0);
   }
@@ -172,7 +173,7 @@ export class GameScene extends Phaser.Scene {
     this.duration = this.nightMinutes * 60_000;
     this.chestSchedule = chestTimes(this.duration, CHEST.perNight);
 
-    // Il terreno: una striscia di strada con tombino e foglie, ripetuta all'infinito.
+    // Il terreno: una striscia di strada con tombino ed erba, ripetuta all'infinito.
     // È fisso sullo schermo e scorre il disegno, invece di muoversi: così la strada non finisce mai.
     this.ground = this.add.tileSprite(0, 0, width, height, this.makeStreetTexture()).setOrigin(0, 0).setScrollFactor(0);
     for (let i = 0; i < 9; i++) this.lamps.push(this.add.image(0, 0, "lampione").setDepth(1));
@@ -197,6 +198,8 @@ export class GameScene extends Phaser.Scene {
 
     this.events.off("card-picked");
     this.events.on("card-picked", (id: string) => this.applyCard(id));
+    this.events.off("chest-closed");
+    this.events.on("chest-closed", () => this.onChestClosed());
     // dopo una carta o una pausa la partita riprende: un attimo di protezione per riprendere in mano il gatto
     this.events.off(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
@@ -221,7 +224,7 @@ export class GameScene extends Phaser.Scene {
     this.anims.create({ key: "pelo-vola", frames: strip("pelo", 0, 1), frameRate: 8, repeat: -1 });
   }
 
-  // Disegna una volta sola la striscia di strada: sampietrini, un tombino e due mucchi di foglie.
+  // Disegna una volta sola la striscia di strada: sampietrini, un tombino e due ciuffi d'erba con la crepa.
   private makeStreetTexture(): string {
     const key = "strada";
     if (this.textures.exists(key)) return key;
@@ -233,8 +236,8 @@ export class GameScene extends Phaser.Scene {
     const img = (k: string) => this.textures.get(k).getSourceImage() as CanvasImageSource;
     for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) ctx.drawImage(img("casella"), x * 16, y * 16);
     ctx.drawImage(img("tombino"), 7 * 16, 2 * 16);
-    ctx.drawImage(img("foglie"), 2 * 16, 6 * 16);
-    ctx.drawImage(img("foglie"), 10 * 16, 7 * 16);
+    ctx.drawImage(img("erba"), 2 * 16, 6 * 16);
+    ctx.drawImage(img("erba"), 10 * 16, 7 * 16);
     canvas.refresh();
     return key;
   }
@@ -562,7 +565,8 @@ export class GameScene extends Phaser.Scene {
     this.xp = state;
     this.pendingLevels += levelsGained;
     this.drawHud();
-    if (this.pendingLevels > 0 && !this.scene.isActive("LevelUp")) this.openLevelUp();
+    // con la partita già ferma (una cassa presa nello stesso istante) la scelta aspetta che riprenda
+    if (this.pendingLevels > 0 && this.scene.isActive() && !this.scene.isActive("LevelUp")) this.openLevelUp();
   }
 
   // Si sale di livello: la partita si ferma e sopra compare la scelta tra tre carte.
@@ -623,23 +627,33 @@ export class GameScene extends Phaser.Scene {
     chest.anims.play("cassa-brilla", true);
   }
 
-  // Presa una cassa: un potere, a volte tre, subito, senza fermare la partita; una scritta dice quali.
+  // Presa una cassa: un potere, a volte tre, dalle stesse carte della scelta al livello. Sono presi subito;
+  // poi la partita si ferma e ChestScene mostra quali, finché non si tocca. Se la scelta di una carta si è
+  // appena aperta, la cassa resta a terra e si prende alla ripresa.
   private takeChest(chest: Sprite) {
-    if (!chest.active || this.over) return;
+    if (!chest.active || this.over || !this.scene.isActive() || this.scene.isActive("LevelUp")) return;
     chest.disableBody(true, true);
     this.chestsTaken++;
+    const levels = { ...this.levels };
     const gained = openChest(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS, CHEST.tripleChance);
     for (const id of gained) this.gainCard(id);
     this.drawHud();
-    const title = gained.length > 1 ? TEXTS.chestTriple : TEXTS.chest;
-    const names = gained.map((id) => CARD_TEXTS[id]?.name ?? id).join(", ");
-    const { width, height } = this.scale;
-    const note = this.add.text(width / 2, height / 2 - 40, `${title}\n${names}`, { ...FONT, color: "#ffc85a", backgroundColor: "#0e0c16", align: "center" })
-      .setOrigin(0.5).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
-    this.time.delayedCall(2500, () => note.destroy());
+    this.joystick = null;
+    this.joystickGfx.clear();
+    const data: ChestData = { gained, levels };
+    this.scene.pause();
+    this.scene.launch("Chest", data);
   }
 
-  // La minimappa: il gatto al centro, i piccioni come puntini, le casse in oro (sul bordo se sono lontane).
+  // Chiusa la cassa la partita riprende (con la protezione di onResume); un livello arrivato insieme alla
+  // cassa apre adesso la sua scelta.
+  private onChestClosed() {
+    this.scene.resume();
+    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
+  }
+
+  // La minimappa: il gatto al centro, i piccioni come puntini, le casse in oro, sempre: sul bordo se sono
+  // lontane, nella loro direzione. Hanno il contorno scuro e lampeggiano tra oro e bianco, per non perderle.
   private drawMinimap() {
     const g = this.minimap;
     const { x: cx, y: cy } = this.minimapCenter;
@@ -653,11 +667,15 @@ export class GameScene extends Phaser.Scene {
       const p = toMinimap(cat, e, MINIMAP.range, h);
       if (p.inside) g.fillRect(cx + p.x, cy + p.y, 1, 1);
     }
-    g.fillStyle(0xffc85a, 1);
+    const blink = Math.floor(this.time.now / 250) % 2 === 0 ? 0xffc85a : 0xffffff;
     for (const c of this.chests.getChildren() as Sprite[]) {
       if (!c.active) continue;
       const p = toMinimap(cat, c, MINIMAP.range, h);
-      g.fillRect(Math.round(cx + p.x) - 1, Math.round(cy + p.y) - 1, 3, 3);
+      // dentro il riquadro anche quando è sul bordo: il segno intero si vede sempre
+      const x = Phaser.Math.Clamp(Math.round(cx + p.x), cx - h + 2, cx + h - 2);
+      const y = Phaser.Math.Clamp(Math.round(cy + p.y), cy - h + 2, cy + h - 2);
+      g.fillStyle(0x0e0c16, 1).fillRect(x - 2, y - 2, 5, 5);
+      g.fillStyle(blink, 1).fillRect(x - 1, y - 1, 3, 3);
     }
     g.fillStyle(0xf5841f, 1).fillRect(cx - 1, cy - 1, 3, 3);
   }
@@ -736,6 +754,7 @@ export class GameScene extends Phaser.Scene {
     this.scene.stop("LevelUp");
     this.scene.stop("Pause");
     this.scene.stop("Map");
+    this.scene.stop("Chest");
     this.scene.start("End", result);
   }
 

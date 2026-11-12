@@ -46,7 +46,7 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `gatto.png` | 80×16 | Cinque fotogrammi da 16×16 in fila: fermo e quattro passi |
 | `casella.png` | 16×16 | I sampietrini, che si ripetono senza cuciture |
 | `tombino.png` | 16×16 | Il tombino |
-| `foglie.png` | 16×16 | Le foglie di platano |
+| `erba.png` | 16×16 | I sampietrini con due ciuffi d'erba e una crepa, al posto delle foglie di platano, che sembravano cuori. La disegna `art/erba.py` partendo da `casella.png` |
 | `lampione.png` | 96×72 | Il lampione intero: palo, alone e pozza di luce in una scena sola |
 | `piccione.png` | 32×16 | Due fotogrammi da 16×16: i due passi (tappa 2) |
 | `graffio.png` | 96×32 | Tre fotogrammi da 32×32: parte, colpisce, svanisce (tappa 2) |
@@ -70,7 +70,7 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Gatto arancione | 16×16 | 5: fermo, 4 passi | 1a | nel repository |
 | Sampietrini | 16×16 | 1 | 1a | nel repository |
 | Tombino | 16×16 | 1 | 1a come decorazione, 4 nel gioco | nel repository |
-| Foglie di platano | 16×16 | 1 | 1a come decorazione, 4 nel gioco | nel repository |
+| Erba tra i sampietrini (prima: foglie di platano) | 16×16 | 1 | 1a come decorazione, 4 nel gioco | nel repository, provvisoria da `art/erba.py` |
 | Lampione: palo, alone, pozza di luce | scena 96×72 | 1 per pezzo | 1a intero, 4 in tre pezzi | nel repository intero; da separare in tre pezzi |
 | Piccione | 16×16 | 2: testa avanti, testa indietro | 2 | nel repository |
 | Graffio | 32×32 | 3 | 2 | nel repository |

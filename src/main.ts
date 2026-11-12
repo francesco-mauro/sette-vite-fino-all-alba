@@ -3,6 +3,7 @@ import * as Phaser from "phaser";
 import { parseMeasureParam } from "./logic/measureParam";
 import { integerZoom } from "./logic/zoom";
 import { BootScene } from "./scenes/BootScene";
+import { ChestScene } from "./scenes/ChestScene";
 import { EndScene } from "./scenes/EndScene";
 import { GameScene } from "./scenes/GameScene";
 import { LevelUpScene } from "./scenes/LevelUpScene";
@@ -47,7 +48,7 @@ const game = new Phaser.Game({
   // Con ?misura: caricamento, scena ferma e misura sopra.
   scene:
     measureCount === null
-      ? [BootScene, TitleScene, GameScene, LevelUpScene, PauseScene, MapScene, EndScene]
+      ? [BootScene, TitleScene, GameScene, LevelUpScene, ChestScene, PauseScene, MapScene, EndScene]
       : [BootScene, GameScene, new MeasureScene(measureCount)],
   // Prima che parta la prima scena: con ?misura la scena di gioco resta ferma, come alla tappa 1a.
   callbacks: {

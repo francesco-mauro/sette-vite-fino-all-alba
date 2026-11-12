@@ -20,7 +20,7 @@ export class BootScene extends Phaser.Scene {
       bar.fillStyle(0xffc85a, 1).fillRect(width / 2 - 60, height / 2 - 2, Math.round(120 * p), 4);
     });
 
-    for (const key of ["casella", "tombino", "foglie", "lampione", "vita", "uccisioni", "titolo", "alba"]) {
+    for (const key of ["casella", "tombino", "erba", "lampione", "vita", "uccisioni", "titolo", "alba"]) {
       this.load.image(key, `assets/${key}.png`);
     }
     // strisce di fotogrammi in fila

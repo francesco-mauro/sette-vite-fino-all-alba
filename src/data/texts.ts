@@ -19,8 +19,10 @@ export const TEXTS = {
   loading: "caricamento",
   hint: "muoviti: il gatto attacca da solo",
   paused: "pausa",
-  resume: "tocca o premi esc per riprendere",
+  resume: "riprendi",
+  resumeKeys: "o premi esc",
   quit: "esci dalla partita",
+  quitConfirm: "sicuro? tocca ancora per uscire",
   dawnTitle: "l'alba!",
   dawnLine: "il gatto ha passato la notte",
   newRecord: "nuovo record!",
@@ -31,6 +33,7 @@ export const TEXTS = {
   lifeLost: "una vita in meno",
   chest: "cassa del tesoro",
   chestTriple: "cassa tripla!",
+  chestContinue: "tocca o premi spazio per continuare",
   mapClose: "tocca o premi m per tornare",
 };
 
