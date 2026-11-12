@@ -5,4 +5,21 @@ export const TEXTS = {
   debugInvincible: "invincibile",
   debugSpawn: "+20 piccioni",
   debugFast: "veloce",
+  level: "liv",
+  chooseCard: "scegli una carta",
+  rare: "rara",
+};
+
+// Nome e descrizione di ogni carta. `first` è la descrizione quando la carta arriva per la prima volta,
+// `more` quando la si prende di nuovo.
+export const CARD_TEXTS: Record<string, { name: string; first: string; more: string }> = {
+  scratch: { name: "graffio", first: "più danno, più spesso, più lontano", more: "più danno, più spesso, più lontano" },
+  tail: { name: "coda a frusta", first: "un colpo ad arco davanti al gatto", more: "più forte e più larga" },
+  fur: { name: "pelo che vola", first: "ciuffi in tutte le direzioni", more: "più ciuffi, più forti" },
+  speed: { name: "zampe veloci", first: "il gatto corre più veloce", more: "il gatto corre più veloce" },
+  health: { name: "pancia piena", first: "più vita, e un po' di cura", more: "più vita, e un po' di cura" },
+  damage: { name: "unghie affilate", first: "tutte le armi fanno più danno", more: "tutte le armi fanno più danno" },
+  magnet: { name: "naso fino", first: "le crocchette arrivano da più lontano", more: "le crocchette arrivano da più lontano" },
+  heal: { name: "supplì", first: "cura 30 di vita", more: "cura 30 di vita" },
+  points: { name: "mancia", first: "100 punti", more: "100 punti" },
 };

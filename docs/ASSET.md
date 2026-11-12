@@ -69,11 +69,11 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Piccione | 16×16 | 2: testa avanti, testa indietro | 2 | nel repository |
 | Graffio | 32×32 | 3 | 2 | nel repository |
 | Joystick | disegnato dal codice | | 2 | nel gioco: un cerchio e un pallino, sotto il pollice |
-| Barre della vita e dell'esperienza, pannelli | disegnati dal codice | | 2 | la barra della vita c'è; l'esperienza alla 3a |
+| Barre della vita e dell'esperienza, pannelli | disegnati dal codice | | 2 | nel gioco: vita, esperienza e le carte della scelta |
 | Crocchetta a pesciolino | 16×16 | 2: ferma, luccica | 3a | nel repository |
 | Coda a frusta | 32×32 | 3 | 3a | nel repository |
 | Pelo che vola | 32×32 | 3 | 3a | nel repository |
-| Icone delle carte: 4 armi, 8 passivi | 16×16 | 1 | 3a | da fare: 12 |
+| Icone delle carte: 4 armi, 8 passivi | 16×16 | 1 | 3a | da fare: 12. Per ora le armi usano un fotogramma del loro effetto |
 | Icona della vita | 9×8 | 1 | 3a | quasi: da riguardare |
 | Icona delle uccisioni | 16×16 | 1 | 3b | pronta |
 | Sfondi del titolo (Roma di notte) e della fine (l'alba) | 480×270 | 1 | 3b | riferimento: alla 3b si decide se usarli interi |

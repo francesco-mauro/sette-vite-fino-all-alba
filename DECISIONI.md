@@ -6,6 +6,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Tappa 1a, 8-10 novembre 2026: Vite e TypeScript a mano, ingrandimento intero, due PC, il Worker statico, la regola dei sette giorni, l'icona, la misura, Vitest, il joystick, le misure arrotondate
 - Tappa 1b, 12 novembre 2026: oxlint, il controllo prima del commit, GitHub Actions, il gioco installabile, la prova di fumo con Playwright, `/api/ping` nel Worker
 - Tappa 2, 12 novembre 2026: il joystick sotto il pollice, Silkscreen come carattere
+- Tappa 3a, 12 novembre 2026: carte e crescita come dati, la scelta in una scena sopra la partita
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -131,3 +132,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** un carattere bitmap preparato a mano, più lavoro per ora; scaricare Jersey 10, che nelle tavole non c'è.
 - **Perché:** Silkscreen è disegnato su una griglia di pixel e a 8 pixel si legge; era già nelle tavole, con la licenza scritta.
 - **Cosa comporta:** il service worker tiene anche il carattere (`woff2` in `globPatterns`), quindi c'è anche senza rete. Jersey 10 per i titoli resta una scelta aperta.
+
+## 2026-11-12 · Le carte e la crescita come dati, la scelta in una scena sopra la partita
+- **Contesto:** la tappa 3a chiede crocchette, livelli, una scelta tra tre carte con rarità e carta di ripiego, due armi nuove e quattro passivi, con un generatore con seme.
+- **Scelta:** i numeri in `src/data/balance.ts` (livelli delle armi riga per riga, passivi, curva dei livelli, pesi delle rarità), le carte in `src/data/cards.ts`, i testi in `src/data/texts.ts`. La logica pura in `src/logic/` (`rng`, `progression`, `cards`, `arc`, `stats`). La scelta è `LevelUpScene`, lanciata sopra la partita in pausa, che restituisce la carta con un evento. Le carte di ripiego sono il supplì (cura 30) e la mancia (100 punti). Il seme si sceglie con `?seme=` nell'indirizzo, se no cambia a ogni partita.
+- **Alternative scartate:** le carte disegnate dentro la scena di gioco, che mescola due cose diverse; `Math.random` per le carte, che non si riproduce; le 12 icone disegnate adesso, rimandate.
+- **Perché:** bilanciare vuol dire cambiare un numero, e la parte che decide si prova con Vitest in un secondo.
+- **Cosa comporta:** le armi hanno come icona un fotogramma del loro effetto, i passivi nessuna icona per ora. Le statistiche si ricalcolano da zero dai livelli delle carte a ogni scelta.

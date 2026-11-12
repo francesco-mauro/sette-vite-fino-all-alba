@@ -3,6 +3,7 @@ import * as Phaser from "phaser";
 import { parseMeasureParam } from "./logic/measureParam";
 import { integerZoom } from "./logic/zoom";
 import { GameScene } from "./scenes/GameScene";
+import { LevelUpScene } from "./scenes/LevelUpScene";
 import { MeasureScene } from "./scenes/MeasureScene";
 
 // La scena vera è sempre 480x270 pixel (scelta della tappa 0). Poi si ingrandisce.
@@ -36,7 +37,8 @@ const game = new Phaser.Game({
   },
   // La fisica Arcade di Phaser: muove il gatto e i nemici e sente quando si toccano.
   physics: { default: "arcade" },
-  scene: measureCount === null ? [GameScene] : [GameScene, new MeasureScene(measureCount)],
+  // La partita e, sopra, la scelta tra tre carte (parte solo quando si sale di livello).
+  scene: measureCount === null ? [GameScene, LevelUpScene] : [GameScene, new MeasureScene(measureCount)],
   // Prima che parta la prima scena: con ?misura la scena di gioco resta ferma, come alla tappa 1a.
   callbacks: {
     preBoot: (g) => g.registry.set("misura", measureCount !== null),
