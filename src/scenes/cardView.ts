@@ -3,8 +3,9 @@
 import * as Phaser from "phaser";
 import { CARDS } from "../data/cards";
 import { CARD_TEXTS, TEXTS } from "../data/texts";
+import { FONT } from "./font";
 
-export const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
+export { FONT };
 export const CARD_W = 128;
 export const CARD_H = 132;
 export const COLORS = { common: 0xcfe0ff, rare: 0xffc85a, fallback: 0xa6f05a, selected: 0xffffff };

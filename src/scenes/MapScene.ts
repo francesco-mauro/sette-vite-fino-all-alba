@@ -5,8 +5,8 @@ import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
 import type { Point } from "../logic/chest";
 import { toMinimap } from "../logic/minimap";
+import { FONT } from "./font";
 
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 // la mappa grande: 100 pixel dal centro al bordo, per 1000 pixel di mondo
 const HALF = 100;
 const RANGE = 1000;

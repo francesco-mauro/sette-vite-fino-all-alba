@@ -6,8 +6,8 @@ Autori e licenze di tutto quello che nel gioco non è codice. Si aggiorna ogni v
 | File | Cosa | Da dove viene | Licenza |
 |---|---|---|---|
 | `public/assets/gatto.png` | il gatto, fermo e quattro passi, 16×16 | disegnato per questo gioco con uno strumento di disegno con l'IA, convertito in PNG pixel per pixel | MIT, come il codice |
-| `public/assets/casella.png` | i sampietrini | idem | MIT |
-| `public/assets/tombino.png` | il tombino | idem | MIT |
+| `public/assets/casella.png` | i sampietrini | idem, con i toni della pietra abbassati da `art/sampietrini_calmi.py` (l'originale in `art/originali/`) | MIT |
+| `public/assets/tombino.png` | il tombino | idem, calmato come i sampietrini | MIT |
 | `public/assets/erba.png` | i sampietrini con l'erba e una crepa | disegnata per questo gioco da `art/erba.py`, partendo da `casella.png` | MIT |
 | `public/assets/lampione.png` | il lampione con la pozza di luce | idem | MIT |
 | `public/assets/piccione.png` | il piccione, due passi, 16×16 | disegnato per questo gioco con uno strumento di disegno con l'IA, preso dalle tavole e ripulito da `art/sprite_dalle_tavole.py` | MIT |

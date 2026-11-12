@@ -2,17 +2,25 @@
 // Sul telefono si tocca una notte e si gioca; sul computer 1, 2, 3 o le frecce per scegliere, spazio o invio per partire.
 // Il tocco vale solo se il dito si appoggia e si alza sullo stesso pulsante (src/logic/tap.ts), come per le carte.
 // In basso a sinistra la versione, in basso a destra il pulsante «aggiornamenti» (o U): chiede al server
-// l'ultima versione e, se è nuova, la installa e riapre il gioco.
+// l'ultima versione e, se è nuova, la installa e riapre il gioco. In alto a sinistra «schermo intero» (o F),
+// dove il browser lo permette.
+//
+// Contenuti:
+// - create: sfondo, nome, scelta della notte, record, versione, aggiornamenti, schermo intero, tasti
+// - select: la notte evidenziata e il suo record
+// - checkUpdates: il pulsante degli aggiornamenti
+// - start: parte la notte scelta
 import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
 import { NIGHTS, loadNight, saveNight } from "../logic/night";
 import { loadRecord } from "../logic/record";
 import { createTapGuard } from "../logic/tap";
 import { updateStatus, versionLabel } from "../logic/version";
+import { canFullscreen, toggleFullscreen } from "./fullscreen";
 import { browserStorage } from "./storage";
 import { applyUpdate, latestBuildId } from "./update";
+import { FONT } from "./font";
 
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 const BUTTON_W = 64;
 const BUTTON_H = 20;
 const GAP = 10;
@@ -81,6 +89,19 @@ export class TitleScene extends Phaser.Scene {
     });
     this.updateText = this.add.text(width - SAFE, height - SAFE - 22, "", small).setOrigin(1, 1).setPadding(3, 2, 3, 2).setVisible(false);
 
+    // lo schermo intero, in alto a sinistra: sul PC la scena entra 4 volte invece di 3
+    if (canFullscreen(this)) {
+      const fullTap = createTapGuard();
+      const fullButton = this.add.text(SAFE, SAFE, TEXTS.fullscreen, { ...FONT, backgroundColor: "#2c3550" })
+        .setOrigin(0, 0).setPadding(4, 4, 4, 4).setInteractive();
+      fullButton.on("pointerdown", (p: Phaser.Input.Pointer) => {
+        if (ready) fullTap.down(p.id, 0);
+      });
+      fullButton.on("pointerup", (p: Phaser.Input.Pointer) => {
+        if (fullTap.up(p.id, 0)) toggleFullscreen(this);
+      });
+    }
+
     // Un segno sul canvas per la prova di fumo (tests/e2e): immagini caricate, titolo pronto.
     this.game.canvas.dataset.scena = "pronta";
 
@@ -93,6 +114,7 @@ export class TitleScene extends Phaser.Scene {
         if (e.key === "ArrowRight") this.select((this.selected + 1) % NIGHTS.length);
         if (e.key === " " || e.key === "Enter") this.start(this.selected);
         if (e.key === "u" || e.key === "U") void this.checkUpdates();
+        if (e.key === "f" || e.key === "F") toggleFullscreen(this);
       });
     });
   }

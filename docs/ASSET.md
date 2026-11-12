@@ -44,8 +44,8 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | File | Misura | Cosa contiene |
 |---|---|---|
 | `gatto.png` | 80×16 | Cinque fotogrammi da 16×16 in fila: fermo e quattro passi |
-| `casella.png` | 16×16 | I sampietrini, che si ripetono senza cuciture |
-| `tombino.png` | 16×16 | Il tombino |
+| `casella.png` | 16×16 | I sampietrini, che si ripetono senza cuciture. Dal 12 novembre 2026 con un tono in meno di contrasto (`art/sampietrini_calmi.py`, gli originali in `art/originali/`) |
+| `tombino.png` | 16×16 | Il tombino, con le pietre intorno calmate come i sampietrini |
 | `erba.png` | 16×16 | I sampietrini con due ciuffi d'erba e una crepa, al posto delle foglie di platano, che sembravano cuori. La disegna `art/erba.py` partendo da `casella.png` |
 | `lampione.png` | 96×72 | Il lampione intero: palo, alone e pozza di luce in una scena sola |
 | `piccione.png` | 32×16 | Due fotogrammi da 16×16: i due passi (tappa 2) |

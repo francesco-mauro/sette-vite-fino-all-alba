@@ -12,6 +12,7 @@ export const TEXTS = {
   minutes: "min",
   record: "record",
   updates: "aggiornamenti",
+  fullscreen: "schermo intero",
   updateChecking: "controllo...",
   updateNone: "sei aggiornato",
   updateFound: "versione nuova: aggiorno...",

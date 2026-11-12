@@ -2,8 +2,9 @@
 // Con ?misura si salta il titolo e parte la scena ferma della misura, come alla tappa 1a.
 import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
+import { FONT as BASE_FONT } from "./font";
 
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#cfe0ff" };
+const FONT = { ...BASE_FONT, color: "#cfe0ff" };
 
 export class BootScene extends Phaser.Scene {
   constructor() {

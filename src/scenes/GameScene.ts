@@ -36,9 +36,11 @@ import { computeStats, type Stats } from "../logic/stats";
 import { nearestIndex } from "../logic/targeting";
 import { spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
+import { toggleFullscreen } from "./fullscreen";
 import type { EndData } from "./EndScene";
 import type { LevelUpData } from "./LevelUpScene";
 import type { MapData } from "./MapScene";
+import { FONT } from "./font";
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
 
@@ -49,7 +51,6 @@ const JOYSTICK_RADIUS = 24;
 const SAFE = 12;
 // Il lampione si ripete ogni tanto, in un punto diverso di ogni riquadro di strada.
 const LAMP_CHUNK = { width: 320, height: 240 };
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 // Il pulsante della pausa, in alto a destra: grande abbastanza per il pollice.
 const PAUSE_SIZE = 18;
 // I ciuffi spariscono poco oltre il bordo dello schermo.
@@ -251,6 +252,7 @@ export class GameScene extends Phaser.Scene {
       kb.on("keydown-ESC", this.openPause, this);
       kb.on("keydown-P", this.openPause, this);
       kb.on("keydown-M", this.openMap, this);
+      kb.on("keydown-F", () => toggleFullscreen(this));
     }
     // Due dita insieme: uno sul joystick, l'altro libero per la pausa.
     this.input.addPointer(1);

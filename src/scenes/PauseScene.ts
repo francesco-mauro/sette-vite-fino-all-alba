@@ -7,8 +7,8 @@ import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
 import { createConfirm } from "../logic/confirm";
 import { createTapGuard } from "../logic/tap";
+import { FONT } from "./font";
 
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 // quanto resta aperta la domanda «sicuro?»
 const CONFIRM_MS = 3000;
 

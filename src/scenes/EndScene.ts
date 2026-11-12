@@ -6,8 +6,8 @@ import { formatClock } from "../logic/clock";
 import { saveRecord } from "../logic/record";
 import { computeScore, type RunResult } from "../shared/score";
 import { browserStorage } from "./storage";
+import { FONT } from "./font";
 
-const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 
 export interface EndData extends RunResult {
   level: number;
