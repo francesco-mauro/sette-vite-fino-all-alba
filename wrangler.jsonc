@@ -6,9 +6,13 @@
   // Le regole di Cloudflare con cui gira il Worker, fissate a una data:
   // così un loro aggiornamento non cambia da solo il comportamento del gioco.
   "compatibility_date": "2026-11-03",
-  // Solo file statici: la cartella che prepara `npm run build`.
-  // Nessun codice sul server per ora, le rotte /api arrivano alla tappa 1b.
+  // Il codice sul server: risponde alle rotte /api (worker/index.ts).
+  "main": "./worker/index.ts",
+  // I file statici: la cartella che prepara `npm run build`.
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    // Il Worker parte solo per /api/*. Tutto il resto lo serve Cloudflare direttamente dai file,
+    // come prima: più veloce, e le richieste dei file non contano come esecuzioni del Worker.
+    "run_worker_first": ["/api/*"]
   }
 }

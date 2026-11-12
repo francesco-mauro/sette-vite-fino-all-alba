@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo se è tutto verde. Dal push al gioco online non passa più niente a mano.
 
-**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Fatta anche la prova di fumo nel browser con Playwright. Mancano la rotta `/api/ping` e la prova finale con un test rotto apposta.
+**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Fatte anche la prova di fumo nel browser con Playwright e la rotta `/api/ping`. Manca la prova finale con un test rotto apposta.
 
 **Fatto quando:** `/api/ping` risponde dall'indirizzo pubblico; un push verde pubblica da solo; un test rotto ferma il commit e la pubblicazione, provato.
 
@@ -12,6 +12,7 @@ L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo s
 - **12 novembre 2026, il gioco si installa sul telefono.** Anticipato dalla tappa 5 perché Francesco vuole vederlo e installarlo dal telefono, aggiornato da solo come Mnemosine. Con vite-plugin-pwa il gioco ha un manifest (nome, icone, tutto schermo, orizzontale) e un service worker che tiene sul telefono i 14 file che servono per giocare, per poter giocare anche senza rete. Provato nel browser del computer e poi sul telefono (sotto, «Le prove della versione installabile»). Le icone sono il gatto fermo ingrandito, fatte da `art/icone.py`. La versione di Node è scritta una volta sola in `.node-version`.
 - **12 novembre 2026, Workers Builds collegato.** Dal sito di Cloudflare il Worker è collegato al repository su GitHub, ramo main. A ogni push Cloudflare lancia `npm run check && npm run build` e, solo se passa, `npx wrangler deploy`. Le anteprime per gli altri rami sono spente: si lavora solo su main. La prima pubblicazione automatica, partita da questo stesso commit, è andata a buon fine in meno di un minuto.
 - **12 novembre 2026, la prova di fumo nel browser.** Playwright apre la build vera in Chromium, sia il gioco sia `?misura`, e aspetta che la scena sia costruita. Se in console c'è un errore, se JavaScript si blocca o se un'immagine del gioco non arriva, la prova è rossa. Gira sul PC con `npm run test:e2e` e su GitHub dopo la build. Provata rotta apposta: con il nome di un'immagine sbagliato diventa rossa.
+- **12 novembre 2026, il primo codice sul server: `/api/ping`.** Il Worker, finora solo file statici, ha un pezzo di codice in `worker/index.ts`. A `/api/ping` risponde `{"ok":true}` in JSON, senza cache: serve a sapere che il server è vivo, e prepara le rotte della classifica della tappa 6. Pagina, codice del gioco e immagini continuano ad arrivare dai file, senza passare dal Worker. I 5 test della rotta sono stati scritti prima del codice e visti rossi. Poi la prova in locale con Wrangler, come farà Cloudflare: ping, metodo sbagliato, rotta che non esiste, pagina, immagini e un file che non c'è rispondono tutti come devono.
 
 ## Le tecnologie di questa tappa, e perché
 | Strumento | Versione | Cosa fa qui | Perché questo |
@@ -39,6 +40,10 @@ La versione di oxlint è la 1.91.0 e non l'ultima, la 1.93.0: nel progetto un pa
 - **Prova di fumo.** Il nome viene dall'elettronica: si accende il circuito e si guarda se esce fumo. Non prova che il gioco sia giusto, prova che non è rotto in modo evidente: la pagina si apre, la scena parte, niente errori. I test di Vitest provano la logica pezzo per pezzo; questa prova tutto insieme, nel browser, con la build che si pubblica.
 - **Unit test ed end-to-end.** I test di Vitest sono unit test: un pezzo di logica alla volta, senza browser, in un secondo. La prova di Playwright è end-to-end, da un capo all'altro: build, server, browser, pagina. È più lenta e più fragile, per questo è una sola e non sta nel controllo prima del commit.
 - **Il segno sul canvas.** Da fuori non si vede quando Phaser ha finito di costruire la scena. Alla fine di `create()` la scena scrive `data-scena="pronta"` sul canvas, e la prova aspetta quel segno: niente attese a tempo fisso, che sono lente quando va bene e sbagliate quando la macchina è lenta.
+- **Worker e file statici insieme.** Su Cloudflare lo stesso Worker fa due lavori: serve i file della build (`assets` in `wrangler.jsonc`) ed esegue il codice di `worker/index.ts` (`main`). Con `run_worker_first: ["/api/*"]` il codice parte solo per gli indirizzi che iniziano con `/api/`. Un file che esiste lo serve Cloudflare direttamente. Un indirizzo che non corrisponde a nessun file arriva al Worker, e il Worker risponde con un 404.
+- **Rotta e API.** Una rotta è un indirizzo a cui il server risponde con dati invece che con una pagina. L'insieme delle rotte è l'API del gioco: oggi c'è solo il ping, alla tappa 6 arriveranno i punteggi.
+- **I codici di risposta.** 200 vuol dire tutto bene, 404 «non c'è», 405 «metodo non ammesso»: `/api/ping` si legge con GET (o HEAD, quello di `curl -I`), e a un POST risponde 405 dicendo nell'intestazione `Allow` quali metodi accetta.
+- **Il service worker e le rotte.** Il gioco installato risponde da solo con la sua pagina a ogni indirizzo che si apre, anche senza rete. Per `/api/` non deve farlo, la risposta deve arrivare dal server: in `vite.config.ts` c'è `navigateFallbackDenylist: [/^\/api\//]`.
 - **Permessi minimi.** `permissions: contents: read`: il workflow può leggere il codice e nient'altro. Se un'azione fosse compromessa, non potrebbe scrivere nel repository.
 
 ## I comandi
@@ -47,6 +52,7 @@ La versione di oxlint è la 1.91.0 e non l'ultima, la 1.93.0: nel progetto un pa
 - `git hook run pre-commit`: lancia il controllo come farebbe git, senza fare il commit.
 - `npm run test:e2e`: la prova di fumo, dopo `npm run build`. Se è rossa, la registrazione passo per passo è in `test-results/` e si apre con `npx playwright show-trace`.
 - `npm ci && npm run check && npm run build && npm run test:e2e`: sul PC, gli stessi passi del controllo su GitHub.
+- `npm run preview:worker`, poi `curl http://localhost:8787/api/ping`: la build e il Worker in locale, come su Cloudflare.
 
 Su un PC appena clonato `npm install` attiva il controllo da solo: lo script `prepare` di `package.json` dice a git di prendere gli hook dalla cartella `.githooks/`.
 
@@ -54,6 +60,7 @@ Su un PC appena clonato `npm install` attiva il controllo da solo: lo script `pr
 - **Gli a capo su Windows.** Git su Windows può salvare i file con gli a capo di Windows, e uno script di shell così non parte. Il file `.gitattributes` tiene gli script di `.githooks/` con gli a capo di Linux.
 - **Il lockfile tra due PC.** Sul PC di casa npm toglie da `package-lock.json` le righe `libc` dei pacchetti per Linux, che l'npm dell'altro PC scrive. Su Windows non cambia cosa si installa. Su Linux, come sulla macchina di GitHub, il campo `libc` distingue le varianti glibc e musl dei pacchetti: senza, è probabile che npm scarichi anche quelle che non servono, senza fare danni. È una deduzione, la documentazione di npm non lo dice. In più sporca le differenze tra un commit e l'altro.
 - **L'aggiornamento che restava in attesa.** La prima prova dell'aggiornamento: la versione nuova si scaricava ma restava «in attesa» finché tutte le schede del gioco non venivano chiuse, e sul telefono un'app installata può restare aperta a lungo. Il plugin attiva da solo il cambio immediato (`skipWaiting` e `clientsClaim`) solo quando registra il service worker in modo «auto»; qui il modo è «script», quindi le due righe vanno scritte a mano. Con le due righe la prova è riuscita.
+- **Gli indirizzi senza file.** Il primo Worker rispondeva a tutto quello che non era `/api/ping` con un errore JSON «rotta sconosciuta». La documentazione di Cloudflare dice però che, quando c'è il codice, al Worker arrivano anche gli indirizzi che non corrispondono a nessun file: un'immagine sbagliata avrebbe ricevuto un errore da API. Prima un test nuovo, rosso, poi il Worker: fuori da `/api/` risponde con un 404 di testo, come prima.
 - **Un server rimasto acceso.** La prima volta `npm ci` sul PC si è fermato con un errore di permessi: un `vite preview` lanciato prima per una prova nel browser era ancora acceso e teneva aperto un file di `node_modules`. Su Windows un file aperto non si può cancellare. Chiuso il server, `npm ci` è passato.
 
 ## Le prove della versione installabile
@@ -76,5 +83,4 @@ Lo stesso giorno la prova di fumo: in `GameScene` il gatto è stato chiesto con 
 «Cosa succede dal tuo push al gioco online?» Prima ancora del push, a ogni commit, partono lint, tipi e test, e se uno è rosso il commit non nasce. Dopo il push GitHub Actions rifà tutto su una macchina pulita, più la build e la prova di fumo in un browser vero, e segna il commit verde o rosso. Nello stesso momento Workers Builds di Cloudflare prende lo stesso commit, rifà il controllo e la build e, solo se passano, pubblica il gioco. Il telefono scarica da solo la versione nuova quando apre il gioco con la rete e la mostra a un'apertura successiva: nella prova è servita più di un'apertura.
 
 ## Da fare
-- La rotta `/api/ping` nello stesso Worker dei file.
 - La prova finale: un test rotto ferma il commit e anche la pubblicazione.

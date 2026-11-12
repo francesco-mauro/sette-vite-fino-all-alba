@@ -15,7 +15,7 @@ In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto ferm
 - [Phaser 4](https://phaser.io), il motore del gioco
 - TypeScript in modalità `strict`
 - [Vite](https://vite.dev) per lo sviluppo e la build
-- [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo: i file del gioco e, in `worker/`, le rotte `/api` (per ora `/api/ping`)
 - [phaser4-rex-plugins](https://github.com/rexrainbow/phaser3-rex-notes) per il joystick virtuale
 - [Vitest](https://vitest.dev) per i test della logica
 - [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) per installarlo sul telefono e giocare senza rete
@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare. `npm test` lancia i test, `npm run lint` il lint, `npm run check` tutti e due più il controllo dei tipi. Dopo la build, `npm run test:e2e` lancia la prova di fumo con Playwright (la prima volta serve `npx playwright install chromium`). Lo stesso controllo parte da solo prima di ogni commit e lo ferma se qualcosa è rosso: `npm install` lo attiva.
+Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare, compreso `/api/ping`. `npm test` lancia i test, `npm run lint` il lint, `npm run check` tutti e due più il controllo dei tipi. Dopo la build, `npm run test:e2e` lancia la prova di fumo con Playwright (la prima volta serve `npx playwright install chromium`). Lo stesso controllo parte da solo prima di ogni commit e lo ferma se qualcosa è rosso: `npm install` lo attiva.
 
 Con `?misura` in fondo all'indirizzo si accende la misura: sprite finti che si muovono, un contatore dei fotogrammi e il joystick virtuale. Come si legge è scritto nel [diario della tappa](docs/tappe/tappa-1a.md).
 

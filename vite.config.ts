@@ -52,6 +52,9 @@ export default defineConfig({
         // Il plugin lo fa da solo solo con injectRegister "auto": qui va scritto (provato il 12 novembre).
         skipWaiting: true,
         clientsClaim: true,
+        // Il gioco installato risponde da solo, con la sua pagina, a ogni indirizzo che si apre.
+        // Le rotte /api no: devono arrivare sempre al Worker sul server.
+        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],

@@ -4,7 +4,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 
 ## Contenuti
 - Tappa 1a, 8-10 novembre 2026: Vite e TypeScript a mano, ingrandimento intero, due PC, il Worker statico, la regola dei sette giorni, l'icona, la misura, Vitest, il joystick, le misure arrotondate
-- Tappa 1b, 12 novembre 2026: oxlint, il controllo prima del commit, GitHub Actions, il gioco installabile, la prova di fumo con Playwright
+- Tappa 1b, 12 novembre 2026: oxlint, il controllo prima del commit, GitHub Actions, il gioco installabile, la prova di fumo con Playwright, `/api/ping` nel Worker
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -109,3 +109,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** prove di gioco vere sul canvas (premere tasti, muovere il gatto), fragili in un browser senza schermo; più browser, che per una prova di fumo non servono; un'attesa a tempo fisso al posto del segno sul canvas; il nome `.spec.ts`, che Vitest avrebbe preso per suo.
 - **Perché:** è il piano della tappa: prova di fumo solo in CI, il controllo prima del commit resta veloce. Il file `.e2e.ts` tiene separati i due mondi senza toccare la configurazione di Vitest.
 - **Cosa comporta:** provata rotta apposta, con un'immagine dal nome sbagliato: rossa, e ha mostrato che `vite preview` risponde «200» con la pagina al posto di un file che non c'è, per questo si controlla il tipo. Workers Builds non aspetta GitHub: se solo la prova di fumo è rossa, Cloudflare pubblica lo stesso, perché il suo comando lancia `npm run check` e la build, non Playwright.
+
+## 2026-11-12 · `/api/ping` nello stesso Worker dei file, solo per `/api/*`
+- **Contesto:** il Worker serviva solo i file statici (decisione del 10 novembre). La tappa 6 vuole punteggi e classifica sul server: la tappa 1b prova prima la strada con una rotta semplice.
+- **Scelta:** `main: ./worker/index.ts` e `run_worker_first: ["/api/*"]` in `wrangler.jsonc`. Il Worker risponde a `/api/ping` con `{"ok":true}` (GET e HEAD, `Cache-Control: no-store`), con 405 agli altri metodi, con un 404 JSON alle altre rotte `/api` e con un 404 di testo agli indirizzi senza file. Niente collegamento ai file (`binding`): al Worker non servono. Nel service worker del gioco installato `/api/` è esclusa dalla risposta con la pagina (`navigateFallbackDenylist`).
+- **Alternative scartate:** un secondo Worker solo per l'API, con due indirizzi e due pubblicazioni; il Worker davanti a ogni richiesta (`run_worker_first: true`), che farebbe passare dal codice anche ogni immagine; un framework per le rotte, come Hono, per una rotta sola.
+- **Perché:** un solo indirizzo, una sola pubblicazione, e i file restano serviti come prima. La funzione `rispondi` riceve una `Request` e restituisce una `Response`, quindi si prova con Vitest senza Cloudflare.
+- **Cosa comporta:** 5 test scritti prima del codice; prova in locale con Wrangler riuscita. La prova di fumo con Playwright usa `vite preview`, che non esegue il Worker: la rotta la provano i test di Vitest e, dopo la pubblicazione, l'indirizzo pubblico.
