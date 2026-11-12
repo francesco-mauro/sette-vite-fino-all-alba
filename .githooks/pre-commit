@@ -1,0 +1,12 @@
+#!/bin/sh
+# Controllo prima di ogni commit: lint, tipi e test.
+# Se uno dei tre è rosso il commit non parte. Git lo usa grazie a
+# `git config core.hooksPath .githooks`, che `npm install` fa da solo (script "prepare").
+
+echo "pre-commit: lint, tipi e test..."
+if ! npm run --silent check; then
+  echo ""
+  echo "pre-commit: qualcosa è rosso, commit fermato. Sistema e riprova."
+  exit 1
+fi
+echo "pre-commit: tutto verde."

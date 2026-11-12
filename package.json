@@ -10,13 +10,17 @@
     "preview:worker": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "oxlint --deny-warnings",
+    "check": "npm run lint && npm run typecheck && npm test",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "phaser": "4.2.1",
     "phaser4-rex-plugins": "4.2.0"
   },
   "devDependencies": {
+    "oxlint": "1.91.0",
     "typescript": "7.0.2",
     "vite": "8.3.6",
     "vitest": "5.1.0",

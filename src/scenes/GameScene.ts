@@ -1,5 +1,5 @@
 // La scena di gioco. Per la tappa 1a: il gatto fermo sui sampietrini, sotto un lampione.
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 
 export class GameScene extends Phaser.Scene {
   constructor() {

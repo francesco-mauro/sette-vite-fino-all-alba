@@ -1,0 +1,4 @@
+# Gli script di shell restano con gli a capo di Linux anche su Windows,
+# altrimenti sh non li legge.
+*.sh text eol=lf
+.githooks/* text eol=lf

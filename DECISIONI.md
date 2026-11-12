@@ -70,3 +70,17 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** lasciare 3, con il gioco a tre quarti della misura giusta proprio sul telefono di prova; leggere la misura con i decimali da `visualViewport`, che non si poteva provare senza ripubblicare.
 - **Perché:** la tolleranza si prova con un test, senza telefono: il test con le misure vere è stato scritto prima e falliva dando 3.
 - **Cosa comporta:** nel caso peggiore la scena sporge di meno di un pixel CSS, e sul telefono di prova entra esatta. Un piccolo scarto nel conto protegge dagli errori dell'ultimo decimale del computer, con un test suo. Il pannello della misura ora mostra la densità con tre decimali. Nella simulazione Phaser sposta la scena di un pixel CSS verso l'alto quando la finestra è alta 375 esatti. Sul telefono, guardato dopo la ripubblicazione, non succede: la scena occupa i 1080 pixel veri dell'altezza senza righe tagliate, e il pannello conferma la densità 2,875. La voce dell'8 novembre resta com'era: la densità lì è scritta 2,88, il numero arrotondato.
+
+## 2026-11-12 · oxlint come lint, e Phaser importato come namespace
+- **Contesto:** la tappa 1b vuole un lint che giri a ogni commit, quindi deve essere veloce.
+- **Scelta:** oxlint 1.91.0, con le regole di correttezza come errori e quelle sospette e di prestazioni come avvisi, e `--deny-warnings` perché anche un avviso fermi il controllo. Phaser si importa con `import * as Phaser from "phaser"` al posto di `import Phaser from "phaser"`.
+- **Alternative scartate:** ESLint, più diffuso, che qui non è stato provato; spegnere la regola `import/no-named-as-default-member`, che segnalava 19 volte l'import di Phaser.
+- **Perché:** oxlint è fatto per essere veloce (il controllo intero, lint più tipi più test, dura circa 4 secondi sul PC di casa) e legge TypeScript senza plugin in più: il file `.oxlintrc.json` serve solo a scegliere quali regole contano come errori. Phaser esporta ogni pezzo anche con il suo nome, quindi l'import come namespace dà gli stessi `Phaser.Game`, `Phaser.Scene` e così via, e la regola resta accesa per il codice futuro.
+- **Cosa comporta:** `npm run lint`. Dopo il cambio dell'import tipi, test e build sono verdi, e nel browser la scena del gioco e quella della misura si aprono senza errori in console. La versione è la 1.91.0 e non la 1.93.0, per la regola dei sette giorni.
+
+## 2026-11-12 · Il controllo prima del commit con un hook di git, senza pacchetti
+- **Contesto:** lint, tipi e test devono partire da soli prima di ogni commit, sui due PC.
+- **Scelta:** uno script in `.githooks/pre-commit` che lancia `npm run check`. Lo script `prepare` di `package.json` esegue `git config core.hooksPath .githooks`, quindi `npm install` lo attiva su ogni PC. `.gitattributes` tiene lo script con gli a capo di Linux.
+- **Alternative scartate:** Husky o simple-git-hooks, che fanno la stessa cosa con un pacchetto in più; controllare solo i file cambiati con lint-staged, che oggi non serve perché il controllo intero dura circa 4 secondi.
+- **Perché:** è una funzione di git, si legge in dieci righe e non aggiunge dipendenze.
+- **Cosa comporta:** provato con un test rotto apposta: il controllo esce con codice 1 e il commit non nasce. Il controllo si può saltare con `--no-verify`: per questo GitHub Actions rifarà tutto a ogni push.

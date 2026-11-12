@@ -1,6 +1,6 @@
 // La scena della misura. Si accende solo con ?misura nell'indirizzo e gira sopra la scena del gioco.
 // Serve a rispondere presto a una domanda: Phaser 4 regge tanti sprite sul telefono di prova?
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import VirtualJoyStick from "phaser4-rex-plugins/plugins/virtualjoystick.js";
 import { createMeasurePanel, type MeasurePanel } from "../debug/measurePanel";
 import { createFrameMeter } from "../logic/frameMeter";

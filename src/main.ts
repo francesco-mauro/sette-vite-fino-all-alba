@@ -1,5 +1,5 @@
 // Sette vite fino all'alba: il punto di partenza. Qui si crea il gioco Phaser e si sceglie come sta nello schermo.
-import Phaser from "phaser";
+import * as Phaser from "phaser";
 import { parseMeasureParam } from "./logic/measureParam";
 import { integerZoom } from "./logic/zoom";
 import { GameScene } from "./scenes/GameScene";
