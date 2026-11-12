@@ -37,6 +37,7 @@ import { nearestIndex } from "../logic/targeting";
 import { spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
+import { hintDone } from "../logic/hint";
 import type { EndData } from "./EndScene";
 import type { LevelUpData } from "./LevelUpScene";
 import type { MapData } from "./MapScene";
@@ -76,6 +77,8 @@ export class GameScene extends Phaser.Scene {
   private clockText!: Phaser.GameObjects.Text;
   private killsText!: Phaser.GameObjects.Text;
   private hintText: Phaser.GameObjects.Text | null = null;
+  // il gatto si è mosso almeno una volta: la scritta d'inizio ha fatto il suo lavoro
+  private moved = false;
   private joystickGfx!: Phaser.GameObjects.Graphics;
   private keys!: Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
 
@@ -139,6 +142,7 @@ export class GameScene extends Phaser.Scene {
     this.hearts = [];
     this.debugText = null;
     this.hintText = null;
+    this.moved = false;
     this.invincible = false;
 
     if (this.registry.get("misura")) {
@@ -334,9 +338,11 @@ export class GameScene extends Phaser.Scene {
     this.drawMinimap();
     this.drawJoystick();
     this.clockText.setText(formatClock(this.elapsed));
-    if (this.hintText && this.elapsed > RUN.hintMs) {
-      this.hintText.destroy();
+    if (this.hintText && hintDone(this.moved, this.elapsed, RUN.hintMs)) {
+      // svanisce in un attimo invece di sparire di colpo
+      const hint = this.hintText;
       this.hintText = null;
+      this.tweens.add({ targets: hint, alpha: 0, duration: 300, onComplete: () => hint.destroy() });
     }
     if (this.debugText) this.updateDebug();
   }
@@ -360,6 +366,7 @@ export class GameScene extends Phaser.Scene {
     const speed = CAT.speed * this.stats.speedMultiplier;
     this.cat.setVelocity(dir.x * speed, dir.y * speed);
     if (dir.x !== 0 || dir.y !== 0) {
+      this.moved = true;
       this.facing = Math.atan2(dir.y, dir.x);
       this.cat.anims.play("gatto-cammina", true);
       if (dir.x !== 0) this.cat.setFlipX(dir.x < 0);

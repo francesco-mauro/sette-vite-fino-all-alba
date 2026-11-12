@@ -3,7 +3,7 @@
 // Il tocco vale solo se il dito si appoggia e si alza sullo stesso pulsante (src/logic/tap.ts), come per le carte.
 // In basso a sinistra la versione, in basso a destra il pulsante «aggiornamenti» (o U): chiede al server
 // l'ultima versione e, se è nuova, la installa e riapre il gioco. In alto a sinistra «schermo intero» (o F),
-// dove il browser lo permette.
+// dove il browser lo permette: a schermo intero diventa «esci da schermo intero», nel gioco installato non c'è.
 //
 // Contenuti:
 // - create: sfondo, nome, scelta della notte, record, versione, aggiornamenti, schermo intero, tasti
@@ -16,7 +16,8 @@ import { NIGHTS, loadNight, saveNight } from "../logic/night";
 import { loadRecord } from "../logic/record";
 import { createTapGuard } from "../logic/tap";
 import { updateStatus, versionLabel } from "../logic/version";
-import { canFullscreen, toggleFullscreen } from "./fullscreen";
+import { fullscreenButton } from "../logic/fullscreenButton";
+import { fullscreenState, toggleFullscreen } from "./fullscreen";
 import { browserStorage } from "./storage";
 import { applyUpdate, latestBuildId } from "./update";
 import { FONT } from "./font";
@@ -90,10 +91,22 @@ export class TitleScene extends Phaser.Scene {
     this.updateText = this.add.text(width - SAFE, height - SAFE - 22, "", small).setOrigin(1, 1).setPadding(3, 2, 3, 2).setVisible(false);
 
     // lo schermo intero, in alto a sinistra: sul PC la scena entra 4 volte invece di 3
-    if (canFullscreen(this)) {
+    if (fullscreenButton(fullscreenState(this))) {
       const fullTap = createTapGuard();
-      const fullButton = this.add.text(SAFE, SAFE, TEXTS.fullscreen, { ...FONT, backgroundColor: "#2c3550" })
+      const fullButton = this.add.text(SAFE, SAFE, "", { ...FONT, backgroundColor: "#2c3550" })
         .setOrigin(0, 0).setPadding(4, 4, 4, 4).setInteractive();
+      // il nome segue lo stato vero: anche quando si esce con Esc o col gesto del telefono
+      const label = () => {
+        const kind = fullscreenButton(fullscreenState(this));
+        fullButton.setText(kind === "exit" ? TEXTS.fullscreenExit : TEXTS.fullscreen);
+      };
+      label();
+      this.scale.on(Phaser.Scale.Events.ENTER_FULLSCREEN, label);
+      this.scale.on(Phaser.Scale.Events.LEAVE_FULLSCREEN, label);
+      this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+        this.scale.off(Phaser.Scale.Events.ENTER_FULLSCREEN, label);
+        this.scale.off(Phaser.Scale.Events.LEAVE_FULLSCREEN, label);
+      });
       fullButton.on("pointerdown", (p: Phaser.Input.Pointer) => {
         if (ready) fullTap.down(p.id, 0);
       });

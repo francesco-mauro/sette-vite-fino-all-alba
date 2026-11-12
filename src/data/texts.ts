@@ -13,6 +13,7 @@ export const TEXTS = {
   record: "record",
   updates: "aggiornamenti",
   fullscreen: "schermo intero",
+  fullscreenExit: "esci da schermo intero",
   updateChecking: "controllo...",
   updateNone: "sei aggiornato",
   updateFound: "versione nuova: aggiorno...",
