@@ -7,7 +7,7 @@ Un gatto randagio, Roma di notte, ondate di nemici: resisti fino all'alba. Gioco
 Un progetto mio, sviluppato con l'aiuto del mio agente AI.
 
 ## A che punto è
-In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
+In costruzione. Chiuse la tappa 1a e la 1b: a ogni push ripartono lint, tipi e test e, solo se sono verdi, il gioco si pubblica da solo. Per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
 
 È fatto per installarsi sul telefono come un'app: si apre a tutto schermo dall'icona, gira anche senza rete e si aggiorna da solo quando esce una versione nuova. Provato nel browser del computer e su un telefono Android.
 
@@ -41,7 +41,7 @@ Con `?misura` in fondo all'indirizzo si accende la misura: sprite finti che si m
 - [docs/ASSET.md](docs/ASSET.md): la lista degli asset, con il budget e la palette
 - [docs/tappe/tappa-0.md](docs/tappe/tappa-0.md): il diario della tappa 0, stile e asset
 - [docs/tappe/tappa-1a.md](docs/tappe/tappa-1a.md): il diario della tappa 1a, il gioco online, con le tecnologie usate e il perché
-- [docs/tappe/tappa-1b.md](docs/tappe/tappa-1b.md): il diario della tappa 1b, qualità e pubblicazione automatica (in corso)
+- [docs/tappe/tappa-1b.md](docs/tappe/tappa-1b.md): il diario della tappa 1b, qualità e pubblicazione automatica
 
 ## Licenza
 [MIT](LICENSE)

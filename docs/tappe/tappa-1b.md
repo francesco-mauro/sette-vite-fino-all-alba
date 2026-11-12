@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo se è tutto verde. Dal push al gioco online non passa più niente a mano.
 
-**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Fatte anche la prova di fumo nel browser con Playwright e la rotta `/api/ping`. Manca la prova finale con un test rotto apposta.
+**Stato: chiusa il 12 novembre 2026, aperta lo stesso giorno.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Fatte anche la prova di fumo nel browser con Playwright e la rotta `/api/ping`. La prova finale con un test rotto apposta ha fermato sia il controllo su GitHub sia la pubblicazione.
 
 **Fatto quando:** `/api/ping` risponde dall'indirizzo pubblico; un push verde pubblica da solo; un test rotto ferma il commit e la pubblicazione, provato.
 
@@ -79,8 +79,16 @@ Il 12 novembre il test dell'ingrandimento sul telefono è stato cambiato apposta
 
 Lo stesso giorno la prova di fumo: in `GameScene` il gatto è stato chiesto con un nome di file che non esiste. Le due prove sono diventate rosse, ed è uscito codice 1. Ha insegnato una cosa: il server ha risposto «200», cioè tutto bene, ma con la pagina del gioco al posto dell'immagine, perché `vite preview` a un file che non c'è risponde con la pagina. Guardare solo il codice di risposta non sarebbe bastato: la prova controlla anche che il tipo sia `image/png`. Rimesso il nome giusto, 2 prove su 2 verdi.
 
+**La prova finale, il 12 novembre.** Un test rotto apposta (l'ingrandimento del telefono di prova atteso 5, è 4) e, nella pagina, un commento invisibile: «questa versione ha un test rotto e non deve arrivare online». Se il commento fosse comparso sull'indirizzo pubblico, la versione rotta sarebbe uscita. Il commit `07d2062` l'ha fatto Francesco saltando apposta il controllo sul PC con `git commit --no-verify`, come farebbe chi lo salta davvero. Cosa è successo:
+- **GitHub:** croce rossa. Si è fermato al passo «Lint, tipi e test»; build e prova di fumo non sono nemmeno partite.
+- **Cloudflare:** la build di Workers Builds è «Failed» dopo 38 secondi, senza nessuna versione nuova. È rimasta attiva quella di prima, di `/api/ping`.
+- **L'indirizzo pubblico:** per più di quattro minuti dopo il push il commento non è mai comparso.
+
+Il commit dopo ha tolto il test rotto e il commento, con il controllo sul PC acceso.
+
 ## La domanda da colloquio
 «Cosa succede dal tuo push al gioco online?» Prima ancora del push, a ogni commit, partono lint, tipi e test, e se uno è rosso il commit non nasce. Dopo il push GitHub Actions rifà tutto su una macchina pulita, più la build e la prova di fumo in un browser vero, e segna il commit verde o rosso. Nello stesso momento Workers Builds di Cloudflare prende lo stesso commit, rifà il controllo e la build e, solo se passano, pubblica il gioco. Il telefono scarica da solo la versione nuova quando apre il gioco con la rete e la mostra a un'apertura successiva: nella prova è servita più di un'apertura.
 
-## Da fare
-- La prova finale: un test rotto ferma il commit e anche la pubblicazione.
+## Per dopo
+- Cloudflare prima di pubblicare lancia lint, tipi e test, ma non la prova di fumo, che gira solo su GitHub. Se un giorno fosse rossa solo lei, il gioco uscirebbe lo stesso. Da decidere se spostare la pubblicazione dentro GitHub Actions, dopo la prova di fumo.
+- Punteggio e pulsanti lontani dagli angoli dello schermo (la scritta di prova sembrava tagliata sul telefono).
