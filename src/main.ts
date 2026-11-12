@@ -13,6 +13,15 @@ export const HEIGHT = 270;
 // Senza, measureCount è null e il gioco parte come sempre.
 const measureCount = parseMeasureParam(location.search);
 
+// Il carattere pixel (Silkscreen, in public/fonts/) va caricato prima che Phaser scriva un testo:
+// Phaser disegna le scritte una volta sola, e senza il carattere userebbe quello di serie.
+// Se non arriva (senza rete e senza copia salvata) il gioco parte lo stesso.
+try {
+  await document.fonts.load('8px "Silkscreen"');
+} catch {
+  // nessun problema: si usa il carattere di riserva
+}
+
 const game = new Phaser.Game({
   type: Phaser.AUTO, // WebGL se c'è, altrimenti Canvas
   parent: "gioco",
@@ -25,10 +34,13 @@ const game = new Phaser.Game({
     mode: Phaser.Scale.NONE, // l'ingrandimento lo decidiamo noi, sotto
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  // La fisica Arcade di Phaser. Per ora la usano solo gli sprite finti della misura,
-  // dalla tappa 2 muoverà il gatto e i nemici.
+  // La fisica Arcade di Phaser: muove il gatto e i nemici e sente quando si toccano.
   physics: { default: "arcade" },
   scene: measureCount === null ? [GameScene] : [GameScene, new MeasureScene(measureCount)],
+  // Prima che parta la prima scena: con ?misura la scena di gioco resta ferma, come alla tappa 1a.
+  callbacks: {
+    preBoot: (g) => g.registry.set("misura", measureCount !== null),
+  },
 });
 
 // L'ingrandimento intero nei pixel VERI dello schermo, non in quelli CSS.

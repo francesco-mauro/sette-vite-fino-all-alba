@@ -48,8 +48,13 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `tombino.png` | 16×16 | Il tombino |
 | `foglie.png` | 16×16 | Le foglie di platano |
 | `lampione.png` | 96×72 | Il lampione intero: palo, alone e pozza di luce in una scena sola |
+| `piccione.png` | 32×16 | Due fotogrammi da 16×16: i due passi (tappa 2) |
+| `graffio.png` | 96×32 | Tre fotogrammi da 32×32: parte, colpisce, svanisce (tappa 2) |
+| `crocchetta.png` | 32×16 | Due fotogrammi da 16×16: ferma e che brilla (pronta per la tappa 3a) |
+| `coda.png` | 96×32 | Tre fotogrammi da 32×32 della coda a frusta (pronta per la tappa 3a) |
+| `pelo.png` | 96×32 | Tre fotogrammi da 32×32 del pelo che vola (pronto per la tappa 3a) |
 
-In più `public/favicon.png`, 64×64: il gatto fermo ingrandito 4 volte, per la scheda del browser.
+In più `public/favicon.png`, 64×64: il gatto fermo ingrandito 4 volte, per la scheda del browser. Dalla tappa 2 gli sprite nuovi escono dalle tavole con `art/sprite_dalle_tavole.py`, che controlla anche i colori: il 12 novembre 2026 tutti dentro i 24 della palette, senza pixel semitrasparenti.
 
 ## Tutti gli asset fino alla tappa 4
 La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito, non ancora per forza nel repository: ci entra alla sua tappa.
@@ -61,13 +66,13 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Tombino | 16×16 | 1 | 1a come decorazione, 4 nel gioco | nel repository |
 | Foglie di platano | 16×16 | 1 | 1a come decorazione, 4 nel gioco | nel repository |
 | Lampione: palo, alone, pozza di luce | scena 96×72 | 1 per pezzo | 1a intero, 4 in tre pezzi | nel repository intero; da separare in tre pezzi |
-| Piccione | 16×16 | 2: testa avanti, testa indietro | 2 | pronto |
-| Graffio | 32×32 | 3 | 2 | pronto |
-| Joystick | disegnato dal codice | | 2 | alla tappa 1a c'è quello della misura |
-| Barre della vita e dell'esperienza, pannelli | disegnati dal codice | | 2 | da fare |
-| Crocchetta a pesciolino | 16×16 | 2: ferma, luccica | 3a | pronta |
-| Coda a frusta | 32×32 | 3 | 3a | pronta |
-| Pelo che vola | 32×32 | 3 | 3a | pronto |
+| Piccione | 16×16 | 2: testa avanti, testa indietro | 2 | nel repository |
+| Graffio | 32×32 | 3 | 2 | nel repository |
+| Joystick | disegnato dal codice | | 2 | nel gioco: un cerchio e un pallino, sotto il pollice |
+| Barre della vita e dell'esperienza, pannelli | disegnati dal codice | | 2 | la barra della vita c'è; l'esperienza alla 3a |
+| Crocchetta a pesciolino | 16×16 | 2: ferma, luccica | 3a | nel repository |
+| Coda a frusta | 32×32 | 3 | 3a | nel repository |
+| Pelo che vola | 32×32 | 3 | 3a | nel repository |
 | Icone delle carte: 4 armi, 8 passivi | 16×16 | 1 | 3a | da fare: 12 |
 | Icona della vita | 9×8 | 1 | 3a | quasi: da riguardare |
 | Icona delle uccisioni | 16×16 | 1 | 3b | pronta |
@@ -81,21 +86,21 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Miagolio | 32×32 | 3 | 4 | pronto |
 
 ## I caratteri
-Jersey 10 per le parole (titoli, nomi, carte, pulsanti) e Silkscreen per numeri ed etichette, mai in grassetto. Nel gioco non ci sono ancora.
+Jersey 10 per le parole (titoli, nomi, carte, pulsanti) e Silkscreen per numeri ed etichette, mai in grassetto. Dalla tappa 2 nel gioco c'è Silkscreen, in `public/fonts/`, usato per ora anche per le parole; Jersey 10 non c'è ancora (vedi `DECISIONI.md`).
 
 Alla tappa 0 si è visto che il testo disegnato dal browser ha sempre i bordi sfumati, a ogni misura provata, da 8 a 48 pixel. Per avere pixel pieni o vuoti la strada pulita è un carattere bitmap: le lettere preparate una volta sola, come immagine. Resta da valutare quando entra il primo testo, insieme alle licenze dei due caratteri, che vanno lette e scritte in `CREDITS.md`.
 
 ## I conti
 - **Immagini fino alla tappa 4:** 5 del gatto, 8 dei nemici, 4 dei capi, 4 degli oggetti, 12 degli attacchi, 3 caselle, 3 pezzi del lampione, 12 icone delle carte, 2 icone dell'interfaccia. In tutto **53**.
 - **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 ci sono due ritocchi: il gabbiano reale e l'icona della vita. I due sfondi delle schermate sono fuori dal conto.
-- **Nel repository:** 5 file, che valgono 8 delle 53 immagini (i 5 fotogrammi del gatto e le 3 caselle), più il lampione intero.
+- **Nel repository:** 10 file, che valgono 21 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, i 2 del piccione, i 2 della crocchetta e i 9 di graffio, coda a frusta e pelo che vola), più il lampione intero.
 
 ## Cosa manca
 1. Le 12 icone delle carte, per la tappa 3a.
 2. Il lampione diviso in palo, alone e pozza, per la tappa 4.
 3. Il pezzetto di pietra tra le zampe del gabbiano reale, e uno sguardo all'icona della vita.
-4. Il carattere bitmap di Jersey 10 e Silkscreen, se serve.
-5. Gli strumenti dentro il repository: lo script che spacchetta le tavole e quello che conta i colori fuori palette oggi stanno fuori. Il secondo è il controllo da passare su ogni immagine nuova.
+4. Jersey 10 per i titoli; Silkscreen c'è dalla tappa 2.
+5. Fatto alla tappa 2: lo spacchettatore delle tavole e il controllo dei colori sono in `art/sprite_dalle_tavole.py`.
 6. L'audio non è in questa lista: è della tappa 5.
 
 ## Da dove arrivano

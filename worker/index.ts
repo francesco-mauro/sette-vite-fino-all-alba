@@ -3,10 +3,10 @@
 // Arrivano qui solo /api/* (in wrangler.jsonc `run_worker_first`) e gli indirizzi senza un file.
 // Per ora c'è /api/ping, per sapere che il server è vivo. Alla tappa 6 arrivano punteggi e classifica.
 
-const METODI_PING = "GET, HEAD";
+const PING_METHODS = "GET, HEAD";
 
-export function rispondi(richiesta: Request): Response {
-  const { pathname } = new URL(richiesta.url);
+export function handleRequest(request: Request): Response {
+  const { pathname } = new URL(request.url);
 
   // Un indirizzo fuori da /api che non corrisponde a nessun file: un 404 semplice, come prima del Worker.
   if (!pathname.startsWith("/api/")) {
@@ -14,10 +14,10 @@ export function rispondi(richiesta: Request): Response {
   }
 
   if (pathname === "/api/ping") {
-    if (richiesta.method !== "GET" && richiesta.method !== "HEAD") {
+    if (request.method !== "GET" && request.method !== "HEAD") {
       return Response.json(
         { errore: "metodo non ammesso" },
-        { status: 405, headers: { Allow: METODI_PING } },
+        { status: 405, headers: { Allow: PING_METHODS } },
       );
     }
     // no-store: la risposta non va tenuta in nessuna cache, ogni ping deve arrivare davvero al server.
@@ -27,5 +27,5 @@ export function rispondi(richiesta: Request): Response {
   return Response.json({ errore: "rotta sconosciuta" }, { status: 404 });
 }
 
-// La forma che Cloudflare si aspetta: un oggetto con il metodo fetch, chiamato a ogni richiesta.
-export default { fetch: rispondi };
+// La forma che Cloudflare si aspetta: un oggetto con il metodo fetch, chiamato a ogni request.
+export default { fetch: handleRequest };

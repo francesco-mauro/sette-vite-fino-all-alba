@@ -43,7 +43,7 @@ export default defineConfig({
       },
       workbox: {
         // Tutto quello che serve per giocare senza rete: codice, pagina, immagini.
-        globPatterns: ["**/*.{js,css,html,png}"],
+        globPatterns: ["**/*.{js,css,html,png,woff2}"],
         // Phaser da solo pesa circa 1,4 MB: il limite di 2 MB di Workbox è troppo stretto per stare tranquilli.
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         // La versione nuova prende il posto della vecchia appena scaricata, senza aspettare

@@ -5,6 +5,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 ## Contenuti
 - Tappa 1a, 8-10 novembre 2026: Vite e TypeScript a mano, ingrandimento intero, due PC, il Worker statico, la regola dei sette giorni, l'icona, la misura, Vitest, il joystick, le misure arrotondate
 - Tappa 1b, 12 novembre 2026: oxlint, il controllo prima del commit, GitHub Actions, il gioco installabile, la prova di fumo con Playwright, `/api/ping` nel Worker
+- Tappa 2, 12 novembre 2026: il joystick sotto il pollice, Silkscreen come carattere
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -116,3 +117,17 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** un secondo Worker solo per l'API, con due indirizzi e due pubblicazioni; il Worker davanti a ogni richiesta (`run_worker_first: true`), che farebbe passare dal codice anche ogni immagine; un framework per le rotte, come Hono, per una rotta sola.
 - **Perché:** un solo indirizzo, una sola pubblicazione, e i file restano serviti come prima. La funzione `rispondi` riceve una `Request` e restituisce una `Response`, quindi si prova con Vitest senza Cloudflare.
 - **Cosa comporta:** 5 test scritti prima del codice; prova in locale con Wrangler riuscita. La prova di fumo con Playwright usa `vite preview`, che non esegue il Worker: la rotta la provano i test di Vitest e, dopo la pubblicazione, l'indirizzo pubblico.
+
+## 2026-11-12 · Il joystick della partita scritto a mano, sotto il pollice
+- **Contesto:** il documento di progetto propone un joystick che compare dove si appoggia il pollice. Quello di phaser4-rex-plugins, scelto il 10 novembre per la misura, ha la base in un punto fisso e parte solo se il dito tocca la base.
+- **Scelta:** nella partita un joystick scritto a mano: il primo dito che tocca la metà sinistra dello schermo fissa il centro, e il vettore viene da `joystickVector` in `src/logic/movement.ts`, con una zona morta del 15% del raggio. Il disegno è un cerchio e un pallino. Il plugin resta nella misura.
+- **Alternative scartate:** spostare la base del plugin sotto il dito al primo tocco, che dipende dall'ordine in cui Phaser e il plugin ricevono l'evento; il joystick fisso in basso a sinistra, che sul telefono obbliga a cercarlo con il pollice.
+- **Perché:** la logica è una funzione pura, provata da tre test, e il comportamento è quello del documento di progetto.
+- **Cosa comporta:** due dita insieme sono già previste (`addPointer`), per i pulsanti delle tappe dopo. Da provare sul telefono vero con la partita intera.
+
+## 2026-11-12 · Silkscreen come unico carattere, scritto da Phaser sulla scena piccola
+- **Contesto:** servono le prime scritte (fine partita, pannello di debug). Alla tappa 0 il testo del browser veniva sempre sfumato; la scelta era Jersey 10 per le parole e Silkscreen per numeri ed etichette.
+- **Scelta:** per ora solo Silkscreen, a 8 e 16 pixel, preso dalle tavole di stile con la sua licenza OFL (`public/fonts/`). Phaser scrive il testo sulla scena da 480x270, che poi si ingrandisce intera: i pixel del carattere restano pieni. Il gioco aspetta il carattere prima di partire, e se non arriva parte lo stesso.
+- **Alternative scartate:** un carattere bitmap preparato a mano, più lavoro per ora; scaricare Jersey 10, che nelle tavole non c'è.
+- **Perché:** Silkscreen è disegnato su una griglia di pixel e a 8 pixel si legge; era già nelle tavole, con la licenza scritta.
+- **Cosa comporta:** il service worker tiene anche il carattere (`woff2` in `globPatterns`), quindi c'è anche senza rete. Jersey 10 per i titoli resta una scelta aperta.
