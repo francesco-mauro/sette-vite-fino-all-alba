@@ -5,8 +5,10 @@ export const CAT = {
   speed: 80,
   // il gatto ha sette vite: questa è la barra di una vita
   maxHealth: 100,
-  // dopo un colpo, per quanto i colpi non contano (il gatto lampeggia)
-  invulnerabilityMs: 1000,
+  // dopo un colpo, per quanto i colpi non contano (il gatto lampeggia). È il tetto del danno: circondato da
+  // cinquanta piccioni il gatto prende un colpo ogni 0,7 secondi, come con uno solo. Era 1000: con quel tetto
+  // il gatto reggeva troppo (misura del 12 novembre 2026 nelle ondate, sotto).
+  invulnerabilityMs: 700,
   // alla ripresa dopo la scelta di una carta o una pausa, per riprendere in mano il gatto
   resumeInvulnerabilityMs: 1000,
 };
@@ -25,7 +27,8 @@ export const PIGEON: EnemyKind = {
   key: "piccione",
   speed: 35,
   health: 10,
-  // provvisorio per la demo: con 10 la prima barra finiva in meno di mezzo minuto; si bilancia alla tappa 4
+  // all'inizio della notte: con 10 la prima barra finiva in meno di mezzo minuto. Poi cresce con le ondate
+  // (WAVES.endDamageScale)
   damage: 6,
   body: { width: 12, height: 10 },
 };
@@ -52,13 +55,14 @@ export const TAIL_LEVELS = [
   { cooldownMs: 1200, damage: 28, radius: 56, halfAngle: Math.PI / 2.2 },
 ];
 
-// Il pelo che vola: `count` ciuffi in tutte le direzioni, ognuno si ferma sul primo nemico che tocca.
+// Il pelo che vola: `count` ciuffi in tutte le direzioni, ognuno vola fino al bordo dello schermo
+// o si ferma sul primo nemico che tocca.
 export const FUR_LEVELS = [
-  { cooldownMs: 2200, damage: 8, count: 2, speed: 140, lifeMs: 1200 },
-  { cooldownMs: 2000, damage: 9, count: 3, speed: 140, lifeMs: 1200 },
-  { cooldownMs: 1800, damage: 10, count: 4, speed: 150, lifeMs: 1300 },
-  { cooldownMs: 1600, damage: 12, count: 6, speed: 150, lifeMs: 1300 },
-  { cooldownMs: 1400, damage: 14, count: 8, speed: 160, lifeMs: 1400 },
+  { cooldownMs: 2200, damage: 8, count: 2, speed: 140 },
+  { cooldownMs: 2000, damage: 9, count: 3, speed: 140 },
+  { cooldownMs: 1800, damage: 10, count: 4, speed: 150 },
+  { cooldownMs: 1600, damage: 12, count: 6, speed: 150 },
+  { cooldownMs: 1400, damage: 14, count: 8, speed: 160 },
 ];
 
 // I potenziamenti passivi: quanto aggiunge ogni livello della carta.
@@ -105,12 +109,21 @@ export const RUN = {
   hintMs: 30_000,
 };
 
-// Le ondate: dall'inizio all'alba l'intervallo tra i gruppi scende e i gruppi crescono.
+// Le ondate: dall'inizio all'alba l'intervallo tra i gruppi scende, i gruppi crescono e i piccioni fanno più danno.
+// Misurate il 12 novembre 2026 con una partita automatica da 5 minuti (il gatto gira in tondo, prima carta
+// a ogni livello): prima perdeva 2 vite su 7, troppo poche (Francesco: «il gatto ha troppa vita»).
 export const WAVES = {
-  startIntervalMs: 2500,
-  endIntervalMs: 700,
+  startIntervalMs: 2200,
+  endIntervalMs: 550,
   startGroup: 3,
-  endGroup: 7,
+  endGroup: 9,
+  // all'alba un piccione nato adesso fa questo multiplo del danno: 18 invece di 6. La vita invece resta 10:
+  // con 11 il primo graffio (10) non basterebbe più, le uccisioni si dimezzerebbero e i poteri arriverebbero
+  // tardi (misurato: livello 4 invece di 12 alla fine della notte da 5 minuti).
+  endDamageScale: 3,
+  // e corre questo multiplo della velocità: 56 invece di 35, sempre meno del gatto (80), ma girare in tondo
+  // non basta più a lasciarli indietro
+  endSpeedScale: 1.6,
 };
 
 export const SPAWN = {
@@ -118,4 +131,18 @@ export const SPAWN = {
   margin: 32,
   // il tetto dei nemici vivi insieme: il pool non cresce oltre
   maxEnemies: 300,
+};
+
+// Le casse del tesoro: compaiono sulla mappa lontano dal gatto, da cercare con la minimappa.
+// Ogni notte, corta o lunga, ne ha lo stesso numero; chi ne prende una riceve un potere, a volte tre.
+export const CHEST = {
+  perNight: 8,
+  // quante possono aspettare sulla mappa insieme: la prossima aspetta che se ne prenda una, e se il gatto
+  // non le prende ne nascono meno di otto
+  maxOnGround: 2,
+  // quanto lontano dal gatto nascono, in pixel: lo schermo è largo 480, quindi sempre fuori vista
+  minDistance: 300,
+  maxDistance: 600,
+  // la probabilità che la cassa dia tre poteri invece di uno
+  tripleChance: 0.1,
 };

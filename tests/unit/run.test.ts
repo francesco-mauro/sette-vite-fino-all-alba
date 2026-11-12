@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import { formatClock } from "../../src/logic/clock";
 import { loadRecord, saveRecord, type Storage } from "../../src/logic/record";
+import { WAVES } from "../../src/data/balance";
 import { spawnPlan } from "../../src/logic/waves";
 import { computeScore } from "../../src/shared/score";
 
@@ -27,8 +28,17 @@ describe("le ondate", () => {
       const now = spawnPlan(p);
       expect(now.intervalMs).toBeLessThanOrEqual(prev.intervalMs);
       expect(now.groupSize).toBeGreaterThanOrEqual(prev.groupSize);
+      expect(now.damageScale).toBeGreaterThanOrEqual(prev.damageScale);
+      expect(now.speedScale).toBeGreaterThanOrEqual(prev.speedScale);
       prev = now;
     }
+  });
+
+  it("i piccioni partono come sempre e all'alba fanno più danno e sono più veloci", () => {
+    expect(spawnPlan(0)).toMatchObject({ damageScale: 1, speedScale: 1 });
+    expect(spawnPlan(1)).toMatchObject({ damageScale: WAVES.endDamageScale, speedScale: WAVES.endSpeedScale });
+    expect(WAVES.endDamageScale).toBeGreaterThan(1);
+    expect(WAVES.endSpeedScale).toBeGreaterThan(1);
   });
 
   it("oltre l'alba o prima dell'inizio resta nei limiti", () => {

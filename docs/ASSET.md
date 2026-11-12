@@ -58,6 +58,7 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `titolo.png` | 480×270 | Lo sfondo del titolo, Roma di notte (tappa 3b) |
 | `alba.png` | 480×270 | Lo sfondo della fine, l'alba su Roma (tappa 3b) |
 | `carte.png` | 64×16 | Quattro icone provvisorie da 16×16: zampe veloci, pancia piena, unghie affilate, naso fino. Le disegna `art/icone_carte.py`, non vengono dalle tavole |
+| `cassa.png` | 32×16 | La cassa del tesoro provvisoria, due fotogrammi da 16×16: ferma, luccica. La disegna `art/cassa.py`, non viene dalle tavole |
 
 In più `public/favicon.png`, 64×64: il gatto fermo ingrandito 4 volte, per la scheda del browser. Dalla tappa 2 gli sprite nuovi escono dalle tavole con `art/sprite_dalle_tavole.py`, che controlla anche i colori: il 12 novembre 2026 tutti dentro i 24 della palette, senza pixel semitrasparenti.
 
@@ -98,15 +99,16 @@ Alla tappa 0 si è visto che il testo disegnato dal browser ha sempre i bordi sf
 ## I conti
 - **Immagini fino alla tappa 4:** 5 del gatto, 8 dei nemici, 4 dei capi, 4 degli oggetti, 12 degli attacchi, 3 caselle, 3 pezzi del lampione, 12 icone delle carte, 2 icone dell'interfaccia. In tutto **53**.
 - **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 ci sono due ritocchi: il gabbiano reale e l'icona della vita. I due sfondi delle schermate sono fuori dal conto.
-- **Nel repository:** 15 file. Valgono 23 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, i 2 del piccione, i 2 della crocchetta, i 9 di graffio, coda a frusta e pelo che vola, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate e le quattro icone provvisorie dei potenziamenti, che stanno fuori dal conto.
+- **Nel repository:** 16 file. Valgono 23 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, i 2 del piccione, i 2 della crocchetta, i 9 di graffio, coda a frusta e pelo che vola, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le quattro icone provvisorie dei potenziamenti e la cassa del tesoro provvisoria, che stanno fuori dal conto.
 
 ## Cosa manca
 1. Le 12 icone delle carte. Per ora le armi usano un fotogramma del loro effetto e i potenziamenti le icone provvisorie di `art/icone_carte.py`.
 2. Il lampione diviso in palo, alone e pozza, per la tappa 4.
 3. Il pezzetto di pietra tra le zampe del gabbiano reale, e uno sguardo all'icona della vita.
-4. Jersey 10 per i titoli; Silkscreen c'è dalla tappa 2.
-5. Fatto alla tappa 2: lo spacchettatore delle tavole e il controllo dei colori sono in `art/sprite_dalle_tavole.py`.
-6. L'audio non è in questa lista: è della tappa 5.
+4. La cassa del tesoro: per ora quella provvisoria di `art/cassa.py`.
+5. Jersey 10 per i titoli; Silkscreen c'è dalla tappa 2.
+6. Fatto alla tappa 2: lo spacchettatore delle tavole e il controllo dei colori sono in `art/sprite_dalle_tavole.py`.
+7. L'audio non è in questa lista: è della tappa 5.
 
 ## Da dove arrivano
 Tutta la grafica è stata disegnata per questo gioco con uno strumento di disegno con l'IA, in due file di tavole che stanno fuori dal repository. Gli sprite sono stati presi dai file delle tavole pixel per pixel, non dalle schermate. Sotto ogni sprite le tavole avevano i sampietrini e un'ombra: sono stati tolti, lasciando pieni i buchi dentro i corpi. Per questo le ombre le disegna il gioco.

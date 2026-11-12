@@ -1,17 +1,23 @@
 // Il titolo: Roma di notte, il nome del gioco e la scelta della notte, 5, 10 o 15 minuti, con il suo record.
 // Sul telefono si tocca una notte e si gioca; sul computer 1, 2, 3 o le frecce per scegliere, spazio o invio per partire.
 // Il tocco vale solo se il dito si appoggia e si alza sullo stesso pulsante (src/logic/tap.ts), come per le carte.
+// In basso a sinistra la versione, in basso a destra il pulsante «aggiornamenti» (o U): chiede al server
+// l'ultima versione e, se è nuova, la installa e riapre il gioco.
 import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
 import { NIGHTS, loadNight, saveNight } from "../logic/night";
 import { loadRecord } from "../logic/record";
 import { createTapGuard } from "../logic/tap";
+import { updateStatus, versionLabel } from "../logic/version";
 import { browserStorage } from "./storage";
+import { applyUpdate, latestBuildId } from "./update";
 
 const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 const BUTTON_W = 64;
 const BUTTON_H = 20;
 const GAP = 10;
+// dai bordi: sul telefono gli angoli sono arrotondati
+const SAFE = 12;
 
 export class TitleScene extends Phaser.Scene {
   private selected = 0;
@@ -19,6 +25,8 @@ export class TitleScene extends Phaser.Scene {
   private labels: Phaser.GameObjects.Text[] = [];
   private recordText!: Phaser.GameObjects.Text;
   private started = false;
+  private checking = false;
+  private updateText!: Phaser.GameObjects.Text;
 
   constructor() {
     super("Title");
@@ -30,6 +38,7 @@ export class TitleScene extends Phaser.Scene {
     this.buttons = [];
     this.labels = [];
     this.started = false;
+    this.checking = false;
     this.selected = Math.max(0, (NIGHTS as readonly number[]).indexOf(loadNight(storage)));
 
     this.add.image(0, 0, "titolo").setOrigin(0, 0);
@@ -58,6 +67,20 @@ export class TitleScene extends Phaser.Scene {
     this.recordText = this.add.text(width / 2, height - 28, "", { ...FONT, color: "#cfe0ff", backgroundColor: "#0e0c16" }).setOrigin(0.5).setPadding(4, 2, 4, 2);
     this.select(this.selected);
 
+    // la versione e il pulsante degli aggiornamenti, piccoli negli angoli in basso
+    const small = { ...FONT, color: "#cfe0ff", backgroundColor: "#0e0c16" };
+    this.add.text(SAFE, height - SAFE, versionLabel(SETTE_VITE_BUILD), small).setOrigin(0, 1).setPadding(3, 2, 3, 2);
+    const updateTap = createTapGuard();
+    const updateButton = this.add.text(width - SAFE, height - SAFE, TEXTS.updates, { ...FONT, backgroundColor: "#2c3550" })
+      .setOrigin(1, 1).setPadding(4, 4, 4, 4).setInteractive();
+    updateButton.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (ready) updateTap.down(p.id, 0);
+    });
+    updateButton.on("pointerup", (p: Phaser.Input.Pointer) => {
+      if (updateTap.up(p.id, 0)) void this.checkUpdates();
+    });
+    this.updateText = this.add.text(width - SAFE, height - SAFE - 22, "", small).setOrigin(1, 1).setPadding(3, 2, 3, 2).setVisible(false);
+
     // Un segno sul canvas per la prova di fumo (tests/e2e): immagini caricate, titolo pronto.
     this.game.canvas.dataset.scena = "pronta";
 
@@ -69,6 +92,7 @@ export class TitleScene extends Phaser.Scene {
         if (e.key === "ArrowLeft") this.select((this.selected + NIGHTS.length - 1) % NIGHTS.length);
         if (e.key === "ArrowRight") this.select((this.selected + 1) % NIGHTS.length);
         if (e.key === " " || e.key === "Enter") this.start(this.selected);
+        if (e.key === "u" || e.key === "U") void this.checkUpdates();
       });
     });
   }
@@ -82,6 +106,21 @@ export class TitleScene extends Phaser.Scene {
     const record = loadRecord(browserStorage(), minutes);
     this.recordText.setText(record > 0 ? `${TEXTS.record} ${minutes} ${TEXTS.minutes}: ${record}` : "");
     this.recordText.setVisible(record > 0);
+  }
+
+  // checkUpdates: chiede al server l'ultima versione; se è nuova la installa e riapre il gioco
+  private async checkUpdates() {
+    if (this.checking || this.started) return;
+    this.checking = true;
+    this.updateText.setText(TEXTS.updateChecking).setVisible(true);
+    const status = updateStatus(SETTE_VITE_BUILD.id, await latestBuildId());
+    if (status === "nuova") {
+      this.updateText.setText(TEXTS.updateFound);
+      await applyUpdate();
+      return;
+    }
+    this.updateText.setText(status === "aggiornato" ? TEXTS.updateNone : TEXTS.updateOffline);
+    this.checking = false;
   }
 
   // start: ricorda la scelta e parte con quella notte

@@ -6,6 +6,7 @@ import { BootScene } from "./scenes/BootScene";
 import { EndScene } from "./scenes/EndScene";
 import { GameScene } from "./scenes/GameScene";
 import { LevelUpScene } from "./scenes/LevelUpScene";
+import { MapScene } from "./scenes/MapScene";
 import { MeasureScene } from "./scenes/MeasureScene";
 import { PauseScene } from "./scenes/PauseScene";
 import { TitleScene } from "./scenes/TitleScene";
@@ -42,11 +43,11 @@ const game = new Phaser.Game({
   // La fisica Arcade di Phaser: muove il gatto e i nemici e sente quando si toccano.
   physics: { default: "arcade" },
   // Parte la prima della lista, il caricamento; le altre si aprono quando servono:
-  // titolo, partita, e sopra la partita la scelta delle carte e la pausa, poi la fine.
+  // titolo, partita, e sopra la partita la scelta delle carte, la pausa e la mappa grande, poi la fine.
   // Con ?misura: caricamento, scena ferma e misura sopra.
   scene:
     measureCount === null
-      ? [BootScene, TitleScene, GameScene, LevelUpScene, PauseScene, EndScene]
+      ? [BootScene, TitleScene, GameScene, LevelUpScene, PauseScene, MapScene, EndScene]
       : [BootScene, GameScene, new MeasureScene(measureCount)],
   // Prima che parta la prima scena: con ?misura la scena di gioco resta ferma, come alla tappa 1a.
   callbacks: {

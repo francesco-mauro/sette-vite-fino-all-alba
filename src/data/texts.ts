@@ -11,6 +11,11 @@ export const TEXTS = {
   chooseNight: "quanto dura la notte?",
   minutes: "min",
   record: "record",
+  updates: "aggiornamenti",
+  updateChecking: "controllo...",
+  updateNone: "sei aggiornato",
+  updateFound: "versione nuova: aggiorno...",
+  updateOffline: "senza rete: riprova dopo",
   loading: "caricamento",
   hint: "muoviti: il gatto attacca da solo",
   paused: "pausa",
@@ -24,6 +29,9 @@ export const TEXTS = {
   kills: "piccioni",
   backToTitle: "tocca o premi spazio per tornare al titolo",
   lifeLost: "una vita in meno",
+  chest: "cassa del tesoro",
+  chestTriple: "cassa tripla!",
+  mapClose: "tocca o premi m per tornare",
 };
 
 // Nome e descrizione di ogni carta. `first` è la descrizione quando la carta arriva per la prima volta,

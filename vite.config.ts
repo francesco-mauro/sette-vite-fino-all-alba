@@ -1,14 +1,45 @@
-// La configurazione di Vite. Per ora serve solo a una cosa: rendere il gioco
-// installabile sul telefono e giocabile senza rete (una PWA), con vite-plugin-pwa.
+// La configurazione di Vite. Serve a due cose: rendere il gioco installabile sul telefono e giocabile
+// senza rete (una PWA), con vite-plugin-pwa; e scrivere la versione, che il titolo mostra e confronta
+// con quella sul server per il pulsante degli aggiornamenti (src/logic/version.ts).
+import { execSync } from "node:child_process";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// La versione: il commit (da Cloudflare, da GitHub o da git) e l'istante del build, all'ora italiana.
+function buildInfo() {
+  let sha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA || "";
+  if (!sha) {
+    try {
+      sha = execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
+    } catch {
+      sha = "locale";
+    }
+  }
+  const hash = sha.slice(0, 7);
+  const now = new Date();
+  const time = new Intl.DateTimeFormat("it-IT", {
+    timeZone: "Europe/Rome", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  }).format(now).replace(".", "");
+  return { id: `${hash}-${now.getTime()}`, hash, time };
+}
+
+const build = buildInfo();
+
 export default defineConfig({
+  define: { SETTE_VITE_BUILD: JSON.stringify(build) },
   plugins: [
+    // version.json accanto al gioco: il telefono non lo tiene in copia (globPatterns sotto non prende i .json),
+    // quindi il pulsante degli aggiornamenti legge sempre quello vero sul server.
+    {
+      name: "versione",
+      generateBundle() {
+        this.emitFile({ type: "asset", fileName: "version.json", source: JSON.stringify(build) });
+      },
+    },
     VitePWA({
-      // Aggiornamento automatico, senza pulsanti: quando c'è una versione nuova
-      // il telefono la scarica in silenzio e la usa dalla volta dopo che si apre il gioco.
-      // Mai un ricaricamento a metà partita.
+      // Aggiornamento automatico: quando c'è una versione nuova il telefono la scarica in silenzio
+      // e la usa dalla volta dopo che si apre il gioco. Mai un ricaricamento a metà partita.
+      // Per non aspettare, nel titolo c'è il pulsante «aggiornamenti» (src/scenes/update.ts).
       registerType: "autoUpdate",
       // Il plugin aggiunge da solo a index.html lo script che registra il service worker.
       injectRegister: "script",

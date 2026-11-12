@@ -11,21 +11,24 @@
 // - update e regenerate, moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup: i piccioni da fuori dello schermo
 // - le armi: fireWeapons, scratch, tail, fur, furHit, damageEnemy, killEnemy
-// - crescere: collect, openLevelUp, pullAllKibbles, applyCard
+// - crescere: collect, openLevelUp, pullAllKibbles, applyCard, gainCard
+// - casse e mappa: spawnChestOnSchedule, takeChest, drawMinimap, openMap
 // - vite, pausa e fine: onTouch, loseLife, onResume, openPause, endRun
 // - l'interfaccia: drawHud, drawJoystick, createDebug, updateDebug
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
-  CARD_WEIGHTS, CAT, FALLBACK, FUR_LEVELS, KIBBLE, PIGEON, RUN, SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
+  CARD_WEIGHTS, CAT, CHEST, FALLBACK, FUR_LEVELS, KIBBLE, PIGEON, RUN, SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
 } from "../data/balance";
-import { TEXTS } from "../data/texts";
+import { CARD_TEXTS, TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
 import { drawCards } from "../logic/cards";
+import { chestPoint, chestTimes, openChest } from "../logic/chest";
 import { formatClock } from "../logic/clock";
 import { DEFAULT_NIGHT } from "../logic/night";
 import { createHealth, heal, isDead, protect, regenerate, takeHit, type Health } from "../logic/health";
 import { chase, joystickVector, keyboardVector, type Vec } from "../logic/movement";
+import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { spawnPoint } from "../logic/spawn";
@@ -34,6 +37,7 @@ import { nearestIndex } from "../logic/targeting";
 import { spawnPlan } from "../logic/waves";
 import type { EndData } from "./EndScene";
 import type { LevelUpData } from "./LevelUpScene";
+import type { MapData } from "./MapScene";
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
 
@@ -47,12 +51,20 @@ const LAMP_CHUNK = { width: 320, height: 240 };
 const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 // Il pulsante della pausa, in alto a destra: grande abbastanza per il pollice.
 const PAUSE_SIZE = 18;
+// I ciuffi spariscono poco oltre il bordo dello schermo.
+const FUR_MARGIN = 16;
+// La minimappa, a destra sotto i piccioni presi: 20 pixel dal centro al bordo, per 400 pixel di mondo.
+// Si tocca (o M) per la mappa grande.
+const MINIMAP = { half: 20, range: 400 };
 
 export class GameScene extends Phaser.Scene {
   private cat!: Sprite;
   private enemies!: Phaser.Physics.Arcade.Group;
   private kibbles!: Phaser.Physics.Arcade.Group;
   private furs!: Phaser.Physics.Arcade.Group;
+  private chests!: Phaser.Physics.Arcade.Group;
+  private minimap!: Phaser.GameObjects.Graphics;
+  private minimapCenter: Vec = { x: 0, y: 0 };
   private effects!: Phaser.GameObjects.Group;
   private ground!: Phaser.GameObjects.TileSprite;
   private lamps: Phaser.GameObjects.Image[] = [];
@@ -84,6 +96,10 @@ export class GameScene extends Phaser.Scene {
   // i minuti della notte scelti nel titolo (3 con ?corta): decidono la durata e quale record si gioca
   private nightMinutes = DEFAULT_NIGHT;
   private nextSpawnAt = 0;
+  // quando nascono le casse di questa notte (chestTimes), e quante ne sono già nate
+  private chestSchedule: number[] = [];
+  private chestsSpawned = 0;
+  private chestsTaken = 0;
   private points = 0;
   private kills = 0;
   private joystick: { pointerId: number; start: Vec; current: Vec } | null = null;
@@ -112,6 +128,8 @@ export class GameScene extends Phaser.Scene {
     this.facing = 0;
     this.elapsed = 0;
     this.nextSpawnAt = 0;
+    this.chestsTaken = 0;
+    this.chestsSpawned = 0;
     this.points = 0;
     this.kills = 0;
     this.joystick = null;
@@ -152,6 +170,7 @@ export class GameScene extends Phaser.Scene {
     // Le ondate seguono la frazione di notte passata (spawnPlan): in 5 minuti arrivano alla stessa ondata finale dei 15.
     if (params.has("corta")) this.nightMinutes = RUN.shortDurationMs / 60_000;
     this.duration = this.nightMinutes * 60_000;
+    this.chestSchedule = chestTimes(this.duration, CHEST.perNight);
 
     // Il terreno: una striscia di strada con tombino e foglie, ripetuta all'infinito.
     // È fisso sullo schermo e scorre il disegno, invece di muoversi: così la strada non finisce mai.
@@ -167,10 +186,12 @@ export class GameScene extends Phaser.Scene {
     this.enemies = this.physics.add.group({ maxSize: SPAWN.maxEnemies });
     this.kibbles = this.physics.add.group({ maxSize: KIBBLE.maxOnGround });
     this.furs = this.physics.add.group({ maxSize: 60 });
+    this.chests = this.physics.add.group({ maxSize: CHEST.maxOnGround });
     this.effects = this.add.group({ maxSize: 60 });
 
     this.physics.add.overlap(this.cat, this.enemies, (_c, enemy) => this.onTouch(enemy as Sprite));
     this.physics.add.overlap(this.cat, this.kibbles, (_c, kibble) => this.collect(kibble as Sprite));
+    this.physics.add.overlap(this.cat, this.chests, (_c, chest) => this.takeChest(chest as Sprite));
     this.physics.add.overlap(this.furs, this.enemies, (fur, enemy) => this.furHit(fur as Sprite, enemy as Sprite));
     this.nextFire = { scratch: 0, tail: 0, fur: 0 };
 
@@ -194,6 +215,7 @@ export class GameScene extends Phaser.Scene {
     this.anims.create({ key: "gatto-cammina", frames: strip("gatto", 1, 4), frameRate: 10, repeat: -1 });
     this.anims.create({ key: "piccione-cammina", frames: strip("piccione", 0, 1), frameRate: 4, repeat: -1 });
     this.anims.create({ key: "crocchetta-brilla", frames: strip("crocchetta", 0, 1), frameRate: 2, repeat: -1 });
+    this.anims.create({ key: "cassa-brilla", frames: strip("cassa", 0, 1), frameRate: 2, repeat: -1 });
     this.anims.create({ key: "graffio", frames: strip("graffio", 0, 2), frameRate: 15, repeat: 0 });
     this.anims.create({ key: "coda", frames: strip("coda", 0, 2), frameRate: 15, repeat: 0 });
     this.anims.create({ key: "pelo-vola", frames: strip("pelo", 0, 1), frameRate: 8, repeat: -1 });
@@ -225,6 +247,7 @@ export class GameScene extends Phaser.Scene {
       }) as typeof this.keys;
       kb.on("keydown-ESC", this.openPause, this);
       kb.on("keydown-P", this.openPause, this);
+      kb.on("keydown-M", this.openMap, this);
     }
     // Due dita insieme: uno sul joystick, l'altro libero per la pausa.
     this.input.addPointer(1);
@@ -268,6 +291,16 @@ export class GameScene extends Phaser.Scene {
     this.add.image(width - SAFE - 6, SAFE + PAUSE_SIZE + 12, "uccisioni").setScrollFactor(0).setDepth(100);
     this.killsText = this.add.text(width - SAFE - 16, SAFE + PAUSE_SIZE + 8, "0", FONT).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
+    // la minimappa: un quadrato che si tocca per la mappa grande; il tocco non arriva al joystick
+    this.minimapCenter = { x: width - SAFE - MINIMAP.half, y: SAFE + PAUSE_SIZE + 26 + MINIMAP.half };
+    const side = MINIMAP.half * 2;
+    const zone = this.add.rectangle(this.minimapCenter.x, this.minimapCenter.y, side + 6, side + 6, 0x000000, 0).setScrollFactor(0).setDepth(100).setInteractive();
+    zone.on("pointerdown", (_p: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
+      event.stopPropagation();
+      this.openMap();
+    });
+    this.minimap = this.add.graphics().setScrollFactor(0).setDepth(100);
+
     this.hintText = this.add.text(width / 2, height - SAFE - 8, TEXTS.hint, { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(100);
     this.drawHud();
   }
@@ -288,10 +321,12 @@ export class GameScene extends Phaser.Scene {
     this.moveCat(time);
     this.moveEnemies();
     this.moveKibbles();
-    this.expireFur(time);
+    this.expireFur();
     this.fireWeapons(time);
     this.spawnOnSchedule();
+    this.spawnChestOnSchedule();
     this.scrollWorld();
+    this.drawMinimap();
     this.drawJoystick();
     this.clockText.setText(formatClock(this.elapsed));
     if (this.hintText && this.elapsed > RUN.hintMs) {
@@ -337,7 +372,7 @@ export class GameScene extends Phaser.Scene {
     for (const child of this.enemies.getChildren()) {
       const enemy = child as Sprite;
       if (!enemy.active) continue;
-      const v = chase({ x: enemy.x, y: enemy.y }, target, PIGEON.speed);
+      const v = chase({ x: enemy.x, y: enemy.y }, target, (enemy.getData("speed") as number | undefined) ?? PIGEON.speed);
       enemy.setVelocity(v.x, v.y);
       enemy.setFlipX(v.x < 0);
     }
@@ -359,10 +394,15 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private expireFur(time: number) {
+  // I ciuffi volano finché escono dallo schermo (o colpiscono un nemico, in furHit).
+  private expireFur() {
+    const view = this.cameras.main.worldView;
     for (const child of this.furs.getChildren()) {
       const f = child as Sprite;
-      if (f.active && time > (f.getData("dieAt") as number)) f.disableBody(true, true);
+      if (!f.active) continue;
+      if (f.x < view.left - FUR_MARGIN || f.x > view.right + FUR_MARGIN || f.y < view.top - FUR_MARGIN || f.y > view.bottom + FUR_MARGIN) {
+        f.disableBody(true, true);
+      }
     }
   }
 
@@ -390,11 +430,12 @@ export class GameScene extends Phaser.Scene {
   private spawnOnSchedule() {
     if (this.elapsed < this.nextSpawnAt) return;
     const plan = spawnPlan(this.elapsed / this.duration);
-    this.spawnGroup(plan.groupSize);
+    this.spawnGroup(plan.groupSize, plan);
     this.nextSpawnAt = this.elapsed + plan.intervalMs;
   }
 
-  private spawnGroup(size: number) {
+  // scale moltiplica danno e velocità dei piccioni: cresce con la notte (spawnPlan)
+  private spawnGroup(size: number, scale = spawnPlan(this.elapsed / this.duration)) {
     if (this.over) return;
     const cam = this.cameras.main;
     const center = spawnPoint(
@@ -410,6 +451,8 @@ export class GameScene extends Phaser.Scene {
       enemy.enableBody(true, enemy.x, enemy.y, true, true);
       enemy.setSize(PIGEON.body.width, PIGEON.body.height).setAlpha(1).setDepth(5);
       enemy.setData("hp", PIGEON.health);
+      enemy.setData("damage", Math.round(PIGEON.damage * scale.damageScale));
+      enemy.setData("speed", PIGEON.speed * scale.speedScale);
       enemy.anims.play("piccione-cammina", true);
     }
   }
@@ -429,7 +472,7 @@ export class GameScene extends Phaser.Scene {
     }
     if (w.fur > 0 && time >= this.nextFire.fur) {
       const lv = FUR_LEVELS[Math.min(w.fur, FUR_LEVELS.length) - 1];
-      this.fur(lv, time);
+      this.fur(lv);
       this.nextFire.fur = time + lv.cooldownMs;
     }
   }
@@ -466,8 +509,9 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Il pelo che vola: ciuffi in tutte le direzioni, a raggiera, partendo da un angolo sempre diverso.
-  private fur(lv: (typeof FUR_LEVELS)[number], time: number) {
+  // Il pelo che vola: ciuffi in tutte le direzioni, a raggiera, partendo da un angolo sempre diverso,
+  // fino al bordo dello schermo.
+  private fur(lv: (typeof FUR_LEVELS)[number]) {
     const start = this.rng() * Math.PI * 2;
     for (let i = 0; i < lv.count; i++) {
       const angle = start + (i * Math.PI * 2) / lv.count;
@@ -476,7 +520,7 @@ export class GameScene extends Phaser.Scene {
       f.enableBody(true, this.cat.x, this.cat.y, true, true);
       f.setSize(10, 10).setDepth(15).setRotation(angle);
       f.setVelocity(Math.cos(angle) * lv.speed, Math.sin(angle) * lv.speed);
-      f.setData("dieAt", time + lv.lifeMs).setData("damage", lv.damage);
+      f.setData("damage", lv.damage);
       f.anims.play("pelo-vola", true);
     }
   }
@@ -543,6 +587,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private applyCard(id: string) {
+    this.gainCard(id);
+    this.drawHud();
+    this.scene.resume();
+    // più livelli in una volta: le scelte arrivano una dopo l'altra
+    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
+  }
+
+  // gainCard: l'effetto di una carta, scelta al livello o trovata in una cassa.
+  private gainCard(id: string) {
     if (id === "heal") {
       this.health = heal(this.health, FALLBACK.healAmount);
     } else if (id === "points") {
@@ -554,15 +607,80 @@ export class GameScene extends Phaser.Scene {
       const gained = this.stats.maxHealthBonus - before;
       if (gained > 0) this.health = heal({ ...this.health, max: CAT.maxHealth + this.stats.maxHealthBonus }, gained);
     }
+  }
+
+  // Le casse: ne nasce una al suo momento, lontano dal gatto. Se ne aspettano già due, la prossima aspetta
+  // che se ne prenda una: non si perde.
+  private spawnChestOnSchedule() {
+    const at = this.chestSchedule[this.chestsSpawned];
+    if (at === undefined || this.elapsed < at || this.chests.countActive(true) >= CHEST.maxOnGround) return;
+    const p = chestPoint({ x: this.cat.x, y: this.cat.y }, this.rng, CHEST.minDistance, CHEST.maxDistance);
+    const chest = this.chests.get(p.x, p.y, "cassa") as Sprite | null;
+    if (!chest) return;
+    this.chestsSpawned++;
+    chest.enableBody(true, p.x, p.y, true, true);
+    chest.setSize(14, 12).setDepth(4);
+    chest.anims.play("cassa-brilla", true);
+  }
+
+  // Presa una cassa: un potere, a volte tre, subito, senza fermare la partita; una scritta dice quali.
+  private takeChest(chest: Sprite) {
+    if (!chest.active || this.over) return;
+    chest.disableBody(true, true);
+    this.chestsTaken++;
+    const gained = openChest(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS, CHEST.tripleChance);
+    for (const id of gained) this.gainCard(id);
     this.drawHud();
-    this.scene.resume();
-    // più livelli in una volta: le scelte arrivano una dopo l'altra
-    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
+    const title = gained.length > 1 ? TEXTS.chestTriple : TEXTS.chest;
+    const names = gained.map((id) => CARD_TEXTS[id]?.name ?? id).join(", ");
+    const { width, height } = this.scale;
+    const note = this.add.text(width / 2, height / 2 - 40, `${title}\n${names}`, { ...FONT, color: "#ffc85a", backgroundColor: "#0e0c16", align: "center" })
+      .setOrigin(0.5).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
+    this.time.delayedCall(2500, () => note.destroy());
+  }
+
+  // La minimappa: il gatto al centro, i piccioni come puntini, le casse in oro (sul bordo se sono lontane).
+  private drawMinimap() {
+    const g = this.minimap;
+    const { x: cx, y: cy } = this.minimapCenter;
+    const h = MINIMAP.half;
+    const cat = { x: this.cat.x, y: this.cat.y };
+    g.clear();
+    g.fillStyle(0x0e0c16, 0.7).fillRect(cx - h, cy - h, h * 2, h * 2);
+    g.lineStyle(1, 0xcfe0ff, 1).strokeRect(cx - h, cy - h, h * 2, h * 2);
+    g.fillStyle(0x8a93a8, 1);
+    for (const e of this.aliveEnemies()) {
+      const p = toMinimap(cat, e, MINIMAP.range, h);
+      if (p.inside) g.fillRect(cx + p.x, cy + p.y, 1, 1);
+    }
+    g.fillStyle(0xffc85a, 1);
+    for (const c of this.chests.getChildren() as Sprite[]) {
+      if (!c.active) continue;
+      const p = toMinimap(cat, c, MINIMAP.range, h);
+      g.fillRect(Math.round(cx + p.x) - 1, Math.round(cy + p.y) - 1, 3, 3);
+    }
+    g.fillStyle(0xf5841f, 1).fillRect(cx - 1, cy - 1, 3, 3);
+  }
+
+  // La mappa grande: la partita si ferma e sopra compare MapScene, come la pausa.
+  private openMap() {
+    if (this.over || !this.scene.isActive() || this.scene.isActive("LevelUp") || this.scene.isActive("Pause") || this.scene.isActive("Map")) return;
+    this.joystick = null;
+    this.joystickGfx.clear();
+    const point = (s: Sprite) => ({ x: s.x, y: s.y });
+    const data: MapData = {
+      cat: point(this.cat),
+      chests: (this.chests.getChildren() as Sprite[]).filter((c) => c.active).map(point),
+      enemies: this.aliveEnemies().map(point),
+    };
+    this.scene.pause();
+    this.scene.launch("Map", data);
   }
 
   private onTouch(enemy: Sprite) {
     if (this.over || this.invincible || !enemy.active) return;
-    const { health, hit } = takeHit(this.health, PIGEON.damage, this.elapsed, CAT.invulnerabilityMs);
+    const damage = (enemy.getData("damage") as number | undefined) ?? PIGEON.damage;
+    const { health, hit } = takeHit(this.health, damage, this.elapsed, CAT.invulnerabilityMs);
     if (!hit) return;
     this.health = health;
     if (isDead(this.health)) this.loseLife();
@@ -617,6 +735,7 @@ export class GameScene extends Phaser.Scene {
     };
     this.scene.stop("LevelUp");
     this.scene.stop("Pause");
+    this.scene.stop("Map");
     this.scene.start("End", result);
   }
 

@@ -20,6 +20,7 @@ Autori e licenze di tutto quello che nel gioco non è codice. Si aggiorna ogni v
 | `public/assets/titolo.png` | lo sfondo del titolo: Roma di notte, 480×270 | idem | MIT |
 | `public/assets/alba.png` | lo sfondo della fine: l'alba su Roma, 480×270 | idem | MIT |
 | `public/assets/carte.png` | le icone provvisorie dei quattro potenziamenti, 16×16 | disegnate per questo gioco da `art/icone_carte.py`, con forme semplici e i colori della palette | MIT |
+| `public/assets/cassa.png` | la cassa del tesoro provvisoria, 16×16, due fotogrammi | disegnata per questo gioco da `art/cassa.py`, con forme semplici e i colori della palette | MIT |
 | `public/favicon.png` | l'icona della scheda del browser, 64×64 | il gatto fermo di `gatto.png`, ingrandito 4 volte | MIT |
 
 ## Caratteri
