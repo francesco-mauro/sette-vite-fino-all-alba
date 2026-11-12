@@ -10,6 +10,7 @@ L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo s
 - **12 novembre 2026, il lint e il controllo prima del commit.** oxlint controlla il codice a ogni commit insieme ai tipi e ai test. Ha trovato una cosa sola, ripetuta 19 volte: il modo di importare Phaser, sistemato in tre file. Il controllo prima del commit è provato con un test rotto apposta: il commit si ferma.
 - **12 novembre 2026, il controllo su GitHub.** Il file `.github/workflows/ci.yml`: a ogni push e a ogni pull request verso main GitHub prende una macchina Linux pulita, installa i pacchetti con `npm ci` e lancia lo stesso `npm run check` del PC, più la build. La spunta verde o la croce rossa compaiono accanto a ogni commit su GitHub e nel README. La prima esecuzione, sul commit `293e877`, è verde: tutti i passi in 25 secondi.
 - **12 novembre 2026, il gioco si installa sul telefono.** Anticipato dalla tappa 5 perché Francesco vuole vederlo e installarlo dal telefono, aggiornato da solo come Mnemosine. Con vite-plugin-pwa il gioco ha un manifest (nome, icone, tutto schermo, orizzontale) e un service worker che tiene sul telefono i 14 file che servono per giocare, per poter giocare anche senza rete. Provato nel browser del computer; sul telefono è da provare. Le icone sono il gatto fermo ingrandito, fatte da `art/icone.py`. La versione di Node è scritta una volta sola in `.node-version`.
+- **12 novembre 2026, Workers Builds collegato.** Dal sito di Cloudflare il Worker è collegato al repository su GitHub, ramo main. A ogni push Cloudflare lancia `npm run check && npm run build` e, solo se passa, `npx wrangler deploy`. Le anteprime per gli altri rami sono spente: si lavora solo su main.
 
 ## Le tecnologie di questa tappa, e perché
 | Strumento | Versione | Cosa fa qui | Perché questo |
@@ -64,6 +65,6 @@ Il 12 novembre il test dell'ingrandimento sul telefono è stato cambiato apposta
 ## Da fare
 - La prova nel browser con Playwright: il gioco si apre e disegna.
 - La rotta `/api/ping` nello stesso Worker dei file.
-- Workers Builds collegato a GitHub, con i test prima della pubblicazione: il collegamento si fa dal sito di Cloudflare.
+- Vedere la prima pubblicazione automatica andare a buon fine.
 - Provare l'installazione e l'aggiornamento automatico sul telefono vero.
 - La prova finale: un test rotto ferma il commit e anche la pubblicazione.
