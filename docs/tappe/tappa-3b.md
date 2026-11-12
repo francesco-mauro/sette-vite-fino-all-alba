@@ -19,6 +19,7 @@ L'obiettivo della tappa: il traguardo minimo, una partita intera da mostrare.
 - **La riga dei primi 30 secondi.** In basso: «muoviti: il gatto attacca da solo».
 - **Dopo la prima prova sul telefono.** Il joystick compare dove si appoggia il pollice, anche nella metà destra. Il dito che era sullo schermo quando si sale di livello non sceglie più la carta: serve un tocco nuovo. I quattro potenziamenti hanno un'icona provvisoria (vedi `DECISIONI.md`).
 - **La durata della notte.** Aggiunta dopo la prima prova: nel titolo si sceglie 5, 10 o 15 minuti, con un record per ogni durata. In 5 minuti le ondate salgono più in fretta e arrivano alla stessa ondata finale dei 15 (vedi `DECISIONI.md`). Provata senza finestra: tocco su «5 min», alba a 05:00, «nuovo record! (5 min)», e tornando al titolo resta scelto 5 con il suo record.
+- **Dopo la seconda prova sul telefono.** In pausa il pulsante dice «esci dalla partita», non più «torna al titolo», che sembrava far tornare alla partita. Dopo una carta o una pausa il gatto ha un secondo di protezione. A ogni livello tutte le crocchette rimaste sulla mappa volano verso il gatto. Provate senza finestra: alla ripresa restano circa 950 millisecondi di protezione, e cinque crocchette lontane arrivano al gatto in meno di un secondo. Pancia piena dà anche una rigenerazione leggerissima, 0,2 di vita al secondo per livello. Armi, ciuffi e invulnerabilità seguono ora il tempo della notte, non l'ora vera: in 3 secondi di pausa il graffio e la protezione dopo una vita persa restano dove erano, e con «veloce» tutto corre quattro volte.
 - **Per provare.** `?corta` fa durare la notte 3 minuti. Nel pannello di debug, «veloce» ora va a quattro volte la velocità normale: la notte corta si gioca in 45 secondi veri.
 
 ## Le tecnologie di questa tappa, e perché
@@ -48,7 +49,7 @@ Con lo script di prova automatica, senza finestra:
 - **Due minuti di notte lunga.** Non invincibile, a velocità normale, con il gatto che gira in cerchio senza schivare: livello 9, 135 piccioni presi, 3 vite perse su 7, 60 fotogrammi al secondo. Era prima di abbassare il danno.
 
 ## La domanda da colloquio
-«Fammi vedere il gioco: cosa c'è dentro di tecnico?» Un survivor in Phaser 4 e TypeScript, con le regole separate dal disegno e provate da 94 test. Le ondate, il punteggio e le carte sono dati, il caso viene da un generatore con seme. I nemici vivono in un pool. A ogni push ci sono lint, test e una prova nel browser vero, e la pubblicazione su Cloudflare parte solo se è tutto verde. Sul telefono si installa come un'app e si aggiorna da solo.
+«Fammi vedere il gioco: cosa c'è dentro di tecnico?» Un survivor in Phaser 4 e TypeScript, con le regole separate dal disegno e provate da 102 test. Le ondate, il punteggio e le carte sono dati, il caso viene da un generatore con seme. I nemici vivono in un pool. A ogni push ci sono lint, test e una prova nel browser vero, e la pubblicazione su Cloudflare parte solo se è tutto verde. Sul telefono si installa come un'app e si aggiorna da solo.
 
 ## Lo spunto per il post
 Dal primo piccione all'alba su Roma: una notte intera giocabile, costruita a tappe con un commit e un diario per ognuna.

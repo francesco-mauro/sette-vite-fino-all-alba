@@ -6,6 +6,8 @@ export interface Stats {
   damageMultiplier: number;
   magnetMultiplier: number;
   maxHealthBonus: number;
+  // vita resa al secondo, da pancia piena
+  regenPerSecond: number;
   // il livello di ogni arma: 0 vuol dire che il gatto non ce l'ha ancora
   weapons: { scratch: number; tail: number; fur: number };
 }
@@ -19,6 +21,7 @@ export function computeStats(levels: Readonly<Record<string, number>>): Stats {
     damageMultiplier: 1 + PASSIVES.damagePerLevel * lv("damage"),
     magnetMultiplier: 1 + PASSIVES.magnetPerLevel * lv("magnet"),
     maxHealthBonus: PASSIVES.healthPerLevel * lv("health"),
+    regenPerSecond: PASSIVES.regenPerLevel * lv("health"),
     weapons: { scratch: 1 + lv("scratch"), tail: lv("tail"), fur: lv("fur") },
   };
 }

@@ -23,6 +23,11 @@ describe("le statistiche dalle carte", () => {
     expect(computeStats({ health: 2 }).maxHealthBonus).toBe(40);
   });
 
+  it("pancia piena dà anche una rigenerazione leggerissima, 0,2 di vita al secondo per livello", () => {
+    expect(computeStats({}).regenPerSecond).toBe(0);
+    expect(computeStats({ health: 5 }).regenPerSecond).toBeCloseTo(1);
+  });
+
   it("la carta del graffio alza il suo livello oltre quello di partenza", () => {
     expect(computeStats({ scratch: 2 }).weapons.scratch).toBe(3);
     expect(computeStats({ tail: 1 }).weapons.tail).toBe(1);

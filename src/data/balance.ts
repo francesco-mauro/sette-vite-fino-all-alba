@@ -7,6 +7,8 @@ export const CAT = {
   maxHealth: 100,
   // dopo un colpo, per quanto i colpi non contano (il gatto lampeggia)
   invulnerabilityMs: 1000,
+  // alla ripresa dopo la scelta di una carta o una pausa, per riprendere in mano il gatto
+  resumeInvulnerabilityMs: 1000,
 };
 
 export interface EnemyKind {
@@ -65,6 +67,8 @@ export const PASSIVES = {
   damagePerLevel: 0.15,
   magnetPerLevel: 0.25,
   healthPerLevel: 20,
+  // pancia piena rende anche vita piano: al secondo, per ogni livello della carta (al quinto, 1 al secondo)
+  regenPerLevel: 0.2,
 };
 
 // Le crocchette: quanta esperienza vale ognuna, e da che distanza la calamita le tira verso il gatto.

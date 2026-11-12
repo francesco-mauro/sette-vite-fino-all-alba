@@ -8,11 +8,11 @@
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita, comandi, interfaccia
-// - update e moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
+// - update e regenerate, moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup: i piccioni da fuori dello schermo
 // - le armi: fireWeapons, scratch, tail, fur, furHit, damageEnemy, killEnemy
-// - crescere: collect, openLevelUp, applyCard
-// - vite, pausa e fine: onTouch, loseLife, openPause, endRun
+// - crescere: collect, openLevelUp, pullAllKibbles, applyCard
+// - vite, pausa e fine: onTouch, loseLife, onResume, openPause, endRun
 // - l'interfaccia: drawHud, drawJoystick, createDebug, updateDebug
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
@@ -24,7 +24,7 @@ import { inArc } from "../logic/arc";
 import { drawCards } from "../logic/cards";
 import { formatClock } from "../logic/clock";
 import { DEFAULT_NIGHT } from "../logic/night";
-import { createHealth, heal, isDead, takeHit, type Health } from "../logic/health";
+import { createHealth, heal, isDead, protect, regenerate, takeHit, type Health } from "../logic/health";
 import { chase, joystickVector, keyboardVector, type Vec } from "../logic/movement";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
@@ -77,7 +77,8 @@ export class GameScene extends Phaser.Scene {
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
   private facing = 0;
   private nextFire = { scratch: 0, tail: 0, fur: 0 };
-  // il tempo di notte passato, in millisecondi di gioco: si ferma con la pausa e con la scelta delle carte
+  // il tempo di notte passato, in millisecondi di gioco: si ferma con la pausa e con la scelta delle carte;
+  // è anche l'orologio di armi, ciuffi e invulnerabilità
   private elapsed = 0;
   private duration = RUN.durationMs;
   // i minuti della notte scelti nel titolo (3 con ?corta): decidono la durata e quale record si gioca
@@ -175,6 +176,9 @@ export class GameScene extends Phaser.Scene {
 
     this.events.off("card-picked");
     this.events.on("card-picked", (id: string) => this.applyCard(id));
+    // dopo una carta o una pausa la partita riprende: un attimo di protezione per riprendere in mano il gatto
+    this.events.off(Phaser.Scenes.Events.RESUME, this.onResume, this);
+    this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
     // quando la scheda o l'app passano in secondo piano, la partita si mette in pausa da sola
     this.game.events.on(Phaser.Core.Events.HIDDEN, this.openPause, this);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.HIDDEN, this.openPause, this));
@@ -270,14 +274,17 @@ export class GameScene extends Phaser.Scene {
 
   update(_time: number, delta: number) {
     if (!this.cat || this.over) return;
-    // L'orologio della scena, non quello del gioco: si ferma durante la scelta delle carte e la pausa e corre doppio
-    // con «veloce», quindi armi, invulnerabilità e ciuffi restano d'accordo tra loro.
-    const time = this.time.now;
-    this.elapsed += delta * this.time.timeScale;
+    // L'orologio di tutto è il tempo della notte (elapsed): si ferma durante la scelta delle carte e la pausa
+    // e corre quattro volte con «veloce», quindi armi, invulnerabilità, ciuffi e ondate restano d'accordo tra loro.
+    // this.time.now no: è l'ora vera, che corre anche in pausa.
+    const step = delta * this.time.timeScale;
+    this.elapsed += step;
+    const time = this.elapsed;
     if (this.elapsed >= this.duration) {
       this.endRun(true);
       return;
     }
+    this.regenerate(step);
     this.moveCat(time);
     this.moveEnemies();
     this.moveKibbles();
@@ -292,6 +299,13 @@ export class GameScene extends Phaser.Scene {
       this.hintText = null;
     }
     if (this.debugText) this.updateDebug();
+  }
+
+  // pancia piena: la vita torna piano; la barra si ridisegna solo quando cambia di un punto
+  private regenerate(ms: number) {
+    const before = Math.floor(this.health.current);
+    this.health = regenerate(this.health, this.stats.regenPerSecond, ms);
+    if (Math.floor(this.health.current) !== before) this.drawHud();
   }
 
   private moveCat(time: number) {
@@ -513,10 +527,19 @@ export class GameScene extends Phaser.Scene {
     this.pendingLevels--;
     this.joystick = null;
     this.joystickGfx.clear();
+    this.pullAllKibbles();
     const choices = drawCards(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS);
     const data: LevelUpData = { choices, levels: { ...this.levels } };
     this.scene.pause();
     this.scene.launch("LevelUp", data);
+  }
+
+  // A ogni livello tutte le crocchette rimaste sulla mappa volano verso il gatto, appena la partita riprende.
+  private pullAllKibbles() {
+    for (const child of this.kibbles.getChildren()) {
+      const k = child as Sprite;
+      if (k.active) k.setData("pulled", true);
+    }
   }
 
   private applyCard(id: string) {
@@ -539,7 +562,7 @@ export class GameScene extends Phaser.Scene {
 
   private onTouch(enemy: Sprite) {
     if (this.over || this.invincible || !enemy.active) return;
-    const { health, hit } = takeHit(this.health, PIGEON.damage, this.time.now, CAT.invulnerabilityMs);
+    const { health, hit } = takeHit(this.health, PIGEON.damage, this.elapsed, CAT.invulnerabilityMs);
     if (!hit) return;
     this.health = health;
     if (isDead(this.health)) this.loseLife();
@@ -555,10 +578,16 @@ export class GameScene extends Phaser.Scene {
       this.endRun(false);
       return;
     }
-    this.health = { ...this.health, current: this.health.max, invulnerableUntil: this.time.now + RUN.respawnInvulnerabilityMs };
+    this.health = { ...this.health, current: this.health.max, invulnerableUntil: this.elapsed + RUN.respawnInvulnerabilityMs };
     const { width, height } = this.scale;
     const note = this.add.text(width / 2, height / 2 - 28, TEXTS.lifeLost, { ...FONT, color: "#e23a4f", backgroundColor: "#0e0c16" }).setOrigin(0.5).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
     this.time.delayedCall(1200, () => note.destroy());
+  }
+
+  // La ripresa dopo una carta o una pausa: un attimo di protezione, sull'orologio della notte.
+  private onResume() {
+    if (this.over) return;
+    this.health = protect(this.health, this.elapsed, CAT.resumeInvulnerabilityMs);
   }
 
   // La pausa: la partita si ferma e sopra compare PauseScene. Non si apre sopra la scelta delle carte.

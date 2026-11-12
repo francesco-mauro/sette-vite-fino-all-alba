@@ -1,6 +1,6 @@
-// I test della vita: il danno e l'attimo di invulnerabilità dopo un colpo.
+// I test della vita: il danno, l'attimo di invulnerabilità dopo un colpo e quello alla ripresa del gioco.
 import { describe, expect, it } from "vitest";
-import { createHealth, heal, isDead, takeHit } from "../../src/logic/health";
+import { createHealth, heal, isDead, protect, regenerate, takeHit } from "../../src/logic/health";
 
 describe("la vita del gatto", () => {
   it("un colpo toglie vita e apre l'attimo di invulnerabilità", () => {
@@ -33,5 +33,46 @@ describe("la vita del gatto", () => {
     const hurt = takeHit(createHealth(100), 30, 0, 800).health;
     expect(heal(hurt, 10).current).toBe(80);
     expect(heal(hurt, 50).current).toBe(100);
+  });
+});
+
+describe("l'attimo di protezione alla ripresa", () => {
+  it("dopo una carta o una pausa i colpi non contano per un attimo", () => {
+    const safe = protect(createHealth(100), 5000, 1000);
+    expect(safe.invulnerableUntil).toBe(6000);
+    expect(takeHit(safe, 10, 5500, 800).hit).toBe(false);
+    expect(takeHit(safe, 10, 6000, 800).hit).toBe(true);
+  });
+
+  it("non accorcia un'invulnerabilità più lunga già in corso", () => {
+    const respawn = { ...createHealth(100), invulnerableUntil: 9000 };
+    expect(protect(respawn, 5000, 1000).invulnerableUntil).toBe(9000);
+  });
+
+  it("non tocca la vita", () => {
+    const hurt = takeHit(createHealth(100), 30, 0, 800).health;
+    expect(protect(hurt, 5000, 1000).current).toBe(70);
+  });
+});
+
+describe("la rigenerazione", () => {
+  it("rende vita piano, in proporzione al tempo passato", () => {
+    const hurt = takeHit(createHealth(100), 30, 0, 800).health;
+    expect(regenerate(hurt, 0.5, 2000).current).toBeCloseTo(71);
+  });
+
+  it("non supera la vita massima", () => {
+    const hurt = takeHit(createHealth(100), 1, 0, 800).health;
+    expect(regenerate(hurt, 1, 5000).current).toBe(100);
+  });
+
+  it("senza pancia piena non cambia niente", () => {
+    const hurt = takeHit(createHealth(100), 30, 0, 800).health;
+    expect(regenerate(hurt, 0, 5000)).toBe(hurt);
+  });
+
+  it("non fa rialzare un gatto a terra", () => {
+    const down = takeHit(createHealth(10), 10, 0, 800).health;
+    expect(regenerate(down, 1, 1000).current).toBe(0);
   });
 });
