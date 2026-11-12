@@ -89,7 +89,8 @@ export const FALLBACK = {
   points: 100,
 };
 
-// La notte: quanto dura, quante vite ha il gatto, e la partita corta per le prove (?corta nell'indirizzo).
+// La notte: quanto dura se nessuno sceglie (le scelte 5, 10, 15 sono in src/logic/night.ts), quante vite ha il gatto,
+// e la partita corta per le prove (?corta nell'indirizzo).
 export const RUN = {
   durationMs: 15 * 60_000,
   shortDurationMs: 3 * 60_000,

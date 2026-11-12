@@ -9,7 +9,7 @@ L'obiettivo della tappa: il traguardo minimo, una partita intera da mostrare.
 ## Cosa c'è di nuovo
 - **Il caricamento.** Tutte le immagini si caricano una volta sola, con una barra, prima del titolo.
 - **Il titolo.** Roma di notte, con la cupola, i pini e il muraglione del Tevere, presa intera dalle tavole. Sopra c'è il nome del gioco, e sotto il record se esiste. Un tocco o lo spazio, e si gioca.
-- **La notte di 15 minuti.** In alto al centro l'orologio conta da 00:00. A 15:00 arriva l'alba e si vince. L'orologio si ferma durante la scelta delle carte e durante la pausa.
+- **La notte di 15 minuti.** In alto al centro l'orologio conta da 00:00. A 15:00 arriva l'alba e si vince (oppure a 5:00 o 10:00, con la durata scelta nel titolo: vedi sotto). L'orologio si ferma durante la scelta delle carte e durante la pausa.
 - **Le ondate che crescono.** All'inizio un gruppo di tre piccioni ogni due secondi e mezzo. Verso l'alba un gruppo di sette ogni 0,7 secondi. La tabella vera, minuto per minuto e con gli altri nemici, è della tappa 4.
 - **Le sette vite.** I cuori stanno sotto le barre. Quando la barra rossa finisce, il gatto perde una vita e un pezzo di punteggio. Riparte dallo stesso punto con la barra piena e un secondo e mezzo di invulnerabilità, e a schermo compare «una vita in meno». Senza vite la notte finisce.
 - **Il punteggio.** Un punto per ogni secondo vivo, 10 per ogni piccione, le mance delle carte, 5000 per l'alba, meno 250 per ogni vita persa, senza scendere sotto zero. La formula sta in `src/shared/score.ts`: alla tappa 6 la userà anche il Worker per scartare i punteggi impossibili.
@@ -18,6 +18,7 @@ L'obiettivo della tappa: il traguardo minimo, una partita intera da mostrare.
 - **La pausa.** Il pulsante in alto a destra, Esc o P. Scatta da sola quando si cambia scheda o app, così tornando la partita non riparte prima di te. Dalla pausa si torna anche al titolo.
 - **La riga dei primi 30 secondi.** In basso: «muoviti: il gatto attacca da solo».
 - **Dopo la prima prova sul telefono.** Il joystick compare dove si appoggia il pollice, anche nella metà destra. Il dito che era sullo schermo quando si sale di livello non sceglie più la carta: serve un tocco nuovo. I quattro potenziamenti hanno un'icona provvisoria (vedi `DECISIONI.md`).
+- **La durata della notte.** Aggiunta dopo la prima prova: nel titolo si sceglie 5, 10 o 15 minuti, con un record per ogni durata. In 5 minuti le ondate salgono più in fretta e arrivano alla stessa ondata finale dei 15 (vedi `DECISIONI.md`). Provata senza finestra: tocco su «5 min», alba a 05:00, «nuovo record! (5 min)», e tornando al titolo resta scelto 5 con il suo record.
 - **Per provare.** `?corta` fa durare la notte 3 minuti. Nel pannello di debug, «veloce» ora va a quattro volte la velocità normale: la notte corta si gioca in 45 secondi veri.
 
 ## Le tecnologie di questa tappa, e perché
@@ -47,7 +48,7 @@ Con lo script di prova automatica, senza finestra:
 - **Due minuti di notte lunga.** Non invincibile, a velocità normale, con il gatto che gira in cerchio senza schivare: livello 9, 135 piccioni presi, 3 vite perse su 7, 60 fotogrammi al secondo. Era prima di abbassare il danno.
 
 ## La domanda da colloquio
-«Fammi vedere il gioco: cosa c'è dentro di tecnico?» Un survivor in Phaser 4 e TypeScript, con le regole separate dal disegno e provate da 88 test. Le ondate, il punteggio e le carte sono dati, il caso viene da un generatore con seme. I nemici vivono in un pool. A ogni push ci sono lint, test e una prova nel browser vero, e la pubblicazione su Cloudflare parte solo se è tutto verde. Sul telefono si installa come un'app e si aggiorna da solo.
+«Fammi vedere il gioco: cosa c'è dentro di tecnico?» Un survivor in Phaser 4 e TypeScript, con le regole separate dal disegno e provate da 94 test. Le ondate, il punteggio e le carte sono dati, il caso viene da un generatore con seme. I nemici vivono in un pool. A ogni push ci sono lint, test e una prova nel browser vero, e la pubblicazione su Cloudflare parte solo se è tutto verde. Sul telefono si installa come un'app e si aggiorna da solo.
 
 ## Lo spunto per il post
 Dal primo piccione all'alba su Roma: una notte intera giocabile, costruita a tappe con un commit e un diario per ognuna.

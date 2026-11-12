@@ -1,11 +1,12 @@
 // La scena di gioco: la notte intera. Il gatto si muove, i piccioni arrivano sempre più fitti, le armi partono
 // da sole (graffio, coda a frusta, pelo che vola), le crocchette fanno salire di livello e a ogni livello si sceglie
-// una carta (LevelUpScene). Il gatto ha sette vite; all'alba, dopo 15 minuti, si vince (EndScene).
+// una carta (LevelUpScene). Il gatto ha sette vite; all'alba, dopo la durata scelta nel titolo (5, 10 o 15 minuti),
+// si vince (EndScene).
 // Le regole stanno in src/logic/ e sono testate; i numeri in src/data/; qui si disegna e si collega.
 //
 // Contenuti:
 // - campi: lo stato della partita
-// - create, createStill, createPlay: la scena ferma della misura o la partita
+// - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita, comandi, interfaccia
 // - update e moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup: i piccioni da fuori dello schermo
@@ -22,6 +23,7 @@ import { TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
 import { drawCards } from "../logic/cards";
 import { formatClock } from "../logic/clock";
+import { DEFAULT_NIGHT } from "../logic/night";
 import { createHealth, heal, isDead, takeHit, type Health } from "../logic/health";
 import { chase, joystickVector, keyboardVector, type Vec } from "../logic/movement";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
@@ -78,6 +80,8 @@ export class GameScene extends Phaser.Scene {
   // il tempo di notte passato, in millisecondi di gioco: si ferma con la pausa e con la scelta delle carte
   private elapsed = 0;
   private duration = RUN.durationMs;
+  // i minuti della notte scelti nel titolo (3 con ?corta): decidono la durata e quale record si gioca
+  private nightMinutes = DEFAULT_NIGHT;
   private nextSpawnAt = 0;
   private points = 0;
   private kills = 0;
@@ -91,6 +95,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   // create: costruisce la scena, una volta per partita.
+  init(data?: { minutes?: number }) {
+    this.nightMinutes = data?.minutes ?? DEFAULT_NIGHT;
+  }
+
   create() {
     this.over = false;
     this.health = createHealth(CAT.maxHealth);
@@ -139,8 +147,10 @@ export class GameScene extends Phaser.Scene {
     // Il seme: con ?seme=123 nell'indirizzo la partita estrae sempre le stesse carte e le stesse nascite.
     const seedParam = params.get("seme");
     this.rng = createRng(seedParam ? Number(seedParam) : Date.now());
-    // La partita corta, per provare: con ?corta la notte dura 3 minuti invece di 15.
-    this.duration = params.has("corta") ? RUN.shortDurationMs : RUN.durationMs;
+    // La durata scelta nel titolo; per provare, con ?corta la notte dura 3 minuti qualunque sia la scelta.
+    // Le ondate seguono la frazione di notte passata (spawnPlan): in 5 minuti arrivano alla stessa ondata finale dei 15.
+    if (params.has("corta")) this.nightMinutes = RUN.shortDurationMs / 60_000;
+    this.duration = this.nightMinutes * 60_000;
 
     // Il terreno: una striscia di strada con tombino e foglie, ripetuta all'infinito.
     // È fisso sullo schermo e scorre il disegno, invece di muoversi: così la strada non finisce mai.
@@ -574,6 +584,7 @@ export class GameScene extends Phaser.Scene {
       livesLost: this.livesLost,
       dawn,
       level: this.xp.level,
+      minutes: this.nightMinutes,
     };
     this.scene.stop("LevelUp");
     this.scene.stop("Pause");

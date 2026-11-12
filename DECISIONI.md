@@ -9,6 +9,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Tappa 3a, 12 novembre 2026: carte e crescita come dati, la scelta in una scena sopra la partita
 - Tappa 3b, 12 novembre 2026: la notte intera, sette vite, punteggio condiviso, record, pausa
 - Dopo la prova sul telefono, 12 novembre 2026: il joystick in tutto lo schermo, il tocco nuovo sulle carte, le icone provvisorie
+- La durata della notte, 12 novembre 2026: 5, 10 o 15 minuti nel titolo, un record per durata, ondate compresse
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -155,3 +156,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** allungare l'attesa prima della scelta, oltre i 400 millisecondi: un pollice fermo più a lungo sceglierebbe lo stesso; aspettare le icone delle tavole, lasciando le carte vuote fino ad allora.
 - **Perché:** la causa del tocco sbagliato era che la carta ascoltava solo l'alzata del dito, non dove era cominciato il tocco. Ora conta il tocco intero, giù e su.
 - **Cosa comporta:** 5 test nuovi, 88 in tutto. Le icone sono provvisorie: quando arrivano quelle delle tavole si sostituisce `carte.png`.
+
+## 2026-11-12 · La durata della notte nel titolo: 5, 10 o 15 minuti
+- **Contesto:** Francesco vuole scegliere quanto dura la partita, «magari in un menu». Quindici minuti sul telefono sono tanti per una partita al volo.
+- **Scelta:** nel titolo tre pulsanti, 5, 10 e 15 minuti. Un tocco su un pulsante fa partire quella notte; sul computer 1, 2, 3, oppure frecce e spazio. L'ultima scelta resta nel browser. Ogni durata ha il suo record: i 15 minuti tengono la chiave di prima, quindi il record di chi aveva già giocato diventa quello dei 15. Le ondate seguono la frazione di notte passata, quindi in 5 minuti si arriva alla stessa ondata finale dei 15. `?corta` resta a 3 minuti, con un record suo. La logica sta in `src/logic/night.ts`, il tocco sui pulsanti usa `src/logic/tap.ts` come le carte.
+- **Alternative scartate:** un record solo, che in pratica batterebbe solo chi gioca 15 minuti; le ondate allo stesso ritmo dei 15, che farebbero della notte da 5 una prova facile. Scelte di Francesco, 12 novembre 2026.
+- **Perché:** una partita corta deve essere intera, con la sua salita e la sua alba, e i punteggi si confrontano solo a parità di durata.
+- **Cosa comporta:** 6 test nuovi, 94 in tutto. Alla tappa 6 la classifica online dovrà essere divisa per durata. Il bilanciamento della tappa 4 va provato su tutte e tre le durate.

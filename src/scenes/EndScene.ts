@@ -11,6 +11,8 @@ const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 
 export interface EndData extends RunResult {
   level: number;
+  // la durata della notte giocata: ogni durata ha il suo record
+  minutes: number;
 }
 
 export class EndScene extends Phaser.Scene {
@@ -28,7 +30,7 @@ export class EndScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const r = this.result;
     const score = computeScore(r);
-    const { record, isNew } = saveRecord(browserStorage(), score);
+    const { record, isNew } = saveRecord(browserStorage(), score, r.minutes);
 
     if (r.dawn) {
       this.add.image(0, 0, "alba").setOrigin(0, 0);
@@ -43,7 +45,7 @@ export class EndScene extends Phaser.Scene {
     const lines = [
       `${TEXTS.score} ${score}`,
       `${TEXTS.time} ${formatClock(r.survivedMs)}   ${TEXTS.kills} ${r.kills}   ${TEXTS.level} ${r.level}`,
-      isNew ? TEXTS.newRecord : `${TEXTS.record} ${record}`,
+      isNew ? `${TEXTS.newRecord} (${r.minutes} ${TEXTS.minutes})` : `${TEXTS.record} ${r.minutes} ${TEXTS.minutes}: ${record}`,
     ];
     lines.forEach((line, i) => {
       const color = i === 2 && isNew ? "#a6f05a" : "#ffffff";
