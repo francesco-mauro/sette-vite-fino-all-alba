@@ -30,7 +30,7 @@ L'obiettivo della tappa: ogni minuto una scelta, con crocchette, livelli e carte
 - **L'estrazione pesata, senza doppioni.** Ogni carta ha un peso: comune 10, rara 4. Si somma il peso di tutte, si tira un numero tra zero e la somma e si vede in quale fetta cade. La carta estratta esce dal sacchetto, così le tre carte sono sempre diverse.
 - **La curva dei livelli.** 5 crocchette per il primo livello, poi 3 in più ogni volta. All'inizio si sale spesso, poi ogni livello chiede di più. È un dato in `src/data/balance.ts`: cambiarla vuol dire cambiare due numeri.
 - **Una scena sopra l'altra.** `scene.pause()` ferma la partita, `scene.launch("LevelUp")` apre le carte sopra. La carta scelta torna alla partita con un evento, e la partita riparte con `scene.resume()`.
-- **Lo stesso orologio per tutto.** Le armi, l'invulnerabilità e la durata dei ciuffi usano l'orologio della scena, che si ferma quando si scelgono le carte e corre doppio con «veloce».
+- **Lo stesso orologio per tutto.** Le armi, l'invulnerabilità e la durata dei ciuffi usano l'orologio della scena, che si ferma quando si scelgono le carte e corre doppio con «veloce» (quattro volte dalla tappa 3b).
 - **Il problema di π e -π.** Per sapere se un piccione è dentro l'arco della coda si confronta il suo angolo con quello del gatto. Guardando a sinistra, π e -π sono la stessa direzione: la differenza tra due angoli va riportata tra -π e π, se no un piccione appena sotto sembrerebbe lontanissimo.
 
 ## Cosa è stato difficile
