@@ -84,3 +84,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** Husky o simple-git-hooks, che fanno la stessa cosa con un pacchetto in più; controllare solo i file cambiati con lint-staged, che oggi non serve perché il controllo intero dura circa 4 secondi.
 - **Perché:** è una funzione di git, si legge in dieci righe e non aggiunge dipendenze.
 - **Cosa comporta:** provato con un test rotto apposta: il controllo esce con codice 1 e il commit non nasce. Il controllo si può saltare con `--no-verify`: per questo GitHub Actions rifarà tutto a ogni push.
+
+## 2026-11-12 · Il controllo su GitHub con GitHub Actions
+- **Contesto:** il controllo prima del commit si può saltare (`--no-verify`) e c'è solo sui PC dove è stato fatto `npm install`. Serve un controllo che non dipenda dal PC.
+- **Scelta:** un workflow, `.github/workflows/ci.yml`, a ogni push e pull request verso main: macchina Ubuntu, Node 24, `npm ci`, `npm run check` (lint, tipi, test) e `npm run build`. Le azioni `actions/checkout` 7.0.1 e `actions/setup-node` 7.1.0 sono fissate all'hash del commit, con la versione nel commento. Permessi in sola lettura, `persist-credentials: false`, un push nuovo ferma il controllo vecchio dello stesso ramo, limite di 10 minuti.
+- **Alternative scartate:** le azioni con il tag `@v7`, più leggibili ma che possono cambiare sotto i piedi; una matrice con più versioni di Node, che a un gioco nel browser non serve; la cache di `node_modules` al posto di quella di npm.
+- **Perché:** è lo stesso controllo del PC, su una macchina pulita, e non si salta. Le due azioni sono uscite da più di sette giorni (checkout 7.0.1 il 20 luglio 2026, setup-node 7.1.0 l'8 ottobre 2026).
+- **Cosa comporta:** sul PC `npm ci`, `npm run check` e `npm run build` passano, e il file è YAML valido. La prima esecuzione vera si vede solo dopo il push. La pubblicazione resta a mano fino a Workers Builds.

@@ -1,5 +1,7 @@
 # Sette vite fino all'alba
 
+[![Controllo](https://github.com/francesco-mauro/sette-vite-fino-all-alba/actions/workflows/ci.yml/badge.svg)](https://github.com/francesco-mauro/sette-vite-fino-all-alba/actions/workflows/ci.yml)
+
 Un gatto randagio, Roma di notte, ondate di nemici: resisti fino all'alba. Gioco survivor in pixel art, nel browser, anche sul telefono in orizzontale.
 
 Un progetto mio, sviluppato con l'aiuto del mio agente AI.
@@ -15,6 +17,7 @@ In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto ferm
 - [phaser4-rex-plugins](https://github.com/rexrainbow/phaser3-rex-notes) per il joystick virtuale
 - [Vitest](https://vitest.dev) per i test della logica
 - [oxlint](https://oxc.rs/docs/guide/usage/linter.html) per il lint
+- [GitHub Actions](https://docs.github.com/actions) per rifare lint, tipi, test e build a ogni push
 - In arrivo: Playwright per la prova nel browser
 
 ## Provarlo in locale

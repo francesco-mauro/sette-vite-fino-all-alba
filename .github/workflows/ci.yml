@@ -1,0 +1,44 @@
+# Il controllo su GitHub: a ogni push e a ogni pull request verso main
+# rifà lint, tipi, test e build su una macchina pulita.
+# È lo stesso `npm run check` del controllo prima del commit, più la build,
+# e non si può saltare come quello sul PC.
+name: Controllo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Il workflow legge soltanto il codice: nessun permesso di scrittura.
+permissions:
+  contents: read
+
+# Due push ravvicinati: il controllo vecchio si ferma e resta solo il nuovo.
+concurrency:
+  group: controllo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  controllo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Le azioni sono fissate al commit esatto, con la versione nel commento.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+
+      # npm ci installa esattamente quello che dice package-lock.json.
+      - run: npm ci
+
+      - name: Lint, tipi e test
+        run: npm run check
+
+      - name: Build
+        run: npm run build
