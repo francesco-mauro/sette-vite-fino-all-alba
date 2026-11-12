@@ -9,7 +9,7 @@ Un progetto mio, sviluppato con l'aiuto del mio agente AI.
 ## A che punto è
 In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
 
-È fatto per installarsi sul telefono come un'app: si apre a tutto schermo dall'icona, gira anche senza rete e si aggiorna da solo quando esce una versione nuova. Per ora è provato nel browser del computer, la prova sul telefono è in corso.
+È fatto per installarsi sul telefono come un'app: si apre a tutto schermo dall'icona, gira anche senza rete e si aggiorna da solo quando esce una versione nuova. Provato nel browser del computer e su un telefono Android.
 
 ## Lo stack
 - [Phaser 4](https://phaser.io), il motore del gioco

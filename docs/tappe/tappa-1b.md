@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo se è tutto verde. Dal push al gioco online non passa più niente a mano.
 
-**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Mancano la prova nel browser con Playwright, la rotta `/api/ping`, la prova sul telefono e la prova finale con un test rotto apposta.
+**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Mancano la prova nel browser con Playwright, la rotta `/api/ping` e la prova finale con un test rotto apposta.
 
 **Fatto quando:** `/api/ping` risponde dall'indirizzo pubblico; un push verde pubblica da solo; un test rotto ferma il commit e la pubblicazione, provato.
 
@@ -32,7 +32,7 @@ La versione di oxlint è la 1.91.0 e non l'ultima, la 1.93.0: nel progetto un pa
 - **`npm ci` e non `npm install`.** `npm ci` installa esattamente le versioni scritte in `package-lock.json` e si ferma se il lockfile non va d'accordo con `package.json`. Non lo riscrive mai: su una macchina di controllo è quello che si vuole.
 - **Azioni fissate al commit.** Le azioni sono programmi scritti da altri. Con `@v7` si prende quello che il loro autore chiama v7 oggi, e domani può cambiare. Con l'hash del commit si prende sempre lo stesso codice; la versione resta scritta nel commento.
 - **PWA, il sito che si installa.** Una pagina web con un manifest (il biglietto da visita: nome, icone, come aprirsi) e un service worker. In generale Chrome su Android allora permette di installarlo dal suo menu: compare l'icona sulla Home e il gioco si apre a tutto schermo, senza la barra del browser.
-- **Service worker.** Un piccolo programma che il browser tiene accanto alla pagina e che si mette in mezzo tra la pagina e la rete. Qui, alla prima apertura, salva sul telefono tutti i file del gioco; dalle volte dopo li serve da lì, quindi il gioco può partire anche senza rete (provato nel browser del PC, sul telefono è da provare).
+- **Service worker.** Un piccolo programma che il browser tiene accanto alla pagina e che si mette in mezzo tra la pagina e la rete. Qui, alla prima apertura, salva sul telefono tutti i file del gioco; dalle volte dopo li serve da lì, quindi il gioco può partire anche senza rete (provato nel browser del PC e sul telefono).
 - **L'aggiornamento automatico.** A ogni apertura con la rete il service worker controlla se c'è una versione nuova. Se c'è la scarica in silenzio e prende il posto della vecchia; la partita aperta non si ricarica, la versione nuova si vede dalla prossima apertura. Nessun pulsante «aggiorna», nessuno store.
 - **Permessi minimi.** `permissions: contents: read`: il workflow può leggere il codice e nient'altro. Se un'azione fosse compromessa, non potrebbe scrivere nel repository.
 
@@ -56,6 +56,11 @@ Nel browser di prova, con la build servita da Wrangler in locale come la servir�
 - **Senza rete.** Server spento e pagina ricaricata: il gioco e la misura si aprono lo stesso, serviti dal service worker.
 - **Aggiornamento.** Con la versione A attiva è stata pubblicata in locale una versione B con un segno nascosto nella pagina. All'apertura successiva il gioco è partito ancora con la A, la B si è installata e ha preso il posto della A senza restare in attesa, e la copia della A è stata cancellata. All'apertura dopo, la pagina era la B.
 
+Sul telefono vero, il 12 novembre, con il gioco pubblicato da Workers Builds:
+- **Installato e senza rete.** Installato da Chrome, si apre dall'icona a tutto schermo e in orizzontale, e parte anche in modalità aereo.
+- **Aggiornamento.** È stata pubblicata una versione con la scritta «prova aggiornamento 1» in un angolo. Alle prime aperture dall'icona non c'era, poi è comparsa da sola. Dalla schermata del telefono la scena è ingrandita 4 volte, con le bande ai lati. La scritta poi è stata tolta.
+- **Da ricordare per l'interfaccia.** La scritta stava a 8 pixel dall'angolo in alto a sinistra e sul telefono sembrava tagliata, anche se nella schermata è intera. La causa probabile, non verificata: in orizzontale quell'angolo cade sul bordo arrotondato dello schermo o sul foro della fotocamera, che la schermata non mostra. Punteggio e pulsanti andranno tenuti lontani dagli angoli.
+
 ## La prova con il test rotto
 Il 12 novembre il test dell'ingrandimento sul telefono è stato cambiato apposta, aspettando 5 al posto di 4. `git hook run pre-commit` ha risposto con 1 test fallito su 26 e «commit fermato», ed è uscito con codice 1. Rimesso il test, 26 su 26 e «tutto verde».
 
@@ -65,5 +70,4 @@ Il 12 novembre il test dell'ingrandimento sul telefono è stato cambiato apposta
 ## Da fare
 - La prova nel browser con Playwright: il gioco si apre e disegna.
 - La rotta `/api/ping` nello stesso Worker dei file.
-- Provare l'installazione e l'aggiornamento automatico sul telefono vero.
 - La prova finale: un test rotto ferma il commit e anche la pubblicazione.
