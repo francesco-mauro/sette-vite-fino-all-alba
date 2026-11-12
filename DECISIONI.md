@@ -8,6 +8,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Tappa 2, 12 novembre 2026: il joystick sotto il pollice, Silkscreen come carattere
 - Tappa 3a, 12 novembre 2026: carte e crescita come dati, la scelta in una scena sopra la partita
 - Tappa 3b, 12 novembre 2026: la notte intera, sette vite, punteggio condiviso, record, pausa
+- Dopo la prova sul telefono, 12 novembre 2026: il joystick in tutto lo schermo, il tocco nuovo sulle carte, le icone provvisorie
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -147,3 +148,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** sette cuori al posto della barra, l'altra strada del 7 novembre; il punteggio calcolato nella scena, che il Worker non potrebbe riusare; un salvataggio senza protezioni, che in una finestra privata farebbe fermare il gioco; la tabella delle ondate minuto per minuto, che è della tappa 4.
 - **Perché:** è il traguardo minimo del progetto: se il tempo finisce qui, il gioco è già da mostrare.
 - **Cosa comporta:** le sette vite sono applicate come preferite da lui; si cambiano se alla prova non gli piacciono. Gif e post restano da fare con lui.
+
+## 2026-11-12 · Dopo la prova sul telefono: joystick ovunque, tocco nuovo sulle carte, icone provvisorie
+- **Contesto:** la prima partita sul telefono di Francesco ha trovato tre cose. Il joystick partiva solo nella metà sinistra, e lui lo voleva anche a destra. Se il pollice era sullo schermo quando si saliva di livello, alzandolo sceglieva la carta che stava sotto. Naso fino, come gli altri tre potenziamenti, non aveva un'icona.
+- **Scelta:** il joystick parte dove si appoggia il primo dito, in tutto lo schermo; pausa e pulsanti di debug fermano il tocco prima che arrivi al joystick. Una carta si sceglie solo se lo stesso dito si appoggia e si alza su di lei dopo che è comparsa (`src/logic/tap.ts`). Le icone dei quattro potenziamenti le disegna `art/icone_carte.py`, con forme semplici e i colori della palette.
+- **Alternative scartate:** allungare l'attesa prima della scelta, oltre i 400 millisecondi: un pollice fermo più a lungo sceglierebbe lo stesso; aspettare le icone delle tavole, lasciando le carte vuote fino ad allora.
+- **Perché:** la causa del tocco sbagliato era che la carta ascoltava solo l'alzata del dito, non dove era cominciato il tocco. Ora conta il tocco intero, giù e su.
+- **Cosa comporta:** 5 test nuovi, 88 in tutto. Le icone sono provvisorie: quando arrivano quelle delle tavole si sostituisce `carte.png`.

@@ -7,7 +7,7 @@ L'obiettivo della tappa: il primo minuto di gioco, sul computer e sul telefono.
 **Fatto quando:** si gioca un minuto sul computer e sul suo telefono: il gatto si muove, i piccioni inseguono, il graffio li elimina, si può morire; test verdi; online.
 
 ## Cosa c'è di nuovo
-I numeri sono quelli della tappa 2. Dalla 3b il piccione toglie 6 punti invece di 10, l'invulnerabilità dura 1 secondo invece di 0,8 e il tetto del pool è 300 invece di 200 (vedi il diario della 3b).
+I numeri sono quelli della tappa 2. Dalla 3b il piccione toglie 6 punti invece di 10, l'invulnerabilità dura 1 secondo invece di 0,8 e il tetto del pool è 300 invece di 200; il joystick parte in tutto lo schermo, non solo nella metà sinistra (vedi il diario della 3b).
 
 - **Gli sprite dalle tavole, con uno script nel repository.** `art/sprite_dalle_tavole.py` apre le tavole di stile, che stanno fuori dal repository, prende ogni immagine dalla sua didascalia e toglie i sampietrini da sotto. Poi mette i fotogrammi in fila in `public/assets/` e controlla che ogni colore sia uno dei 24 della palette. Sono entrati il piccione e il graffio, e già pronti per la tappa 3a la crocchetta, la coda a frusta e il pelo che vola.
 - **Il carattere pixel.** Silkscreen, preso dalle stesse tavole, con la sua licenza libera (OFL). Il gioco lo carica prima di partire.

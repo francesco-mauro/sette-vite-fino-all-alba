@@ -12,7 +12,7 @@ In costruzione. Chiuse la tappa 1a e la 1b: a ogni push ripartono lint, tipi e t
 È fatto per installarsi sul telefono come un'app: si apre a tutto schermo dall'icona, gira anche senza rete e si aggiorna da solo quando esce una versione nuova. Provato nel browser del computer e su un telefono Android.
 
 ## Come si gioca
-Si muove solo il gatto: attacca da solo. Sul computer frecce o WASD; sul telefono, in orizzontale, si appoggia il pollice nella metà sinistra dello schermo e compare il joystick. Quando si sale di livello si tocca una delle tre carte (sul computer 1, 2, 3). Finita la barra rossa il gatto perde una delle sette vite e riparte; all'alba si vince. La pausa è il pulsante in alto a destra, o Esc, e scatta da sola se si cambia app. Per provare: `?corta` fa durare la notte 3 minuti, `?seme=123` estrae sempre gli stessi numeri, `?debug` accende il pannello (fotogrammi al secondo, nemici vivi, invincibilità, piccioni in più, velocità quadrupla).
+Si muove solo il gatto: attacca da solo. Sul computer frecce o WASD; sul telefono, in orizzontale, si appoggia il pollice dove si vuole, a destra o a sinistra, e lì compare il joystick. Quando si sale di livello si tocca una delle tre carte (sul computer 1, 2, 3): il dito che era già sullo schermo non sceglie, serve un tocco nuovo. Finita la barra rossa il gatto perde una delle sette vite e riparte; all'alba si vince. La pausa è il pulsante in alto a destra, o Esc, e scatta da sola se si cambia app. Per provare: `?corta` fa durare la notte 3 minuti, `?seme=123` estrae sempre gli stessi numeri, `?debug` accende il pannello (fotogrammi al secondo, nemici vivi, invincibilità, piccioni in più, velocità quadrupla).
 
 ## Lo stack
 - [Phaser 4](https://phaser.io), il motore del gioco

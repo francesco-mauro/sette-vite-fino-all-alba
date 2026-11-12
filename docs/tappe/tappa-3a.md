@@ -48,5 +48,5 @@ Nella prova automatica, invincibile, con lo stesso seme: livello 2 a 13 secondi,
 Una crocchetta a forma di pesce, un supplì come carta di riserva, e dietro un'estrazione pesata con seme.
 
 ## Da fare
-- Le 12 icone delle carte: per ora le armi usano un fotogramma del loro effetto e i potenziamenti non hanno icona.
-- Provare la scelta delle carte con il pollice, sul telefono.
+- Le 12 icone delle carte: per ora le armi usano un fotogramma del loro effetto; dalla 3b i potenziamenti hanno icone provvisorie, disegnate da `art/icone_carte.py`.
+- Provare la scelta delle carte con il pollice, sul telefono: alla prima prova il dito già sullo schermo sceglieva da solo, corretto nella 3b.

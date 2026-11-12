@@ -216,7 +216,8 @@ export class GameScene extends Phaser.Scene {
     this.input.addPointer(1);
     this.joystickGfx = this.add.graphics().setScrollFactor(0).setDepth(90);
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {
-      if (this.over || this.joystick || p.x > this.scale.width / 2) return;
+      // in tutto lo schermo, a destra o a sinistra: pausa e pulsanti di debug fermano il tocco prima che arrivi qui
+      if (this.over || this.joystick) return;
       this.joystick = { pointerId: p.id, start: { x: p.x, y: p.y }, current: { x: p.x, y: p.y } };
     });
     this.input.on("pointermove", (p: Phaser.Input.Pointer) => {

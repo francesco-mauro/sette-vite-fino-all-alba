@@ -30,6 +30,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet("graffio", "assets/graffio.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("coda", "assets/coda.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("pelo", "assets/pelo.png", { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet("carte", "assets/carte.png", { frameWidth: 16, frameHeight: 16 });
   }
 
   create() {

@@ -17,6 +17,7 @@ L'obiettivo della tappa: il traguardo minimo, una partita intera da mostrare.
 - **Il record.** Si salva nel browser e resta anche dopo aver ricaricato. Se il browser non permette di salvare (finestra privata, dati bloccati), il gioco va avanti lo stesso.
 - **La pausa.** Il pulsante in alto a destra, Esc o P. Scatta da sola quando si cambia scheda o app, così tornando la partita non riparte prima di te. Dalla pausa si torna anche al titolo.
 - **La riga dei primi 30 secondi.** In basso: «muoviti: il gatto attacca da solo».
+- **Dopo la prima prova sul telefono.** Il joystick compare dove si appoggia il pollice, anche nella metà destra. Il dito che era sullo schermo quando si sale di livello non sceglie più la carta: serve un tocco nuovo. I quattro potenziamenti hanno un'icona provvisoria (vedi `DECISIONI.md`).
 - **Per provare.** `?corta` fa durare la notte 3 minuti. Nel pannello di debug, «veloce» ora va a quattro volte la velocità normale: la notte corta si gioca in 45 secondi veri.
 
 ## Le tecnologie di questa tappa, e perché
@@ -37,6 +38,7 @@ L'obiettivo della tappa: il traguardo minimo, una partita intera da mostrare.
 ## Cosa è stato difficile
 - **Il segno della prova di fumo.** Il primo segno sul canvas lo metteva la scena di gioco. Ora il gioco parte dal titolo: il segno lo mette il titolo dopo aver caricato tutte le immagini. Poi la prova preme spazio e aspetta il segno della partita.
 - **Troppo difficile per un telefono.** Con 10 di danno a piccione, nella prova automatica la prima barra finiva in 24 secondi. Ora il piccione toglie 6 e l'invulnerabilità dura un secondo. È un numero provvisorio: la bilanciatura vera è della tappa 4.
+- **La carta scelta da sola.** Sul telefono, con il pollice sul joystick nel momento in cui si saliva di livello, alzandolo si sceglieva la carta sotto il dito. L'attesa di 400 millisecondi non bastava: la carta ascoltava solo l'alzata del dito. Ora una carta vale solo se il dito si appoggia e si alza su di lei, dopo che è comparsa. Provato con un tocco simulato, senza finestra: pollice tenuto giù nella metà destra per 25 secondi, carte rimaste dopo l'alzata, scelta con un tocco nuovo.
 - **Le scritte sopra i lampioni.** La luce di un lampione dietro le barre rendeva il livello difficile da leggere. Dietro l'interfaccia in alto a sinistra ora c'è un fondo scuro mezzo trasparente.
 
 ## Cosa abbiamo misurato
@@ -45,7 +47,7 @@ Con lo script di prova automatica, senza finestra:
 - **Due minuti di notte lunga.** Non invincibile, a velocità normale, con il gatto che gira in cerchio senza schivare: livello 9, 135 piccioni presi, 3 vite perse su 7, 60 fotogrammi al secondo. Era prima di abbassare il danno.
 
 ## La domanda da colloquio
-«Fammi vedere il gioco: cosa c'è dentro di tecnico?» Un survivor in Phaser 4 e TypeScript, con le regole separate dal disegno e provate da 83 test. Le ondate, il punteggio e le carte sono dati, il caso viene da un generatore con seme. I nemici vivono in un pool. A ogni push ci sono lint, test e una prova nel browser vero, e la pubblicazione su Cloudflare parte solo se è tutto verde. Sul telefono si installa come un'app e si aggiorna da solo.
+«Fammi vedere il gioco: cosa c'è dentro di tecnico?» Un survivor in Phaser 4 e TypeScript, con le regole separate dal disegno e provate da 88 test. Le ondate, il punteggio e le carte sono dati, il caso viene da un generatore con seme. I nemici vivono in un pool. A ogni push ci sono lint, test e una prova nel browser vero, e la pubblicazione su Cloudflare parte solo se è tutto verde. Sul telefono si installa come un'app e si aggiorna da solo.
 
 ## Lo spunto per il post
 Dal primo piccione all'alba su Roma: una notte intera giocabile, costruita a tappe con un commit e un diario per ognuna.
@@ -53,5 +55,5 @@ Dal primo piccione all'alba su Roma: una notte intera giocabile, costruita a tap
 ## Da fare
 - La gif per il README, registrata insieme.
 - Il post su LinkedIn: è a nome di Francesco, quindi passa dalla revisione di «Scrittura a suo nome».
-- Provare la notte intera sul telefono vero: joystick, carte con il pollice, pausa cambiando app.
+- Riprovare sul telefono vero dopo le correzioni della prima prova: joystick a destra, carte con il pollice, pausa cambiando app.
 - La bilanciatura, con i numeri scelti da Francesco: tappa 4.

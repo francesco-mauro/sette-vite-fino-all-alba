@@ -1,19 +1,25 @@
 // La scelta tra tre carte: una scena sopra la partita, che intanto è ferma e scurita.
 // Riceve le tre carte già estratte (src/logic/cards.ts) e restituisce quella scelta con l'evento "card-picked".
 // Sul telefono si tocca la carta; sul computer anche 1, 2, 3, oppure frecce e invio.
+// Il tocco vale solo se il dito si appoggia sulla carta dopo che è comparsa (src/logic/tap.ts).
 import * as Phaser from "phaser";
 import { CARDS } from "../data/cards";
 import { CARD_TEXTS, TEXTS } from "../data/texts";
+import { createTapGuard, type TapGuard } from "../logic/tap";
 
 const FONT = { fontFamily: "Silkscreen", fontSize: "8px", color: "#ffffff" };
 const CARD_W = 128;
 const CARD_H = 132;
 const COLORS = { common: 0xcfe0ff, rare: 0xffc85a, fallback: 0xa6f05a, selected: 0xffffff };
-// le armi hanno come icona un fotogramma del loro effetto
+// le armi hanno come icona un fotogramma del loro effetto; i potenziamenti le icone provvisorie di art/icone_carte.py
 const ICONS: Record<string, { key: string; frame: number }> = {
   scratch: { key: "graffio", frame: 1 },
   tail: { key: "coda", frame: 1 },
   fur: { key: "pelo", frame: 0 },
+  speed: { key: "carte", frame: 0 },
+  health: { key: "carte", frame: 1 },
+  damage: { key: "carte", frame: 2 },
+  magnet: { key: "carte", frame: 3 },
   heal: { key: "crocchetta", frame: 0 },
   points: { key: "crocchetta", frame: 1 },
 };
@@ -29,6 +35,7 @@ export class LevelUpScene extends Phaser.Scene {
   private selected = 0;
   private ready = false;
   private levels: Record<string, number> = {};
+  private tap: TapGuard = createTapGuard();
 
   constructor() {
     super("LevelUp");
@@ -40,6 +47,7 @@ export class LevelUpScene extends Phaser.Scene {
     this.frames = [];
     this.ready = false;
     this.levels = data.levels;
+    this.tap = createTapGuard();
   }
 
   create() {
@@ -55,7 +63,7 @@ export class LevelUpScene extends Phaser.Scene {
     });
     this.highlight();
 
-    // Un attimo prima di accettare la scelta: il dito che stava sul joystick non deve scegliere per sbaglio.
+    // Un attimo prima di accettare la scelta, anche da tastiera: un tasto premuto mentre le carte compaiono non sceglie.
     this.time.delayedCall(400, () => (this.ready = true));
     const kb = this.input.keyboard;
     kb?.on("keydown", (e: KeyboardEvent) => {
@@ -90,7 +98,13 @@ export class LevelUpScene extends Phaser.Scene {
       this.selected = index;
       this.highlight();
     });
-    frame.on("pointerup", () => this.pick(index));
+    // il dito che stava sul joystick quando si è saliti di livello non ha un "giù" qui: alzandolo non sceglie
+    frame.on("pointerdown", (p: Phaser.Input.Pointer) => {
+      if (this.ready) this.tap.down(p.id, index);
+    });
+    frame.on("pointerup", (p: Phaser.Input.Pointer) => {
+      if (this.tap.up(p.id, index)) this.pick(index);
+    });
   }
 
   private move(step: number) {
