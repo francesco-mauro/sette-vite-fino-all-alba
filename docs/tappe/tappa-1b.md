@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo se è tutto verde. Dal push al gioco online non passa più niente a mano.
 
-**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico. Mancano la prova nel browser con Playwright, la rotta `/api/ping`, la pubblicazione automatica con Workers Builds e la prova finale con un test rotto apposta.
+**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Mancano la prova nel browser con Playwright, la rotta `/api/ping`, la prova sul telefono e la prova finale con un test rotto apposta.
 
 **Fatto quando:** `/api/ping` risponde dall'indirizzo pubblico; un push verde pubblica da solo; un test rotto ferma il commit e la pubblicazione, provato.
 
@@ -10,7 +10,7 @@ L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo s
 - **12 novembre 2026, il lint e il controllo prima del commit.** oxlint controlla il codice a ogni commit insieme ai tipi e ai test. Ha trovato una cosa sola, ripetuta 19 volte: il modo di importare Phaser, sistemato in tre file. Il controllo prima del commit è provato con un test rotto apposta: il commit si ferma.
 - **12 novembre 2026, il controllo su GitHub.** Il file `.github/workflows/ci.yml`: a ogni push e a ogni pull request verso main GitHub prende una macchina Linux pulita, installa i pacchetti con `npm ci` e lancia lo stesso `npm run check` del PC, più la build. La spunta verde o la croce rossa compaiono accanto a ogni commit su GitHub e nel README. La prima esecuzione, sul commit `293e877`, è verde: tutti i passi in 25 secondi.
 - **12 novembre 2026, il gioco si installa sul telefono.** Anticipato dalla tappa 5 perché Francesco vuole vederlo e installarlo dal telefono, aggiornato da solo come Mnemosine. Con vite-plugin-pwa il gioco ha un manifest (nome, icone, tutto schermo, orizzontale) e un service worker che tiene sul telefono i 14 file che servono per giocare, per poter giocare anche senza rete. Provato nel browser del computer; sul telefono è da provare. Le icone sono il gatto fermo ingrandito, fatte da `art/icone.py`. La versione di Node è scritta una volta sola in `.node-version`.
-- **12 novembre 2026, Workers Builds collegato.** Dal sito di Cloudflare il Worker è collegato al repository su GitHub, ramo main. A ogni push Cloudflare lancia `npm run check && npm run build` e, solo se passa, `npx wrangler deploy`. Le anteprime per gli altri rami sono spente: si lavora solo su main.
+- **12 novembre 2026, Workers Builds collegato.** Dal sito di Cloudflare il Worker è collegato al repository su GitHub, ramo main. A ogni push Cloudflare lancia `npm run check && npm run build` e, solo se passa, `npx wrangler deploy`. Le anteprime per gli altri rami sono spente: si lavora solo su main. La prima pubblicazione automatica, partita da questo stesso commit, è andata a buon fine in meno di un minuto.
 
 ## Le tecnologie di questa tappa, e perché
 | Strumento | Versione | Cosa fa qui | Perché questo |
@@ -60,11 +60,10 @@ Nel browser di prova, con la build servita da Wrangler in locale come la servir�
 Il 12 novembre il test dell'ingrandimento sul telefono è stato cambiato apposta, aspettando 5 al posto di 4. `git hook run pre-commit` ha risposto con 1 test fallito su 26 e «commit fermato», ed è uscito con codice 1. Rimesso il test, 26 su 26 e «tutto verde».
 
 ## La domanda da colloquio
-«Cosa succede dal tuo push al gioco online?» Per ora fino a metà: prima ancora del push, a ogni commit, partono lint, tipi e test, e se uno è rosso il commit non nasce. Dopo il push GitHub Actions rifà tutto, più la build, su una macchina pulita, e segna il commit verde o rosso. La pubblicazione automatica arriva con Workers Builds.
+«Cosa succede dal tuo push al gioco online?» Prima ancora del push, a ogni commit, partono lint, tipi e test, e se uno è rosso il commit non nasce. Dopo il push GitHub Actions rifà tutto, più la build, su una macchina pulita, e segna il commit verde o rosso. Nello stesso momento Workers Builds di Cloudflare prende lo stesso commit, rifà il controllo e la build e, solo se passano, pubblica il gioco. Il telefono trova la versione nuova alla prima apertura con la rete e la usa dalla volta dopo.
 
 ## Da fare
 - La prova nel browser con Playwright: il gioco si apre e disegna.
 - La rotta `/api/ping` nello stesso Worker dei file.
-- Vedere la prima pubblicazione automatica andare a buon fine.
 - Provare l'installazione e l'aggiornamento automatico sul telefono vero.
 - La prova finale: un test rotto ferma il commit e anche la pubblicazione.
