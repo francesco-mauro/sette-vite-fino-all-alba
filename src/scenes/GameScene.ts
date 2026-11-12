@@ -31,5 +31,8 @@ export class GameScene extends Phaser.Scene {
 
     // Il gatto: fotogramma 0, quello fermo, al centro.
     this.add.sprite(width / 2, height / 2, "gatto", 0);
+
+    // Un segno sul canvas per la prova di fumo (tests/e2e): la scena è costruita.
+    this.game.canvas.dataset.scena = "pronta";
   }
 }

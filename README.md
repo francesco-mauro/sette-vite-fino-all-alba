@@ -20,8 +20,8 @@ In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto ferm
 - [Vitest](https://vitest.dev) per i test della logica
 - [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) per installarlo sul telefono e giocare senza rete
 - [oxlint](https://oxc.rs/docs/guide/usage/linter.html) per il lint
-- [GitHub Actions](https://docs.github.com/actions) per rifare lint, tipi, test e build a ogni push
-- In arrivo: Playwright per la prova nel browser
+- [Playwright](https://playwright.dev) per la prova di fumo: il gioco si apre in un browser vero senza errori
+- [GitHub Actions](https://docs.github.com/actions) per rifare lint, tipi, test, build e prova di fumo a ogni push
 
 ## Provarlo in locale
 Serve Node.js.
@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare. `npm test` lancia i test, `npm run lint` il lint, `npm run check` tutti e due più il controllo dei tipi. Lo stesso controllo parte da solo prima di ogni commit e lo ferma se qualcosa è rosso: `npm install` lo attiva.
+Poi si apre l'indirizzo che stampa Vite. `npm run build` controlla i tipi e prepara la versione da pubblicare in `dist/`. `npm run preview:worker` serve quella versione in locale con Wrangler, come farà Cloudflare. `npm test` lancia i test, `npm run lint` il lint, `npm run check` tutti e due più il controllo dei tipi. Dopo la build, `npm run test:e2e` lancia la prova di fumo con Playwright (la prima volta serve `npx playwright install chromium`). Lo stesso controllo parte da solo prima di ogni commit e lo ferma se qualcosa è rosso: `npm install` lo attiva.
 
 Con `?misura` in fondo all'indirizzo si accende la misura: sprite finti che si muovono, un contatore dei fotogrammi e il joystick virtuale. Come si legge è scritto nel [diario della tappa](docs/tappe/tappa-1a.md).
 

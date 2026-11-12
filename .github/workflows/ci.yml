@@ -1,6 +1,6 @@
 # Il controllo su GitHub: a ogni push e a ogni pull request verso main
-# rifà lint, tipi, test e build su una macchina pulita.
-# È lo stesso `npm run check` del controllo prima del commit, più la build,
+# rifà lint, tipi, test e build su una macchina pulita, poi la prova di fumo nel browser.
+# È lo stesso `npm run check` del controllo prima del commit, più la build e la prova di fumo,
 # e non si può saltare come quello sul PC.
 name: Controllo
 
@@ -43,3 +43,11 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      # La prova di fumo: Chromium apre la build appena fatta e controlla che il gioco parta.
+      # Serve solo il Chromium senza schermo (--only-shell), con le librerie di sistema che vuole.
+      - name: Browser per la prova di fumo
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: Prova di fumo
+        run: npm run test:e2e

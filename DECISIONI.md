@@ -2,6 +2,10 @@
 
 Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, alternative scartate, perché, cosa comporta.
 
+## Contenuti
+- Tappa 1a, 8-10 novembre 2026: Vite e TypeScript a mano, ingrandimento intero, due PC, il Worker statico, la regola dei sette giorni, l'icona, la misura, Vitest, il joystick, le misure arrotondate
+- Tappa 1b, 12 novembre 2026: oxlint, il controllo prima del commit, GitHub Actions, il gioco installabile, la prova di fumo con Playwright
+
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
 - **Scelta:** progetto montato a mano con tre pacchetti: `phaser` 4.2.1, `vite` 8.3.6, `typescript` 7.0.2.
@@ -97,4 +101,11 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Scelta:** vite-plugin-pwa 2.0.0 in `vite.config.ts`: manifest con nome, icone, tutto schermo e orizzontale; service worker di Workbox che tiene sul telefono i 14 file del gioco; `registerType: "autoUpdate"` con `skipWaiting` e `clientsClaim` scritti a mano. Le icone escono dal gatto fermo con `art/icone.py`, ingrandito senza sfumare su fondo `#1c2133`; quella `maskable` ha il gatto più piccolo, perché Android la ritaglia.
 - **Alternative scartate:** manifest e service worker scritti a mano, più da mantenere; un pulsante «aggiorna» o un avviso, che a un gioco non serve; ricaricare la pagina appena arriva la versione nuova, che interromperebbe la partita.
 - **Perché:** è la strada già provata su Mnemosine. Con `injectRegister: "script"` il plugin non attiva da solo il cambio immediato: senza le due righe la versione nuova restava in attesa (provato).
-- **Cosa comporta:** la versione nuova si vede dalla seconda apertura con la rete, mai a metà partita. Le prove nel browser del PC (installabile, senza rete, aggiornamento da A a B) sono nel diario della 1b; sul telefono vero sono da fare. La versione di Node è in `.node-version` (24), letta da GitHub Actions e da Workers Builds.
+- **Cosa comporta:** la versione nuova si vede a un'apertura successiva con la rete, mai a metà partita. Le prove nel browser del PC (installabile, senza rete, aggiornamento da A a B) sono nel diario della 1b; sul telefono vero sono state fatte il 12 novembre, e per l'aggiornamento è servita più di un'apertura. La versione di Node è in `.node-version` (24), letta da GitHub Actions e da Workers Builds.
+
+## 2026-11-12 · La prova di fumo con Playwright, solo su GitHub
+- **Contesto:** i test di Vitest provano la logica, ma non dicono se la build si apre nel browser: un'immagine con il nome sbagliato o un errore all'avvio passerebbero.
+- **Scelta:** Playwright 1.64.1, una sola prova in `tests/e2e/fumo.e2e.ts`, solo Chromium. Apre la build servita da `vite preview` (il gioco e `?misura`), aspetta il segno `data-scena="pronta"` che `GameScene` mette sul canvas alla fine di `create()`, e controlla che non ci siano errori in console, errori di JavaScript o immagini che non arrivano come `image/png`. Gira con `npm run test:e2e` e su GitHub Actions dopo la build; non nel controllo prima del commit e non in Workers Builds.
+- **Alternative scartate:** prove di gioco vere sul canvas (premere tasti, muovere il gatto), fragili in un browser senza schermo; più browser, che per una prova di fumo non servono; un'attesa a tempo fisso al posto del segno sul canvas; il nome `.spec.ts`, che Vitest avrebbe preso per suo.
+- **Perché:** è il piano della tappa: prova di fumo solo in CI, il controllo prima del commit resta veloce. Il file `.e2e.ts` tiene separati i due mondi senza toccare la configurazione di Vitest.
+- **Cosa comporta:** provata rotta apposta, con un'immagine dal nome sbagliato: rossa, e ha mostrato che `vite preview` risponde «200» con la pagina al posto di un file che non c'è, per questo si controlla il tipo. Workers Builds non aspetta GitHub: se solo la prova di fumo è rossa, Cloudflare pubblica lo stesso, perché il suo comando lancia `npm run check` e la build, non Playwright.

@@ -3,3 +3,6 @@ node_modules/
 # la build: la rifà vite build
 dist/
 .wrangler/
+# la prova di fumo di Playwright: registrazioni delle prove fallite e rapporto
+test-results/
+playwright-report/

@@ -2,7 +2,7 @@
 
 L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo se è tutto verde. Dal push al gioco online non passa più niente a mano.
 
-**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Mancano la prova nel browser con Playwright, la rotta `/api/ping` e la prova finale con un test rotto apposta.
+**Stato: in corso dal 12 novembre 2026.** Fatti il lint, il controllo prima del commit, il controllo su GitHub con GitHub Actions e, anticipato su richiesta, il gioco installabile sul telefono con l'aggiornamento automatico, e la pubblicazione automatica con Workers Builds. Il gioco installato è provato sul telefono, aggiornamento compreso. Fatta anche la prova di fumo nel browser con Playwright. Mancano la rotta `/api/ping` e la prova finale con un test rotto apposta.
 
 **Fatto quando:** `/api/ping` risponde dall'indirizzo pubblico; un push verde pubblica da solo; un test rotto ferma il commit e la pubblicazione, provato.
 
@@ -11,6 +11,7 @@ L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo s
 - **12 novembre 2026, il controllo su GitHub.** Il file `.github/workflows/ci.yml`: a ogni push e a ogni pull request verso main GitHub prende una macchina Linux pulita, installa i pacchetti con `npm ci` e lancia lo stesso `npm run check` del PC, più la build. La spunta verde o la croce rossa compaiono accanto a ogni commit su GitHub e nel README. La prima esecuzione, sul commit `293e877`, è verde: tutti i passi in 25 secondi.
 - **12 novembre 2026, il gioco si installa sul telefono.** Anticipato dalla tappa 5 perché Francesco vuole vederlo e installarlo dal telefono, aggiornato da solo come Mnemosine. Con vite-plugin-pwa il gioco ha un manifest (nome, icone, tutto schermo, orizzontale) e un service worker che tiene sul telefono i 14 file che servono per giocare, per poter giocare anche senza rete. Provato nel browser del computer e poi sul telefono (sotto, «Le prove della versione installabile»). Le icone sono il gatto fermo ingrandito, fatte da `art/icone.py`. La versione di Node è scritta una volta sola in `.node-version`.
 - **12 novembre 2026, Workers Builds collegato.** Dal sito di Cloudflare il Worker è collegato al repository su GitHub, ramo main. A ogni push Cloudflare lancia `npm run check && npm run build` e, solo se passa, `npx wrangler deploy`. Le anteprime per gli altri rami sono spente: si lavora solo su main. La prima pubblicazione automatica, partita da questo stesso commit, è andata a buon fine in meno di un minuto.
+- **12 novembre 2026, la prova di fumo nel browser.** Playwright apre la build vera in Chromium, sia il gioco sia `?misura`, e aspetta che la scena sia costruita. Se in console c'è un errore, se JavaScript si blocca o se un'immagine del gioco non arriva, la prova è rossa. Gira sul PC con `npm run test:e2e` e su GitHub dopo la build. Provata rotta apposta: con il nome di un'immagine sbagliato diventa rossa.
 
 ## Le tecnologie di questa tappa, e perché
 | Strumento | Versione | Cosa fa qui | Perché questo |
@@ -19,8 +20,9 @@ L'obiettivo della tappa: ogni push si controlla e si pubblica da solo, ma solo s
 | Git hook `pre-commit` | | Lancia lint, tipi e test prima di ogni commit | È una funzione di git, non serve un pacchetto in più (vedi `DECISIONI.md`) |
 | [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) | 2.0.0 | Manifest, service worker e lista dei file da tenere sul telefono | Si aggancia a Vite, che c'è già, e usa Workbox di Google per il service worker: poche righe di configurazione in `vite.config.ts`. È la stessa strada di Mnemosine |
 | [GitHub Actions](https://docs.github.com/actions) | checkout 7.0.1, setup-node 7.1.0 | Rifà il controllo su GitHub a ogni push | Il repository sta già su GitHub, ed è gratis per i repository pubblici. Il controllo sul PC si può saltare, questo no |
+| [Playwright](https://playwright.dev) | 1.64.1 | La prova di fumo: apre la build in un browser vero e controlla che il gioco parta | Guida un browser vero, qui Chromium, e ha già dentro l'attesa delle condizioni (`expect` riprova finché la condizione è vera o scade il tempo). Accende da solo il server della build e lo spegne alla fine (vedi `DECISIONI.md`) |
 
-La versione di oxlint è la 1.91.0 e non l'ultima, la 1.93.0: nel progetto un pacchetto nuovo entra nell'ultima versione uscita da almeno sette giorni, così un'eventuale versione difettosa ha il tempo di essere scoperta da altri.
+La versione di oxlint è la 1.91.0 e non l'ultima, la 1.93.0: nel progetto un pacchetto nuovo entra nell'ultima versione uscita da almeno sette giorni, così un'eventuale versione difettosa ha il tempo di essere scoperta da altri. Per la stessa regola Playwright è alla 1.64.1: la 1.65.0 è uscita il 5 novembre e il 12 non aveva ancora sette giorni pieni.
 
 ## I concetti, in parole semplici
 - **Lint.** Un programma che legge il codice senza eseguirlo e segnala gli errori comuni: una variabile mai usata, un confronto che è sempre vero, un import scritto in un modo che può confondere. Il controllo dei tipi dice se i pezzi combaciano, il lint se il codice ha l'aria di un errore.
@@ -34,13 +36,17 @@ La versione di oxlint è la 1.91.0 e non l'ultima, la 1.93.0: nel progetto un pa
 - **PWA, il sito che si installa.** Una pagina web con un manifest (il biglietto da visita: nome, icone, come aprirsi) e un service worker. In generale Chrome su Android allora permette di installarlo dal suo menu: compare l'icona sulla Home e il gioco si apre a tutto schermo, senza la barra del browser.
 - **Service worker.** Un piccolo programma che il browser tiene accanto alla pagina e che si mette in mezzo tra la pagina e la rete. Qui, alla prima apertura, salva sul telefono tutti i file del gioco; dalle volte dopo li serve da lì, quindi il gioco può partire anche senza rete (provato nel browser del PC e sul telefono).
 - **L'aggiornamento automatico.** A ogni apertura con la rete il service worker controlla se c'è una versione nuova. Se c'è la scarica in silenzio e prende il posto della vecchia; la partita aperta non si ricarica, la versione nuova si vede dalla prossima apertura. Nessun pulsante «aggiorna», nessuno store.
+- **Prova di fumo.** Il nome viene dall'elettronica: si accende il circuito e si guarda se esce fumo. Non prova che il gioco sia giusto, prova che non è rotto in modo evidente: la pagina si apre, la scena parte, niente errori. I test di Vitest provano la logica pezzo per pezzo; questa prova tutto insieme, nel browser, con la build che si pubblica.
+- **Unit test ed end-to-end.** I test di Vitest sono unit test: un pezzo di logica alla volta, senza browser, in un secondo. La prova di Playwright è end-to-end, da un capo all'altro: build, server, browser, pagina. È più lenta e più fragile, per questo è una sola e non sta nel controllo prima del commit.
+- **Il segno sul canvas.** Da fuori non si vede quando Phaser ha finito di costruire la scena. Alla fine di `create()` la scena scrive `data-scena="pronta"` sul canvas, e la prova aspetta quel segno: niente attese a tempo fisso, che sono lente quando va bene e sbagliate quando la macchina è lenta.
 - **Permessi minimi.** `permissions: contents: read`: il workflow può leggere il codice e nient'altro. Se un'azione fosse compromessa, non potrebbe scrivere nel repository.
 
 ## I comandi
 - `npm run lint`: il lint su tutto il progetto.
 - `npm run check`: lint, tipi e test, uno dopo l'altro. È quello che lancia il controllo prima del commit.
 - `git hook run pre-commit`: lancia il controllo come farebbe git, senza fare il commit.
-- `npm ci && npm run check && npm run build`: sul PC, gli stessi passi del controllo su GitHub.
+- `npm run test:e2e`: la prova di fumo, dopo `npm run build`. Se è rossa, la registrazione passo per passo è in `test-results/` e si apre con `npx playwright show-trace`.
+- `npm ci && npm run check && npm run build && npm run test:e2e`: sul PC, gli stessi passi del controllo su GitHub.
 
 Su un PC appena clonato `npm install` attiva il controllo da solo: lo script `prepare` di `package.json` dice a git di prendere gli hook dalla cartella `.githooks/`.
 
@@ -64,10 +70,11 @@ Sul telefono vero, il 12 novembre, con il gioco pubblicato da Workers Builds:
 ## La prova con il test rotto
 Il 12 novembre il test dell'ingrandimento sul telefono è stato cambiato apposta, aspettando 5 al posto di 4. `git hook run pre-commit` ha risposto con 1 test fallito su 26 e «commit fermato», ed è uscito con codice 1. Rimesso il test, 26 su 26 e «tutto verde».
 
+Lo stesso giorno la prova di fumo: in `GameScene` il gatto è stato chiesto con un nome di file che non esiste. Le due prove sono diventate rosse, ed è uscito codice 1. Ha insegnato una cosa: il server ha risposto «200», cioè tutto bene, ma con la pagina del gioco al posto dell'immagine, perché `vite preview` a un file che non c'è risponde con la pagina. Guardare solo il codice di risposta non sarebbe bastato: la prova controlla anche che il tipo sia `image/png`. Rimesso il nome giusto, 2 prove su 2 verdi.
+
 ## La domanda da colloquio
-«Cosa succede dal tuo push al gioco online?» Prima ancora del push, a ogni commit, partono lint, tipi e test, e se uno è rosso il commit non nasce. Dopo il push GitHub Actions rifà tutto, più la build, su una macchina pulita, e segna il commit verde o rosso. Nello stesso momento Workers Builds di Cloudflare prende lo stesso commit, rifà il controllo e la build e, solo se passano, pubblica il gioco. Il telefono scarica da solo la versione nuova quando apre il gioco con la rete e la mostra a un'apertura successiva: nella prova è servita più di un'apertura.
+«Cosa succede dal tuo push al gioco online?» Prima ancora del push, a ogni commit, partono lint, tipi e test, e se uno è rosso il commit non nasce. Dopo il push GitHub Actions rifà tutto su una macchina pulita, più la build e la prova di fumo in un browser vero, e segna il commit verde o rosso. Nello stesso momento Workers Builds di Cloudflare prende lo stesso commit, rifà il controllo e la build e, solo se passano, pubblica il gioco. Il telefono scarica da solo la versione nuova quando apre il gioco con la rete e la mostra a un'apertura successiva: nella prova è servita più di un'apertura.
 
 ## Da fare
-- La prova nel browser con Playwright: il gioco si apre e disegna.
 - La rotta `/api/ping` nello stesso Worker dei file.
 - La prova finale: un test rotto ferma il commit e anche la pubblicazione.
