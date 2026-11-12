@@ -91,3 +91,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** le azioni con il tag `@v7`, più leggibili ma che possono cambiare sotto i piedi; una matrice con più versioni di Node, che a un gioco nel browser non serve; la cache di `node_modules` al posto di quella di npm.
 - **Perché:** è lo stesso controllo del PC, su una macchina pulita, e non si salta. Le due azioni sono uscite da più di sette giorni (checkout 7.0.1 il 20 luglio 2026, setup-node 7.1.0 l'8 ottobre 2026).
 - **Cosa comporta:** sul PC `npm ci`, `npm run check` e `npm run build` passano, e il file è YAML valido. La prima esecuzione vera si vede solo dopo il push. La pubblicazione resta a mano fino a Workers Builds.
+
+## 2026-11-12 · Il gioco installabile, con l'aggiornamento automatico
+- **Contesto:** Francesco vuole vedere il gioco dal telefono, installarlo e riceverlo aggiornato da solo, come Mnemosine. Era previsto alla tappa 5, viene anticipato.
+- **Scelta:** vite-plugin-pwa 2.0.0 in `vite.config.ts`: manifest con nome, icone, tutto schermo e orizzontale; service worker di Workbox che tiene sul telefono i 14 file del gioco; `registerType: "autoUpdate"` con `skipWaiting` e `clientsClaim` scritti a mano. Le icone escono dal gatto fermo con `art/icone.py`, ingrandito senza sfumare su fondo `#1c2133`; quella `maskable` ha il gatto più piccolo, perché Android la ritaglia.
+- **Alternative scartate:** manifest e service worker scritti a mano, più da mantenere; un pulsante «aggiorna» o un avviso, che a un gioco non serve; ricaricare la pagina appena arriva la versione nuova, che interromperebbe la partita.
+- **Perché:** è la strada già provata su Mnemosine. Con `injectRegister: "script"` il plugin non attiva da solo il cambio immediato: senza le due righe la versione nuova restava in attesa (provato).
+- **Cosa comporta:** la versione nuova si vede dalla seconda apertura con la rete, mai a metà partita. Le prove nel browser del PC (installabile, senza rete, aggiornamento da A a B) sono nel diario della 1b; sul telefono vero sono da fare. La versione di Node è in `.node-version` (24), letta da GitHub Actions e da Workers Builds.

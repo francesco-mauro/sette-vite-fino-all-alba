@@ -9,6 +9,8 @@ Un progetto mio, sviluppato con l'aiuto del mio agente AI.
 ## A che punto è
 In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto fermo sui sampietrini, sotto un lampione. Si apre qui: <https://sette-vite-fino-all-alba.normandy001-fm.workers.dev/>
 
+È fatto per installarsi sul telefono come un'app: si apre a tutto schermo dall'icona, gira anche senza rete e si aggiorna da solo quando esce una versione nuova. Per ora è provato nel browser del computer, la prova sul telefono è in corso.
+
 ## Lo stack
 - [Phaser 4](https://phaser.io), il motore del gioco
 - TypeScript in modalità `strict`
@@ -16,6 +18,7 @@ In costruzione. Chiusa la tappa 1a, in corso la 1b: per ora mostra il gatto ferm
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) per pubblicarlo
 - [phaser4-rex-plugins](https://github.com/rexrainbow/phaser3-rex-notes) per il joystick virtuale
 - [Vitest](https://vitest.dev) per i test della logica
+- [vite-plugin-pwa](https://vite-pwa-org.netlify.app/) per installarlo sul telefono e giocare senza rete
 - [oxlint](https://oxc.rs/docs/guide/usage/linter.html) per il lint
 - [GitHub Actions](https://docs.github.com/actions) per rifare lint, tipi, test e build a ogni push
 - In arrivo: Playwright per la prova nel browser
