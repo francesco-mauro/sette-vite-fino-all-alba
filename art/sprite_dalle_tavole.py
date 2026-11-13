@@ -13,6 +13,8 @@ all'angolo in alto a sinistra, più un'ombra fatta con gli stessi quattro colori
 - Per gli effetti (gli attacchi), che non hanno contorno: diventa trasparente ogni pixel
   con un colore dei sampietrini, ovunque sia.
 - Le icone dell'interfaccia e gli sfondi delle schermate (titolo, alba) si prendono interi.
+- Un pezzetto di sampietrini chiuso dentro un corpo (tra le zampe del gabbiano reale) non si raggiunge
+  dal bordo: i suoi pixel sono scritti in BUCHI e si svuotano dopo.
 
 Uso:  python art/sprite_dalle_tavole.py "<percorso>/Gatto a Roma — stile visivo 2.html"
 Esce con 1 se una didascalia non si trova. Serve Pillow.
@@ -41,6 +43,21 @@ SPRITE = {
     "uccisioni.png": ("intero", ["Uccisioni"]),
     "titolo.png": ("intero", ["Roma di notte: cupola, pini, muraglione del Tevere, un lampione, un motorino e il gatto"]),
     "alba.png": ("intero", ["L'alba su Roma: il sole sorge dietro i tetti, il gatto accanto al motorino"]),
+    # tappa 4: gli altri tre nemici
+    "zanzara.png": ("corpo", ["Zanzara, ali alzate", "Zanzara, ali abbassate"]),
+    "pantegana.png": ("corpo", ["Pantegana, corsa A", "Pantegana, corsa B"]),
+    "cornacchia.png": ("corpo", ["Cornacchia in volo", "Cornacchia in picchiata"]),
+    # tappa 4: i due capi, 32x32
+    "gabbiano.png": ("corpo", ["Gabbiano, ali alzate", "Gabbiano, ali abbassate"]),
+    "gabbiano-reale.png": ("corpo", ["Gabbiano reale fermo", "Gabbiano reale che urla"]),
+    # tappa 4: la quarta arma
+    "miagolio.png": ("effetto", ["Miagolio, fotogramma 1", "Miagolio, fotogramma 2", "Miagolio, fotogramma 3"]),
+}
+
+# Pixel di sampietrini rimasti chiusi dentro un corpo, da svuotare a mano: per file, per fotogramma (da 0).
+# Si svuotano solo se hanno davvero un colore dei sampietrini, così una tavola ridisegnata non perde un pezzo.
+BUCHI = {
+    "gabbiano-reale.png": {0: [(15, 26), (16, 26)], 1: [(15, 25), (16, 25)]},
 }
 
 CASELLA = "Casella di sampietrini"
@@ -110,6 +127,14 @@ def pulisci(img, casella, modo):
     return img
 
 
+def svuota(img, casella, pixel):
+    """Rende trasparenti i pixel di BUCHI, se hanno un colore dei sampietrini."""
+    colori = {casella.getpixel((x, y)) for x in range(casella.width) for y in range(casella.height)}
+    for x, y in pixel:
+        if img.getpixel((x, y)) in colori:
+            img.putpixel((x, y), (0, 0, 0, 0))
+
+
 def carattere(percorso):
     """Silkscreen, il carattere pixel di numeri ed etichette, con la sua licenza (OFL).
 
@@ -158,7 +183,9 @@ def main():
             if dati is None:
                 mancanti.append(d)
                 continue
-            fotogrammi.append(pulisci(apri(dati), casella, modo))
+            pulito = pulisci(apri(dati), casella, modo)
+            svuota(pulito, casella, BUCHI.get(nome, {}).get(len(fotogrammi), []))
+            fotogrammi.append(pulito)
         if len(fotogrammi) != len(didascalie):
             continue
         w, h = fotogrammi[0].size

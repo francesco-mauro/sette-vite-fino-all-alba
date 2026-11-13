@@ -18,7 +18,7 @@ export interface RunResult {
   dawn: boolean;
 }
 
-// computeScore: un punto per ogni secondo vivo, dieci per ogni piccione, le mance, il premio dell'alba;
+// computeScore: un punto per ogni secondo vivo, dieci per ogni nemico preso, le mance, il premio dell'alba;
 // meno un pezzo per ogni vita persa, senza scendere sotto zero.
 export function computeScore(run: RunResult): number {
   const raw =

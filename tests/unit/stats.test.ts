@@ -32,4 +32,9 @@ describe("le statistiche dalle carte", () => {
     expect(computeStats({ scratch: 2 }).weapons.scratch).toBe(3);
     expect(computeStats({ tail: 1 }).weapons.tail).toBe(1);
   });
+
+  it("il miagolio parte da zero e sale con la sua carta", () => {
+    expect(computeStats({}).weapons.meow).toBe(0);
+    expect(computeStats({ meow: 2 }).weapons.meow).toBe(2);
+  });
 });

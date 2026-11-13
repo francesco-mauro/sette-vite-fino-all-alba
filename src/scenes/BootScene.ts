@@ -27,11 +27,18 @@ export class BootScene extends Phaser.Scene {
     // strisce di fotogrammi in fila
     this.load.spritesheet("gatto", "assets/gatto.png", { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet("piccione", "assets/piccione.png", { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("zanzara", "assets/zanzara.png", { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("pantegana", "assets/pantegana.png", { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("cornacchia", "assets/cornacchia.png", { frameWidth: 16, frameHeight: 16 });
+    // i due capi sono grandi il doppio
+    this.load.spritesheet("gabbiano", "assets/gabbiano.png", { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet("gabbiano-reale", "assets/gabbiano-reale.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("crocchetta", "assets/crocchetta.png", { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet("cassa", "assets/cassa.png", { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet("graffio", "assets/graffio.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("coda", "assets/coda.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("pelo", "assets/pelo.png", { frameWidth: 32, frameHeight: 32 });
+    this.load.spritesheet("miagolio", "assets/miagolio.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("carte", "assets/carte.png", { frameWidth: 16, frameHeight: 16 });
   }
 

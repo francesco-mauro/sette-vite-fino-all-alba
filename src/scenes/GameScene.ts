@@ -1,5 +1,7 @@
-// La scena di gioco: la notte intera. Il gatto si muove, i piccioni arrivano sempre più fitti, le armi partono
-// da sole (graffio, coda a frusta, pelo che vola), le crocchette fanno salire di livello e a ogni livello si sceglie
+// La scena di gioco: la notte intera. Il gatto si muove, i nemici arrivano secondo la tabella delle ondate
+// (piccioni, poi zanzare, pantegane e cornacchie in picchiata), a un terzo e a due terzi della notte arrivano
+// i due capi (il gabbiano che carica, il gabbiano reale che urla), le armi partono
+// da sole (graffio, coda a frusta, pelo che vola, miagolio), le crocchette fanno salire di livello e a ogni livello si sceglie
 // una carta (LevelUpScene); le casse del tesoro mostrano le carte vinte (ChestScene). Il gatto ha sette vite; all'alba, dopo la durata scelta nel titolo (5, 10 o 15 minuti),
 // si vince (EndScene).
 // Le regole stanno in src/logic/ e sono testate; i numeri in src/data/; qui si disegna e si collega.
@@ -8,9 +10,10 @@
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita con erba e tombino, comandi, interfaccia
-// - update e regenerate, moveCat, moveEnemies, moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
-// - spawnGroup: i piccioni da fuori dello schermo
-// - le armi: fireWeapons, scratch, tail, fur, furHit, damageEnemy, killEnemy
+// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia), kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
+// - spawnGroup, dress: un gruppo di nemici di un tipo, da fuori dello schermo; lo sprite del pool rivestito da capo
+// - i capi: spawnBossOnSchedule, spawnBoss, makeRoom, e più sotto dropBossChest, drawBossBars, hurt
+// - le armi: fireWeapons, scratch, tail, fur, furHit, meow (l'onda che spinge via), damageEnemy, killEnemy
 // - crescere: collect, openLevelUp, pullAllKibbles, applyCard, gainCard
 // - casse e mappa: spawnChestOnSchedule, takeChest, onChestClosed, drawMinimap, openMap
 // - vite, pausa e fine: onTouch, loseLife, onResume, openPause, endRun
@@ -18,23 +21,29 @@
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
-  CARD_WEIGHTS, CAT, CHEST, FALLBACK, FUR_LEVELS, KIBBLE, PIGEON, RUN, SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
+  BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, ENEMIES, FALLBACK, FUR_LEVELS, KIBBLE, MEOW, MEOW_LEVELS, PIGEON, RUN,
+  SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
+  type BossId, type EnemyId, type FoeKind, type ScreamConfig,
 } from "../data/balance";
-import { TEXTS } from "../data/texts";
+import { BOSS_TEXTS, TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
+import { bossHealth, dueBoss } from "../logic/boss";
 import { drawCards } from "../logic/cards";
 import { chestPoint, chestTimes, openChest } from "../logic/chest";
+import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { formatClock } from "../logic/clock";
+import { inReach, knockback } from "../logic/knockback";
 import { DEFAULT_NIGHT } from "../logic/night";
 import { createHealth, heal, isDead, protect, regenerate, takeHit, type Health } from "../logic/health";
 import { chase, joystickVector, keyboardVector, type Vec } from "../logic/movement";
 import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
-import { spawnPoint } from "../logic/spawn";
+import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
+import { groupOffset, spawnPoint, tooFar } from "../logic/spawn";
 import { computeStats, type Stats } from "../logic/stats";
 import { nearestIndex } from "../logic/targeting";
-import { spawnPlan } from "../logic/waves";
+import { dueSpawns, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
 import { hintDone } from "../logic/hint";
@@ -44,6 +53,14 @@ import type { MapData } from "./MapScene";
 import { FONT } from "./font";
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
+// Una riga del diario dei capi, per il debug: tempi in millisecondi di notte.
+interface BossLogEntry {
+  id: BossId;
+  nato: number;
+  caduto: number | null;
+  vita: number;
+  richiami: number;
+}
 
 // Il joystick che compare sotto il pollice: quanto spingere per la velocità piena, in pixel della scena.
 const JOYSTICK_RADIUS = 24;
@@ -56,9 +73,14 @@ const LAMP_CHUNK = { width: 320, height: 240 };
 const PAUSE_SIZE = 18;
 // I ciuffi spariscono poco oltre il bordo dello schermo.
 const FUR_MARGIN = 16;
-// La minimappa, a destra sotto i piccioni presi: 20 pixel dal centro al bordo, per 400 pixel di mondo.
+// La minimappa, a destra sotto i nemici presi: 20 pixel dal centro al bordo, per 400 pixel di mondo.
 // Si tocca (o M) per la mappa grande.
 const MINIMAP = { half: 20, range: 400 };
+// L'anello del miagolio, nell'ultimo fotogramma, arriva a 13 pixel e mezzo dal centro del suo disegno da 32:
+// lo sprite si ingrandisce di raggio diviso questo numero, così l'anello che si vede è il bordo vero dell'onda.
+const MEOW_RING = 13.5;
+// La barra della vita di un capo, in basso al centro: larga abbastanza da vederla calare.
+const BOSS_BAR = { width: 120, height: 5 };
 
 export class GameScene extends Phaser.Scene {
   private cat!: Sprite;
@@ -72,6 +94,10 @@ export class GameScene extends Phaser.Scene {
   private ground!: Phaser.GameObjects.TileSprite;
   private lamps: Phaser.GameObjects.Image[] = [];
   private hud!: Phaser.GameObjects.Graphics;
+  // i capi: i cerchi dell'urlo nel mondo, le barre della vita fisse sullo schermo con il nome sopra
+  private bossFx!: Phaser.GameObjects.Graphics;
+  private bossBars!: Phaser.GameObjects.Graphics;
+  private bossNames: Phaser.GameObjects.Text[] = [];
   private hearts: Phaser.GameObjects.Image[] = [];
   private levelText!: Phaser.GameObjects.Text;
   private clockText!: Phaser.GameObjects.Text;
@@ -93,20 +119,30 @@ export class GameScene extends Phaser.Scene {
   private pendingLevels = 0;
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
   private facing = 0;
-  private nextFire = { scratch: 0, tail: 0, fur: 0 };
+  private nextFire = { scratch: 0, tail: 0, fur: 0, meow: 0 };
   // il tempo di notte passato, in millisecondi di gioco: si ferma con la pausa e con la scelta delle carte;
   // è anche l'orologio di armi, ciuffi e invulnerabilità
   private elapsed = 0;
   private duration = RUN.durationMs;
   // i minuti della notte scelti nel titolo (3 con ?corta): decidono la durata e quale record si gioca
   private nightMinutes = DEFAULT_NIGHT;
-  private nextSpawnAt = 0;
+  // per ogni tipo di nemico, da che momento della notte tocca di nuovo a lui (dueSpawns)
+  private nextSpawnAt: Partial<Record<EnemyId, number>> = {};
   // quando nascono le casse di questa notte (chestTimes), e quante ne sono già nate
   private chestSchedule: number[] = [];
   private chestsSpawned = 0;
   private chestsTaken = 0;
+  // i capi vivi adesso, quanti ne sono nati, e il diario per il debug (quando è nato e quando è caduto ognuno,
+  // quanta vita gli resta, quante volte è stato riportato vicino)
+  private bosses: Sprite[] = [];
+  private bossesSpawned = 0;
+  private bossLog: BossLogEntry[] = [];
   private points = 0;
   private kills = 0;
+  // quante volte un nemico rimasto lontano è stato riportato vicino: si legge solo nel debug
+  private recalls = 0;
+  // quanti nemici ha spinto via il miagolio: anche questo si legge solo nel debug
+  private pushes = 0;
   private joystick: { pointerId: number; start: Vec; current: Vec } | null = null;
   private over = false;
   private invincible = false;
@@ -132,11 +168,17 @@ export class GameScene extends Phaser.Scene {
     this.pendingLevels = 0;
     this.facing = 0;
     this.elapsed = 0;
-    this.nextSpawnAt = 0;
+    this.nextSpawnAt = {};
     this.chestsTaken = 0;
     this.chestsSpawned = 0;
+    this.bosses = [];
+    this.bossesSpawned = 0;
+    this.bossLog = [];
+    this.bossNames = [];
     this.points = 0;
     this.kills = 0;
+    this.recalls = 0;
+    this.pushes = 0;
     this.joystick = null;
     this.lamps = [];
     this.hearts = [];
@@ -192,14 +234,16 @@ export class GameScene extends Phaser.Scene {
     this.enemies = this.physics.add.group({ maxSize: SPAWN.maxEnemies });
     this.kibbles = this.physics.add.group({ maxSize: KIBBLE.maxOnGround });
     this.furs = this.physics.add.group({ maxSize: 60 });
-    this.chests = this.physics.add.group({ maxSize: CHEST.maxOnGround });
+    // un posto in più per ogni capo: la sua cassa nasce anche se due stanno già aspettando
+    this.chests = this.physics.add.group({ maxSize: CHEST.maxOnGround + BOSS_ORDER.length });
     this.effects = this.add.group({ maxSize: 60 });
+    this.bossFx = this.add.graphics().setDepth(3);
 
     this.physics.add.overlap(this.cat, this.enemies, (_c, enemy) => this.onTouch(enemy as Sprite));
     this.physics.add.overlap(this.cat, this.kibbles, (_c, kibble) => this.collect(kibble as Sprite));
     this.physics.add.overlap(this.cat, this.chests, (_c, chest) => this.takeChest(chest as Sprite));
     this.physics.add.overlap(this.furs, this.enemies, (fur, enemy) => this.furHit(fur as Sprite, enemy as Sprite));
-    this.nextFire = { scratch: 0, tail: 0, fur: 0 };
+    this.nextFire = { scratch: 0, tail: 0, fur: 0, meow: 0 };
 
     this.events.off("card-picked");
     this.events.on("card-picked", (id: string) => this.applyCard(id));
@@ -222,11 +266,17 @@ export class GameScene extends Phaser.Scene {
     const strip = (key: string, start: number, end: number) => this.anims.generateFrameNumbers(key, { start, end });
     this.anims.create({ key: "gatto-cammina", frames: strip("gatto", 1, 4), frameRate: 10, repeat: -1 });
     this.anims.create({ key: "piccione-cammina", frames: strip("piccione", 0, 1), frameRate: 4, repeat: -1 });
+    this.anims.create({ key: "zanzara-cammina", frames: strip("zanzara", 0, 1), frameRate: 12, repeat: -1 });
+    this.anims.create({ key: "pantegana-cammina", frames: strip("pantegana", 0, 1), frameRate: 6, repeat: -1 });
+    // il gabbiano batte le ali mentre si avvicina; il gabbiano reale ha due pose, fermo e urla, scelte in scream
+    this.anims.create({ key: "gabbiano-cammina", frames: strip("gabbiano", 0, 1), frameRate: 5, repeat: -1 });
+    // la cornacchia non ha un'animazione: un fotogramma in volo e uno in picchiata, scelti in moveEnemies
     this.anims.create({ key: "crocchetta-brilla", frames: strip("crocchetta", 0, 1), frameRate: 2, repeat: -1 });
     this.anims.create({ key: "cassa-brilla", frames: strip("cassa", 0, 1), frameRate: 2, repeat: -1 });
     this.anims.create({ key: "graffio", frames: strip("graffio", 0, 2), frameRate: 15, repeat: 0 });
     this.anims.create({ key: "coda", frames: strip("coda", 0, 2), frameRate: 15, repeat: 0 });
     this.anims.create({ key: "pelo-vola", frames: strip("pelo", 0, 1), frameRate: 8, repeat: -1 });
+    this.anims.create({ key: "miagolio", frames: strip("miagolio", 0, 2), frameRate: 12, repeat: 0 });
   }
 
   // Disegna una volta sola la striscia di strada: sampietrini, un tombino e due ciuffi d'erba con la crepa.
@@ -277,7 +327,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // L'interfaccia, tutta lontana dagli angoli: vita, esperienza, livello e cuori a sinistra; l'orologio in alto
-  // al centro; pausa e piccioni presi a destra; la riga dei primi secondi in basso.
+  // al centro; pausa e nemici presi a destra; la riga dei primi secondi in basso.
   private createHud() {
     const { width, height } = this.scale;
     // un fondo scuro mezzo trasparente: barre e livello si leggono anche sopra la luce di un lampione
@@ -310,6 +360,12 @@ export class GameScene extends Phaser.Scene {
     });
     this.minimap = this.add.graphics().setScrollFactor(0).setDepth(100);
 
+    // le barre dei capi: due posti, uno sopra l'altro, in basso al centro; si vedono solo con un capo vivo
+    this.bossBars = this.add.graphics().setScrollFactor(0).setDepth(100);
+    for (let i = 0; i < BOSS_ORDER.length; i++) {
+      this.bossNames.push(this.add.text(width / 2, height - SAFE - 9 - i * 18, "", { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(3, 1, 3, 1).setScrollFactor(0).setDepth(100).setVisible(false));
+    }
+
     this.hintText = this.add.text(width / 2, height - SAFE - 8, TEXTS.hint, { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(100);
     this.drawHud();
   }
@@ -333,9 +389,11 @@ export class GameScene extends Phaser.Scene {
     this.expireFur();
     this.fireWeapons(time);
     this.spawnOnSchedule();
+    this.spawnBossOnSchedule();
     this.spawnChestOnSchedule();
     this.scrollWorld();
     this.drawMinimap();
+    this.drawBossBars();
     this.drawJoystick();
     this.clockText.setText(formatClock(this.elapsed));
     if (this.hintText && hintDone(this.moved, this.elapsed, RUN.hintMs)) {
@@ -379,15 +437,95 @@ export class GameScene extends Phaser.Scene {
     this.cat.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.3 : 1);
   }
 
+  // Tutti vanno dritti verso il gatto, tranne chi ha un attacco suo. Chi ha la picchiata (la cornacchia, e il
+  // gabbiano con la sua carica) segue le fasi di src/logic/dive.ts e cambia fotogramma quando prende la mira e
+  // si lancia. Il gabbiano reale segue quelle dell'urlo (scream, qui sotto).
   private moveEnemies() {
     const target = { x: this.cat.x, y: this.cat.y };
+    this.bossFx.clear();
     for (const child of this.enemies.getChildren()) {
       const enemy = child as Sprite;
       if (!enemy.active) continue;
-      const v = chase({ x: enemy.x, y: enemy.y }, target, (enemy.getData("speed") as number | undefined) ?? PIGEON.speed);
-      enemy.setVelocity(v.x, v.y);
-      enemy.setFlipX(v.x < 0);
+      if (tooFar(enemy, target, SPAWN.recallDistance)) this.recall(enemy);
+      // chi è stato spinto dal miagolio scivola all'indietro finché dura la spinta: qui nessuno gli cambia la velocità
+      if (this.elapsed < ((enemy.getData("pushedUntil") as number | undefined) ?? 0)) continue;
+      const from = { x: enemy.x, y: enemy.y };
+      const speed = (enemy.getData("speed") as number | undefined) ?? PIGEON.speed;
+      const kind = this.kindOf(enemy);
+      if (kind.scream) {
+        this.scream(enemy, kind.scream, from, target, speed);
+        continue;
+      }
+      if (!kind.dive) {
+        const v = chase(from, target, speed);
+        enemy.setVelocity(v.x, v.y);
+        enemy.setFlipX(v.x < 0);
+        continue;
+      }
+      const step = diveStep(enemy.getData("dive") as DiveState, from, target, this.elapsed, speed, kind.dive);
+      enemy.setData("dive", step.state);
+      enemy.setVelocity(step.velocity.x, step.velocity.y);
+      // chi ha un'animazione (il gabbiano) batte le ali mentre si avvicina; in mira e in picchiata il disegno
+      // è fermo sul secondo fotogramma, e quello è l'avviso
+      const flap = `${kind.key}-cammina`;
+      if (step.state.phase === "approach" && this.anims.exists(flap)) {
+        enemy.anims.play(flap, true);
+      } else {
+        const attacking = step.state.phase === "aim" || step.state.phase === "dive";
+        enemy.anims.stop();
+        enemy.setFrame(attacking ? 1 : 0);
+      }
+      // ferma, guarda il gatto; in volo, guarda dove va
+      const lookX = step.velocity.x !== 0 ? step.velocity.x : target.x - from.x;
+      enemy.setFlipX(lookX < 0);
     }
+  }
+
+  // Che nemico è questo sprite: un capo, uno dei quattro nemici, o il piccione di riserva.
+  private kindOf(enemy: Sprite): FoeKind & { key: string; scream?: ScreamConfig } {
+    const id = enemy.getData("kind") as string | undefined;
+    return BOSSES[id as BossId] ?? ENEMIES[id as EnemyId] ?? PIGEON;
+  }
+
+  // Un passo del gabbiano reale: si avvicina, a tiro si ferma e carica l'urlo (secondo fotogramma, e il cerchio
+  // rosso che si allarga fino al bordo dell'urlo è l'avviso), poi urla: il gatto dentro il raggio prende il colpo.
+  private scream(boss: Sprite, cfg: ScreamConfig, from: Vec, target: Vec, speed: number) {
+    const before = (boss.getData("scream") as ScreamState | undefined) ?? startScream();
+    const step = screamStep(before, from, target, this.elapsed, speed, cfg);
+    boss.setData("scream", step.state);
+    boss.setVelocity(step.velocity.x, step.velocity.y);
+    boss.setFrame(step.state.phase === "windup" ? 1 : 0);
+    boss.setFlipX(target.x - from.x < 0);
+    const progress = windupProgress(step.state, this.elapsed, cfg);
+    if (progress > 0) {
+      this.bossFx.lineStyle(1, 0xcfe0ff, 0.45).strokeCircle(from.x, from.y, cfg.radius);
+      this.bossFx.fillStyle(0xe23a4f, 0.18).fillCircle(from.x, from.y, cfg.radius * progress);
+      this.bossFx.lineStyle(1, 0xe23a4f, 0.9).strokeCircle(from.x, from.y, cfg.radius * progress);
+    }
+    if (!step.burst) return;
+    // l'urlo: un lampo sull'area, e il colpo se il gatto è ancora dentro
+    const flash = this.add.circle(from.x, from.y, cfg.radius, 0xffffff, 0.5).setDepth(3);
+    this.tweens.add({ targets: flash, alpha: 0, duration: 220, onComplete: () => flash.destroy() });
+    if (inScream(from, target, cfg.radius)) this.hurt((boss.getData("damage") as number | undefined) ?? this.kindOf(boss).damage);
+  }
+
+  // Un nemico rimasto troppo lontano torna in un punto di nascita nuovo, appena fuori dallo schermo: è lo stesso
+  // nemico, con la vita che aveva, solo spostato. Così chi viene seminato non occupa un posto lontano dal gatto.
+  private recall(enemy: Sprite) {
+    const p = this.spawnCenter();
+    enemy.body?.reset(p.x, p.y);
+    // una cornacchia o un capo ripartono dall'avvicinamento, qualunque cosa stessero facendo
+    enemy.setData("dive", startDive());
+    enemy.setData("scream", startScream());
+    this.recalls++;
+    const log = enemy.getData("log") as BossLogEntry | null | undefined;
+    if (log) log.richiami++;
+  }
+
+  // Un punto nella cornice appena fuori dallo schermo, intorno alla vista di adesso.
+  private spawnCenter(): Vec {
+    const cam = this.cameras.main;
+    return spawnPoint({ x: cam.midPoint.x, y: cam.midPoint.y }, this.scale.width / 2, this.scale.height / 2, SPAWN.margin, this.rng);
   }
 
   // Le crocchette stanno ferme finché il gatto non entra nel raggio della calamita: allora gli volano incontro.
@@ -438,35 +576,94 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Le ondate: quando arriva il momento nasce un gruppo, e il prossimo si fissa secondo quanta notte è passata.
+  // Le ondate: la riga della tabella per questo momento della notte dice chi c'è; ogni tipo ha il suo orologio,
+  // e quando tocca a lui nasce il suo gruppo (dueSpawns).
   private spawnOnSchedule() {
-    if (this.elapsed < this.nextSpawnAt) return;
     const plan = spawnPlan(this.elapsed / this.duration);
-    this.spawnGroup(plan.groupSize, plan);
-    this.nextSpawnAt = this.elapsed + plan.intervalMs;
+    const due = dueSpawns(plan.row, this.nextSpawnAt, this.elapsed);
+    this.nextSpawnAt = due.nextAt;
+    for (const { kind, size } of due.spawns) this.spawnGroup(kind, size, plan);
   }
 
-  // scale moltiplica danno e velocità dei piccioni: cresce con la notte (spawnPlan)
-  private spawnGroup(size: number, scale = spawnPlan(this.elapsed / this.duration)) {
+  // Un gruppo di nemici dello stesso tipo, tutti dallo stesso punto fuori dallo schermo.
+  // scale moltiplica danno e velocità: cresce con la notte (spawnPlan). La picchiata non accelera: resta schivabile.
+  private spawnGroup(id: EnemyId, size: number, scale: { damageScale: number; speedScale: number } = spawnPlan(this.elapsed / this.duration)) {
     if (this.over) return;
-    const cam = this.cameras.main;
-    const center = spawnPoint(
-      { x: cam.midPoint.x, y: cam.midPoint.y },
-      this.scale.width / 2,
-      this.scale.height / 2,
-      SPAWN.margin,
-      this.rng,
-    );
+    const kind = ENEMIES[id];
+    const center = this.spawnCenter();
     for (let i = 0; i < size; i++) {
-      const enemy = this.enemies.get(center.x + (i % 3) * 14, center.y + Math.floor(i / 3) * 12, PIGEON.key) as Sprite | null;
+      const offset = groupOffset(i);
+      const enemy = this.enemies.get(center.x + offset.x, center.y + offset.y, kind.key) as Sprite | null;
       if (!enemy) return;
-      enemy.enableBody(true, enemy.x, enemy.y, true, true);
-      enemy.setSize(PIGEON.body.width, PIGEON.body.height).setAlpha(1).setDepth(5);
-      enemy.setData("hp", PIGEON.health);
-      enemy.setData("damage", Math.round(PIGEON.damage * scale.damageScale));
-      enemy.setData("speed", PIGEON.speed * scale.speedScale);
-      enemy.anims.play("piccione-cammina", true);
+      this.dress(enemy, kind, kind.health, scale);
     }
+  }
+
+  // Lo sprite esce dal pool: prima poteva essere un altro nemico, anche un capo grande il doppio, quindi
+  // immagine, scatola delle collisioni e dati si rimettono tutti.
+  private dress(enemy: Sprite, kind: FoeKind & { key: string }, health: number, scale: { damageScale: number; speedScale: number }) {
+    enemy.anims.stop();
+    enemy.setTexture(kind.key, 0);
+    enemy.enableBody(true, enemy.x, enemy.y, true, true);
+    enemy.setSize(kind.body.width, kind.body.height).setAlpha(1).setDepth(5);
+    enemy.setData("kind", kind.key);
+    enemy.setData("hp", health);
+    enemy.setData("damage", Math.round(kind.damage * scale.damageScale));
+    enemy.setData("speed", kind.speed * scale.speedScale);
+    enemy.setData("dive", startDive());
+    enemy.setData("scream", startScream());
+    enemy.setData("log", null);
+    enemy.setData("pushedUntil", 0);
+    const walk = `${kind.key}-cammina`;
+    if (!kind.dive && this.anims.exists(walk)) enemy.anims.play(walk, true);
+  }
+
+  // I capi: ognuno nasce una volta, al suo momento della notte (dueBoss), in qualunque durata.
+  private spawnBossOnSchedule() {
+    const times = BOSS_ORDER.map((id) => BOSSES[id].at);
+    const i = dueBoss(times, this.bossesSpawned, this.elapsed / this.duration);
+    if (i === -1) return;
+    this.bossesSpawned++;
+    this.spawnBoss(BOSS_ORDER[i]);
+  }
+
+  // Un capo nasce da fuori dello schermo come gli altri, ma il suo posto è garantito: con il pool pieno
+  // prende quello del nemico più lontano. La vita segue la durata della notte (bossHealth).
+  private spawnBoss(id: BossId) {
+    if (this.over) return;
+    const kind = BOSSES[id];
+    const p = this.spawnCenter();
+    let boss = this.enemies.get(p.x, p.y, kind.key) as Sprite | null;
+    if (!boss && this.makeRoom()) boss = this.enemies.get(p.x, p.y, kind.key) as Sprite | null;
+    if (!boss) return;
+    const health = bossHealth(kind.health, this.nightMinutes, BOSS.fullNightMinutes);
+    this.dress(boss, kind, health, spawnPlan(this.elapsed / this.duration));
+    boss.setDepth(6);
+    this.bosses.push(boss);
+    const log: BossLogEntry = { id, nato: Math.round(this.elapsed), caduto: null, vita: health, richiami: 0 };
+    this.bossLog.push(log);
+    boss.setData("log", log);
+    const { width } = this.scale;
+    const note = this.add.text(width / 2, SAFE + 26, BOSS_TEXTS[id].arrives, { ...FONT, color: "#ffc85a", backgroundColor: "#0e0c16" }).setOrigin(0.5, 0).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
+    this.time.delayedCall(BOSS.announceMs, () => note.destroy());
+  }
+
+  // Libera un posto nel pool togliendo il nemico più lontano dal gatto, mai un capo. Non lascia crocchette
+  // e non conta tra i presi: è solo uscito di scena.
+  private makeRoom(): boolean {
+    let farthest: Sprite | null = null;
+    let best = -1;
+    for (const e of this.aliveEnemies()) {
+      if (this.bosses.includes(e)) continue;
+      const d = Phaser.Math.Distance.Between(e.x, e.y, this.cat.x, this.cat.y);
+      if (d > best) {
+        best = d;
+        farthest = e;
+      }
+    }
+    if (!farthest) return false;
+    farthest.disableBody(true, true);
+    return true;
   }
 
   // Ogni arma ha il suo orologio: quando arriva il suo momento parte, e il prossimo colpo si sposta avanti.
@@ -487,16 +684,21 @@ export class GameScene extends Phaser.Scene {
       this.fur(lv);
       this.nextFire.fur = time + lv.cooldownMs;
     }
+    if (w.meow > 0 && time >= this.nextFire.meow) {
+      const lv = MEOW_LEVELS[Math.min(w.meow, MEOW_LEVELS.length) - 1];
+      this.meow(lv);
+      this.nextFire.meow = time + lv.cooldownMs;
+    }
   }
 
   private aliveEnemies(): Sprite[] {
     return this.enemies.getChildren().filter((c) => c.active) as Sprite[];
   }
 
-  private playEffect(key: string, x: number, y: number, rotation = 0, scale = 1) {
+  private playEffect(key: string, x: number, y: number, rotation = 0, scale = 1, alpha = 1) {
     const fx = this.effects.get(x, y, key) as Phaser.GameObjects.Sprite | null;
     if (!fx) return;
-    fx.setActive(true).setVisible(true).setDepth(20).setRotation(rotation).setScale(scale);
+    fx.setActive(true).setVisible(true).setDepth(20).setRotation(rotation).setScale(scale).setAlpha(alpha);
     fx.play(key);
     fx.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.effects.killAndHide(fx));
   }
@@ -543,6 +745,27 @@ export class GameScene extends Phaser.Scene {
     this.damageEnemy(enemy, fur.getData("damage") as number);
   }
 
+  // Il miagolio: un'onda tonda intorno al gatto. Chi è dentro prende poco danno e viene spinto via
+  // (src/logic/knockback.ts): per un attimo scivola all'indietro, poi riparte verso il gatto. Una cornacchia
+  // spinta perde la picchiata e ricomincia dall'avvicinamento. I capi prendono il danno ma restano dove sono.
+  private meow(lv: (typeof MEOW_LEVELS)[number]) {
+    const origin = { x: this.cat.x, y: this.cat.y };
+    // ingrandito tre o quattro volte il disegno diventa pesante: un po' trasparente lascia vedere il gatto e chi gli sta addosso
+    this.playEffect("miagolio", origin.x, origin.y, 0, lv.radius / MEOW_RING, 0.75);
+    for (const enemy of this.aliveEnemies()) {
+      const at = { x: enemy.x, y: enemy.y };
+      if (!inReach(origin, at, lv.radius)) continue;
+      const push = lv.push * (this.bosses.includes(enemy) ? MEOW.bossPush : 1);
+      this.damageEnemy(enemy, lv.damage);
+      const v = knockback(origin, at, lv.radius, push, MEOW.pushMs);
+      if (!enemy.active || !v) continue;
+      enemy.setVelocity(v.x, v.y);
+      enemy.setData("pushedUntil", this.elapsed + MEOW.pushMs);
+      enemy.setData("dive", startDive());
+      this.pushes++;
+    }
+  }
+
   private damageEnemy(enemy: Sprite, baseDamage: number) {
     const hp = (enemy.getData("hp") as number) - baseDamage * this.stats.damageMultiplier;
     enemy.setData("hp", hp);
@@ -554,23 +777,43 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(80, () => enemy.active && enemy.setAlpha(1));
   }
 
-  // Un piccione eliminato lascia una crocchetta dove cade.
+  // Un nemico eliminato lascia una crocchetta dove cade: vale di più se il nemico era duro.
   private killEnemy(enemy: Sprite) {
     const { x, y } = enemy;
+    const kind = this.kindOf(enemy);
     enemy.disableBody(true, true);
     this.kills++;
     this.killsText.setText(String(this.kills));
+    if (this.bosses.includes(enemy)) this.dropBossChest(enemy, x, y);
+    // non tutti la lasciano sempre: la zanzara solo ogni tanto (kibbleChance)
+    if (kind.kibbleChance < 1 && this.rng() >= kind.kibbleChance) return;
     const k = this.kibbles.get(x, y, "crocchetta") as Sprite | null;
     if (!k) return;
     k.enableBody(true, x, y, true, true);
-    k.setSize(8, 8).setDepth(4).setVelocity(0, 0).setData("pulled", false);
+    k.setSize(8, 8).setDepth(4).setVelocity(0, 0).setData("pulled", false).setData("xp", kind.xp);
     k.anims.play("crocchetta-brilla", true);
+  }
+
+  // Un capo caduto lascia una cassa del tesoro dove cade (tripla per il gabbiano reale), oltre alla crocchetta.
+  private dropBossChest(boss: Sprite, x: number, y: number) {
+    const kind = BOSSES[boss.getData("kind") as BossId];
+    this.bosses = this.bosses.filter((b) => b !== boss);
+    const log = boss.getData("log") as BossLogEntry | null | undefined;
+    if (log) {
+      log.caduto = Math.round(this.elapsed);
+      log.vita = 0;
+    }
+    const chest = this.chests.get(x, y, "cassa") as Sprite | null;
+    if (!chest) return;
+    chest.enableBody(true, x, y, true, true);
+    chest.setSize(14, 12).setDepth(4).setData("triple", kind.tripleChest);
+    chest.anims.play("cassa-brilla", true);
   }
 
   private collect(kibble: Sprite) {
     if (!kibble.active || this.over) return;
     kibble.disableBody(true, true);
-    const { state, levelsGained } = addXp(this.xp, KIBBLE.xp);
+    const { state, levelsGained } = addXp(this.xp, (kibble.getData("xp") as number | undefined) ?? KIBBLE.xp);
     this.xp = state;
     this.pendingLevels += levelsGained;
     this.drawHud();
@@ -632,7 +875,8 @@ export class GameScene extends Phaser.Scene {
     if (!chest) return;
     this.chestsSpawned++;
     chest.enableBody(true, p.x, p.y, true, true);
-    chest.setSize(14, 12).setDepth(4);
+    // lo sprite esce dal pool: prima poteva essere la cassa tripla di un capo
+    chest.setSize(14, 12).setDepth(4).setData("triple", false);
     chest.anims.play("cassa-brilla", true);
   }
 
@@ -644,7 +888,9 @@ export class GameScene extends Phaser.Scene {
     chest.disableBody(true, true);
     this.chestsTaken++;
     const levels = { ...this.levels };
-    const gained = openChest(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS, CHEST.tripleChance);
+    // la cassa del gabbiano reale è tripla di sicuro: con probabilità 1 il tiro è sempre sotto
+    const tripleChance = chest.getData("triple") ? 1 : CHEST.tripleChance;
+    const gained = openChest(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS, tripleChance);
     for (const id of gained) this.gainCard(id);
     this.drawHud();
     this.joystick = null;
@@ -661,7 +907,7 @@ export class GameScene extends Phaser.Scene {
     if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
   }
 
-  // La minimappa: il gatto al centro, i piccioni come puntini, le casse in oro, sempre: sul bordo se sono
+  // La minimappa: il gatto al centro, i nemici come puntini, le casse in oro, sempre: sul bordo se sono
   // lontane, nella loro direzione. Hanno il contorno scuro e lampeggiano tra oro e bianco, per non perderle.
   private drawMinimap() {
     const g = this.minimap;
@@ -686,7 +932,35 @@ export class GameScene extends Phaser.Scene {
       g.fillStyle(0x0e0c16, 1).fillRect(x - 2, y - 2, 5, 5);
       g.fillStyle(blink, 1).fillRect(x - 1, y - 1, 3, 3);
     }
+    // i capi in rosso, sempre: sul bordo se sono lontani, come le casse
+    for (const b of this.bosses) {
+      const p = toMinimap(cat, b, MINIMAP.range, h);
+      const x = Phaser.Math.Clamp(Math.round(cx + p.x), cx - h + 2, cx + h - 2);
+      const y = Phaser.Math.Clamp(Math.round(cy + p.y), cy - h + 2, cy + h - 2);
+      g.fillStyle(0x0e0c16, 1).fillRect(x - 2, y - 2, 5, 5);
+      g.fillStyle(0xe23a4f, 1).fillRect(x - 1, y - 1, 3, 3);
+    }
     g.fillStyle(0xf5841f, 1).fillRect(cx - 1, cy - 1, 3, 3);
+  }
+
+  // Le barre dei capi vivi, in basso al centro, con il nome sopra: quanta vita gli resta.
+  private drawBossBars() {
+    const g = this.bossBars;
+    const { width, height } = this.scale;
+    g.clear();
+    this.bossNames.forEach((name, i) => {
+      const boss = this.bosses[i];
+      name.setVisible(!!boss);
+      if (!boss) return;
+      const kind = BOSSES[boss.getData("kind") as BossId];
+      const max = bossHealth(kind.health, this.nightMinutes, BOSS.fullNightMinutes);
+      const left = Phaser.Math.Clamp((boss.getData("hp") as number) / max, 0, 1);
+      const x = width / 2 - BOSS_BAR.width / 2;
+      const y = height - SAFE - 7 - i * 18;
+      name.setText(BOSS_TEXTS[kind.key].name);
+      g.fillStyle(0x0e0c16, 1).fillRect(x - 1, y - 1, BOSS_BAR.width + 2, BOSS_BAR.height + 2);
+      g.fillStyle(0xe23a4f, 1).fillRect(x, y, Math.round(BOSS_BAR.width * left), BOSS_BAR.height);
+    });
   }
 
   // La mappa grande: la partita si ferma e sopra compare MapScene, come la pausa.
@@ -698,6 +972,7 @@ export class GameScene extends Phaser.Scene {
     const data: MapData = {
       cat: point(this.cat),
       chests: (this.chests.getChildren() as Sprite[]).filter((c) => c.active).map(point),
+      bosses: this.bosses.map(point),
       enemies: this.aliveEnemies().map(point),
     };
     this.scene.pause();
@@ -706,7 +981,12 @@ export class GameScene extends Phaser.Scene {
 
   private onTouch(enemy: Sprite) {
     if (this.over || this.invincible || !enemy.active) return;
-    const damage = (enemy.getData("damage") as number | undefined) ?? PIGEON.damage;
+    this.hurt((enemy.getData("damage") as number | undefined) ?? PIGEON.damage);
+  }
+
+  // Un colpo al gatto, da un contatto o dall'urlo: non conta durante l'invulnerabilità.
+  private hurt(damage: number) {
+    if (this.over || this.invincible) return;
     const { health, hit } = takeHit(this.health, damage, this.elapsed, CAT.invulnerabilityMs);
     if (!hit) return;
     this.health = health;
@@ -748,6 +1028,7 @@ export class GameScene extends Phaser.Scene {
   private endRun(dawn: boolean) {
     if (this.over) return;
     this.over = true;
+    if (this.debugText) this.writeDebugState(Math.round(this.game.loop.actualFps), this.enemies.countActive(true));
     this.time.timeScale = 1;
     this.physics.world.timeScale = 1;
     this.anims.globalTimeScale = 1;
@@ -792,8 +1073,8 @@ export class GameScene extends Phaser.Scene {
     g.fillStyle(0xffffff, 0.35).fillCircle(start.x + v.x * JOYSTICK_RADIUS, start.y + v.y * JOYSTICK_RADIUS, 9);
   }
 
-  // Il pannello di debug, con ?debug nell'indirizzo: fotogrammi, nemici, e tre pulsanti per provare in fretta.
-  // Sta sotto la pausa e i piccioni presi, sul lato destro.
+  // Il pannello di debug, con ?debug nell'indirizzo: fotogrammi, nemici, e cinque pulsanti per provare in fretta.
+  // Sta sotto la pausa e i nemici presi, sul lato destro.
   private createDebug() {
     const { width } = this.scale;
     const top = SAFE + PAUSE_SIZE + 24;
@@ -810,9 +1091,18 @@ export class GameScene extends Phaser.Scene {
       this.invincible = !this.invincible;
       inv.setColor(this.invincible ? "#ffc85a" : "#ffffff");
     });
+    // un gruppo di ogni tipo, anche di quelli che a quest'ora della notte non ci sarebbero ancora
     button(TEXTS.debugSpawn, top + 38, () => {
-      for (let i = 0; i < 7; i++) this.spawnGroup(3);
+      for (let i = 0; i < 3; i++) this.spawnGroup("piccione", 3);
+      this.spawnGroup("zanzara", 6);
+      this.spawnGroup("pantegana", 2);
+      this.spawnGroup("cornacchia", 2);
     });
+    // un capo a comando, a turno: il gabbiano, poi il gabbiano reale, poi di nuovo il gabbiano
+    let nextBoss = 0;
+    button(TEXTS.debugBoss, top + 70, () => this.spawnBoss(BOSS_ORDER[nextBoss++ % BOSS_ORDER.length]));
+    // un livello di miagolio a ogni tocco, senza aspettare che esca la carta
+    button(TEXTS.debugMeow, top + 86, () => this.gainCard("meow"));
     const fast = button(TEXTS.debugFast, top + 54, () => {
       const on = this.time.timeScale === 1;
       // Arcade conta il contrario: timeScale 0,5 vuol dire fisica due volte più veloce
@@ -825,6 +1115,26 @@ export class GameScene extends Phaser.Scene {
 
   private updateDebug() {
     const alive = this.enemies.countActive(true);
-    this.debugText?.setText(`${Math.round(this.game.loop.actualFps)} fps\n${alive} nemici`);
+    const fps = Math.round(this.game.loop.actualFps);
+    this.debugText?.setText(`${fps} fps\n${alive} nemici`);
+    this.writeDebugState(fps, alive);
+  }
+
+  // Con ?debug lo stato della partita si legge anche da fuori, sul canvas: serve alla partita automatica
+  // che misura il bilanciamento (quante vite perse, a che livello, quanti nemici insieme, quanti sullo schermo,
+  // quanti riportati vicino, quanti spinti via dal miagolio, a che livello è ogni carta, quando è nato e quando
+  // è caduto ogni capo).
+  private writeDebugState(fps: number, alive: number) {
+    const view = this.cameras.main.worldView;
+    const inView = this.aliveEnemies().filter((e) => view.contains(e.x, e.y)).length;
+    for (const b of this.bosses) {
+      const log = b.getData("log") as BossLogEntry | null | undefined;
+      if (log) log.vita = Math.round(b.getData("hp") as number);
+    }
+    this.game.canvas.dataset.stato = JSON.stringify({
+      ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
+      presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, spinti: this.pushes, carte: this.levels,
+      capi: this.bossLog, fps,
+    });
   }
 }

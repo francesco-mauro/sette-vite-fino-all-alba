@@ -9,11 +9,11 @@ export interface Stats {
   // vita resa al secondo, da pancia piena
   regenPerSecond: number;
   // il livello di ogni arma: 0 vuol dire che il gatto non ce l'ha ancora
-  weapons: { scratch: number; tail: number; fur: number };
+  weapons: { scratch: number; tail: number; fur: number; meow: number };
 }
 
 // computeStats: `levels` dice a che livello è ogni carta presa (per id). Il graffio c'è dall'inizio, al livello 1:
-// la sua carta lo alza oltre. Coda a frusta e pelo che vola partono da 0.
+// la sua carta lo alza oltre. Coda a frusta, pelo che vola e miagolio partono da 0.
 export function computeStats(levels: Readonly<Record<string, number>>): Stats {
   const lv = (id: string) => levels[id] ?? 0;
   return {
@@ -22,6 +22,6 @@ export function computeStats(levels: Readonly<Record<string, number>>): Stats {
     magnetMultiplier: 1 + PASSIVES.magnetPerLevel * lv("magnet"),
     maxHealthBonus: PASSIVES.healthPerLevel * lv("health"),
     regenPerSecond: PASSIVES.regenPerLevel * lv("health"),
-    weapons: { scratch: 1 + lv("scratch"), tail: lv("tail"), fur: lv("fur") },
+    weapons: { scratch: 1 + lv("scratch"), tail: lv("tail"), fur: lv("fur"), meow: lv("meow") },
   };
 }

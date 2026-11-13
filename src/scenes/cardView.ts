@@ -14,6 +14,7 @@ const ICONS: Record<string, { key: string; frame: number }> = {
   scratch: { key: "graffio", frame: 1 },
   tail: { key: "coda", frame: 1 },
   fur: { key: "pelo", frame: 0 },
+  meow: { key: "miagolio", frame: 1 },
   speed: { key: "carte", frame: 0 },
   health: { key: "carte", frame: 1 },
   damage: { key: "carte", frame: 2 },

@@ -59,8 +59,14 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `alba.png` | 480×270 | Lo sfondo della fine, l'alba su Roma (tappa 3b) |
 | `carte.png` | 64×16 | Quattro icone provvisorie da 16×16: zampe veloci, pancia piena, unghie affilate, naso fino. Le disegna `art/icone_carte.py`, non vengono dalle tavole |
 | `cassa.png` | 32×16 | La cassa del tesoro provvisoria, due fotogrammi da 16×16: ferma, luccica. La disegna `art/cassa.py`, non viene dalle tavole |
+| `zanzara.png` | 32×16 | Due fotogrammi da 16×16: ali alzate, ali abbassate (tappa 4) |
+| `pantegana.png` | 32×16 | Due fotogrammi da 16×16: i due passi della corsa (tappa 4) |
+| `cornacchia.png` | 32×16 | Due fotogrammi da 16×16: in volo, in picchiata (tappa 4) |
+| `gabbiano.png` | 64×32 | Due fotogrammi da 32×32: ali alzate, ali abbassate (tappa 4) |
+| `gabbiano-reale.png` | 64×32 | Due fotogrammi da 32×32: fermo, urla. Il pezzetto di pietra tra le zampe lo toglie lo script, due pixel per fotogramma (tappa 4) |
+| `miagolio.png` | 96×32 | Tre fotogrammi da 32×32 del miagolio: un anello che parte, si allarga, svanisce (tappa 4) |
 
-In più `public/favicon.png`, 64×64: il gatto fermo ingrandito 4 volte, per la scheda del browser. Dalla tappa 2 gli sprite nuovi escono dalle tavole con `art/sprite_dalle_tavole.py`, che controlla anche i colori: il 12 novembre 2026 tutti dentro i 24 della palette, senza pixel semitrasparenti.
+In più `public/favicon.png`, 64×64: il gatto fermo ingrandito 4 volte, per la scheda del browser. Dalla tappa 2 gli sprite nuovi escono dalle tavole con `art/sprite_dalle_tavole.py`, che controlla anche i colori: il 12 novembre 2026 tutti dentro i 24 della palette, senza pixel semitrasparenti, e lo stesso il 13 novembre con i tre nemici, i due capi e il miagolio della tappa 4.
 
 ## Tutti gli asset fino alla tappa 4
 La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito, non ancora per forza nel repository: ci entra alla sua tappa.
@@ -83,13 +89,13 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Icona della vita | 9×8 | 1 | 3a | nel repository dalla tappa 3b, presa così com'è |
 | Icona delle uccisioni | 16×16 | 1 | 3b | nel repository |
 | Sfondi del titolo (Roma di notte) e della fine (l'alba) | 480×270 | 1 | 3b | nel repository, usati interi |
-| Zanzara | 16×16 | 2: ali su, ali giù | 4 | pronta |
-| Pantegana | 16×16 | 2: corsa | 4 | pronta |
-| Cornacchia grigia | 16×16 | 2: in volo, in picchiata | 4 | pronta |
-| Gabbiano, capo del quinto minuto | 32×32 | 2: ali su, ali giù | 4 | pronto |
-| Gabbiano reale, capo del decimo minuto | 32×32 | 2: fermo, urla | 4 | quasi: tra le zampe è rimasto un pezzetto di pietra, da togliere a mano |
+| Zanzara | 16×16 | 2: ali su, ali giù | 4 | nel repository |
+| Pantegana | 16×16 | 2: corsa | 4 | nel repository |
+| Cornacchia grigia | 16×16 | 2: in volo, in picchiata | 4 | nel repository |
+| Gabbiano, capo del quinto minuto | 32×32 | 2: ali su, ali giù | 4 | nel repository |
+| Gabbiano reale, capo del decimo minuto | 32×32 | 2: fermo, urla | 4 | nel repository, senza il pezzetto di pietra tra le zampe |
 | Supplì | 16×16 | 2: con il filo, con la croce della cura | 4 | pronto |
-| Miagolio | 32×32 | 3 | 4 | pronto |
+| Miagolio | 32×32 | 3 | 4 | nel repository. Nel gioco si ingrandisce fino al raggio dell'onda |
 
 ## I caratteri
 Jersey 10 per le parole (titoli, nomi, carte, pulsanti) e Silkscreen per numeri ed etichette, mai in grassetto. Dalla tappa 2 nel gioco c'è Silkscreen, in `public/fonts/`, usato per ora anche per le parole; Jersey 10 non c'è ancora (vedi `DECISIONI.md`).
@@ -98,13 +104,13 @@ Alla tappa 0 si è visto che il testo disegnato dal browser ha sempre i bordi sf
 
 ## I conti
 - **Immagini fino alla tappa 4:** 5 del gatto, 8 dei nemici, 4 dei capi, 4 degli oggetti, 12 degli attacchi, 3 caselle, 3 pezzi del lampione, 12 icone delle carte, 2 icone dell'interfaccia. In tutto **53**.
-- **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 ci sono due ritocchi: il gabbiano reale e l'icona della vita. I due sfondi delle schermate sono fuori dal conto.
-- **Nel repository:** 16 file. Valgono 23 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, i 2 del piccione, i 2 della crocchetta, i 9 di graffio, coda a frusta e pelo che vola, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le quattro icone provvisorie dei potenziamenti e la cassa del tesoro provvisoria, che stanno fuori dal conto.
+- **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 resta un ritocco da guardare, l'icona della vita; quello del gabbiano reale è fatto. I due sfondi delle schermate sono fuori dal conto.
+- **Nel repository:** 22 file. Valgono 36 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, gli 8 dei quattro nemici, i 4 dei due capi, i 2 della crocchetta, i 12 di graffio, coda a frusta, pelo che vola e miagolio, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le quattro icone provvisorie dei potenziamenti e la cassa del tesoro provvisoria, che stanno fuori dal conto.
 
 ## Cosa manca
 1. Le 12 icone delle carte. Per ora le armi usano un fotogramma del loro effetto e i potenziamenti le icone provvisorie di `art/icone_carte.py`.
 2. Il lampione diviso in palo, alone e pozza, per la tappa 4.
-3. Il pezzetto di pietra tra le zampe del gabbiano reale, e uno sguardo all'icona della vita.
+3. Uno sguardo all'icona della vita. Il pezzetto di pietra tra le zampe del gabbiano reale è tolto dal 13 novembre 2026.
 4. La cassa del tesoro: per ora quella provvisoria di `art/cassa.py`.
 5. Jersey 10 per i titoli; Silkscreen c'è dalla tappa 2.
 6. Fatto alla tappa 2: lo spacchettatore delle tavole e il controllo dei colori sono in `art/sprite_dalle_tavole.py`.

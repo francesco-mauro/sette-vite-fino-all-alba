@@ -2,7 +2,9 @@
 export const TEXTS = {
   gameOverTitle: "il gatto è stanco",
   debugInvincible: "invincibile",
-  debugSpawn: "+20 piccioni",
+  debugSpawn: "+ nemici",
+  debugBoss: "+ capo",
+  debugMeow: "+ miagolio",
   debugFast: "veloce",
   level: "liv",
   chooseCard: "scegli una carta",
@@ -30,7 +32,7 @@ export const TEXTS = {
   newRecord: "nuovo record!",
   score: "punteggio",
   time: "tempo",
-  kills: "piccioni",
+  kills: "nemici",
   backToTitle: "tocca o premi spazio per tornare al titolo",
   lifeLost: "una vita in meno",
   chest: "cassa del tesoro",
@@ -39,12 +41,19 @@ export const TEXTS = {
   mapClose: "tocca o premi m per tornare",
 };
 
+// I capi: il nome sopra la barra della vita e la scritta che li annuncia.
+export const BOSS_TEXTS: Record<string, { name: string; arrives: string }> = {
+  gabbiano: { name: "gabbiano", arrives: "arriva il gabbiano!" },
+  "gabbiano-reale": { name: "gabbiano reale", arrives: "arriva il gabbiano reale!" },
+};
+
 // Nome e descrizione di ogni carta. `first` è la descrizione quando la carta arriva per la prima volta,
 // `more` quando la si prende di nuovo.
 export const CARD_TEXTS: Record<string, { name: string; first: string; more: string }> = {
   scratch: { name: "graffio", first: "più danno, più spesso, più lontano", more: "più danno, più spesso, più lontano" },
   tail: { name: "coda a frusta", first: "un colpo ad arco davanti al gatto", more: "più forte e più larga" },
   fur: { name: "pelo che vola", first: "ciuffi in tutte le direzioni", more: "più ciuffi, più forti" },
+  meow: { name: "miagolio", first: "un'onda che spinge via chi è vicino", more: "più larga, più forte, più spesso" },
   speed: { name: "zampe veloci", first: "il gatto corre più veloce", more: "il gatto corre più veloce" },
   health: { name: "pancia piena", first: "più vita, un po' di cura, e si rigenera piano", more: "più vita, un po' di cura, e si rigenera piano" },
   damage: { name: "unghie affilate", first: "tutte le armi fanno più danno", more: "tutte le armi fanno più danno" },

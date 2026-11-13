@@ -1,17 +1,52 @@
-// Le ondate: quanto spesso arrivano i piccioni e quanti, man mano che la notte avanza. Logica pura, senza Phaser.
-// La tabella vera, minuto per minuto e con tutti i nemici, è della tappa 4: per ora una salita dritta.
-import { WAVES } from "../data/balance";
+// Le ondate: chi nasce e quando, man mano che la notte avanza. Logica pura, senza Phaser.
+// La tabella con i numeri è in src/data/waves.ts; qui ci sono le regole per leggerla.
+import { WAVES, type EnemyId } from "../data/balance";
+import { WAVE_TABLE } from "../data/waves";
 
-// spawnPlan: `progress` è quanta notte è passata, da 0 (inizio) a 1 (alba).
-// L'intervallo tra un gruppo e l'altro scende, il gruppo cresce, e i piccioni nascono più cattivi: danno e
-// velocità si moltiplicano da 1 all'inizio fino a WAVES.endDamageScale e WAVES.endSpeedScale all'alba.
-// La notte non diventa mai più facile.
-export function spawnPlan(progress: number): { intervalMs: number; groupSize: number; damageScale: number; speedScale: number } {
+// Un gruppo di un tipo di nemico: `size` insieme, ogni `everyMs` millisecondi di notte.
+export interface WaveGroup {
+  size: number;
+  everyMs: number;
+}
+
+// Una riga della tabella: per ogni tipo presente in quel minuto, il suo gruppo. Chi manca non nasce.
+export type WaveRow = Partial<Record<EnemyId, WaveGroup>>;
+
+// waveRow: la riga per `progress`, cioè quanta notte è passata, da 0 (inizio) a 1 (alba).
+// La notte è divisa in tante parti uguali quante sono le righe: con 15 righe, in una notte da 15 minuti ogni riga
+// dura un minuto, in una da 5 venti secondi. Così una notte corta ha le stesse ondate, più in fretta.
+export function waveRow(progress: number, table: readonly WaveRow[]): WaveRow {
+  const p = Math.min(1, Math.max(0, progress));
+  return table[Math.min(table.length - 1, Math.floor(p * table.length))];
+}
+
+// spawnPlan: la riga di adesso e quanto sono cattivi i nemici che nascono adesso. Danno e velocità si
+// moltiplicano da 1 all'inizio fino a WAVES.endDamageScale e WAVES.endSpeedScale all'alba.
+export function spawnPlan(progress: number, table: readonly WaveRow[] = WAVE_TABLE): { row: WaveRow; damageScale: number; speedScale: number } {
   const p = Math.min(1, Math.max(0, progress));
   return {
-    intervalMs: Math.round(WAVES.startIntervalMs + (WAVES.endIntervalMs - WAVES.startIntervalMs) * p),
-    groupSize: Math.floor(WAVES.startGroup + (WAVES.endGroup - WAVES.startGroup) * p),
+    row: waveRow(p, table),
     damageScale: 1 + (WAVES.endDamageScale - 1) * p,
     speedScale: 1 + (WAVES.endSpeedScale - 1) * p,
   };
+}
+
+// dueSpawns: i gruppi che devono nascere adesso. `nextAt` dice, per ogni tipo, da che momento della notte
+// tocca di nuovo a lui; un tipo che non c'è ancora (appena entrato nella tabella) nasce subito.
+// Restituisce i gruppi e gli orologi aggiornati, senza toccare quelli ricevuti.
+// Quando la riga cambia, un orologio che sta correndo finisce il suo giro con l'intervallo vecchio: il nuovo vale dal gruppo dopo.
+export function dueSpawns(
+  row: WaveRow,
+  nextAt: Readonly<Partial<Record<EnemyId, number>>>,
+  elapsed: number,
+): { spawns: { kind: EnemyId; size: number }[]; nextAt: Partial<Record<EnemyId, number>> } {
+  const spawns: { kind: EnemyId; size: number }[] = [];
+  const updated = { ...nextAt };
+  for (const kind of Object.keys(row) as EnemyId[]) {
+    const group = row[kind];
+    if (!group || elapsed < (nextAt[kind] ?? 0)) continue;
+    spawns.push({ kind, size: group.size });
+    updated[kind] = elapsed + group.everyMs;
+  }
+  return { spawns, nextAt: updated };
 }

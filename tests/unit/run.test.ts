@@ -1,9 +1,7 @@
-// I test della partita intera: l'orologio, le ondate che crescono, il punteggio, il record.
+// I test della partita intera: l'orologio, il punteggio, il record. Le ondate hanno i loro in waves.test.ts.
 import { describe, expect, it } from "vitest";
 import { formatClock } from "../../src/logic/clock";
 import { loadRecord, saveRecord, type Storage } from "../../src/logic/record";
-import { WAVES } from "../../src/data/balance";
-import { spawnPlan } from "../../src/logic/waves";
 import { computeScore } from "../../src/shared/score";
 
 describe("l'orologio della notte", () => {
@@ -14,41 +12,8 @@ describe("l'orologio della notte", () => {
   });
 });
 
-describe("le ondate", () => {
-  it("all'inizio pochi piccioni e radi, all'alba tanti e fitti", () => {
-    const start = spawnPlan(0);
-    const end = spawnPlan(1);
-    expect(end.intervalMs).toBeLessThan(start.intervalMs);
-    expect(end.groupSize).toBeGreaterThan(start.groupSize);
-  });
-
-  it("la notte non diventa mai più facile andando avanti", () => {
-    let prev = spawnPlan(0);
-    for (let p = 0.05; p <= 1; p += 0.05) {
-      const now = spawnPlan(p);
-      expect(now.intervalMs).toBeLessThanOrEqual(prev.intervalMs);
-      expect(now.groupSize).toBeGreaterThanOrEqual(prev.groupSize);
-      expect(now.damageScale).toBeGreaterThanOrEqual(prev.damageScale);
-      expect(now.speedScale).toBeGreaterThanOrEqual(prev.speedScale);
-      prev = now;
-    }
-  });
-
-  it("i piccioni partono come sempre e all'alba fanno più danno e sono più veloci", () => {
-    expect(spawnPlan(0)).toMatchObject({ damageScale: 1, speedScale: 1 });
-    expect(spawnPlan(1)).toMatchObject({ damageScale: WAVES.endDamageScale, speedScale: WAVES.endSpeedScale });
-    expect(WAVES.endDamageScale).toBeGreaterThan(1);
-    expect(WAVES.endSpeedScale).toBeGreaterThan(1);
-  });
-
-  it("oltre l'alba o prima dell'inizio resta nei limiti", () => {
-    expect(spawnPlan(2)).toEqual(spawnPlan(1));
-    expect(spawnPlan(-1)).toEqual(spawnPlan(0));
-  });
-});
-
 describe("il punteggio", () => {
-  it("conta i secondi vivi, i piccioni presi e le mance", () => {
+  it("conta i secondi vivi, i nemici presi e le mance", () => {
     expect(computeScore({ survivedMs: 60_000, kills: 10, points: 100, livesLost: 0, dawn: false })).toBe(60 + 100 + 100);
   });
 
@@ -59,7 +24,7 @@ describe("il punteggio", () => {
   });
 
   it("ogni vita persa toglie un pezzo, ma il punteggio non va sotto zero", () => {
-    // 60 secondi più 10 piccioni fanno 160, meno 250 per la vita persa: si ferma a zero
+    // 60 secondi più 10 nemici fanno 160, meno 250 per la vita persa: si ferma a zero
     expect(computeScore({ survivedMs: 60_000, kills: 10, points: 0, livesLost: 1, dawn: false })).toBe(0);
     expect(computeScore({ survivedMs: 600_000, kills: 100, points: 0, livesLost: 2, dawn: false })).toBe(600 + 1000 - 500);
   });

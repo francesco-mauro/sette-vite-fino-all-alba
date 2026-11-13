@@ -6,6 +6,7 @@ export const CARDS: CardDef[] = [
   { id: "scratch", rarity: "common", maxLevel: 5 },
   { id: "tail", rarity: "common", maxLevel: 5 },
   { id: "fur", rarity: "rare", maxLevel: 5 },
+  { id: "meow", rarity: "common", maxLevel: 5 },
   { id: "speed", rarity: "common", maxLevel: 5 },
   { id: "health", rarity: "common", maxLevel: 5 },
   { id: "damage", rarity: "rare", maxLevel: 5 },
