@@ -2,16 +2,16 @@
 
 L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 1.0 e regge il carico.
 
-**Stato: in corso dal 13 novembre 2026.** Fatti i primi quattro passi: chi arriva e quando (tre nemici nuovi e la tabella delle ondate), i nemici rimasti lontano che tornano vicino, i due capi, e il miagolio, la quarta arma. Mancano i passivi che restano, il supplì, le categorie di collisione, la prova con 500 nemici e la bilanciatura.
+**Stato: in corso dal 13 novembre 2026.** Fatti i primi cinque passi: chi arriva e quando (tre nemici nuovi e la tabella delle ondate), i nemici rimasti lontano che tornano vicino, i due capi, il miagolio, la quarta arma, e i tre passivi che mancavano, con il graffio che sceglie il capo. Sono tutti online dal 13 novembre. Mancano il supplì, le categorie di collisione, la prova con 500 nemici e la bilanciatura.
 
 **Fatto quando:** la misura con 500 nemici c'è, con numeri veri; i quindici minuti si giocano con la difficoltà che sale e tutti i contenuti; la partita di prova con una persona che non conosce il gioco è fatta e annotata; test verdi; online.
 
 ## Contenuti
-- Cosa c'è di nuovo: i tre nemici, la picchiata, la tabella delle ondate, chi resta lontano, i due capi, il miagolio
+- Cosa c'è di nuovo: i tre nemici, la picchiata, la tabella delle ondate, chi resta lontano, i due capi, il miagolio, il graffio che sceglie il capo, i tre passivi nuovi
 - Le tecnologie di questa tappa, e perché
 - I concetti, in parole semplici
 - Cosa è stato difficile
-- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio
+- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi
 - La domanda da colloquio
 - Lo spunto per il post
 - Da fare
@@ -44,11 +44,23 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 
 | Livello | Torna ogni | Danno | Raggio | Spinta |
 |---|---|---|---|---|
-| 1 | 3,0 secondi | 2 | 40 pixel | 24 pixel |
-| 2 | 2,8 secondi | 2 | 44 | 28 |
-| 3 | 2,6 secondi | 3 | 48 | 32 |
-| 4 | 2,4 secondi | 3 | 54 | 36 |
-| 5 | 2,2 secondi | 4 | 60 | 42 |
+| 1 | 3,0 secondi | 2 | 40 pixel | 32 pixel |
+| 2 | 2,8 secondi | 2 | 44 | 36 |
+| 3 | 2,6 secondi | 3 | 48 | 42 |
+| 4 | 2,4 secondi | 3 | 54 | 48 |
+| 5 | 2,2 secondi | 4 | 60 | 56 |
+
+- **La spinta più lunga.** All'inizio era 24, 28, 32, 36 e 42 pixel. Dopo averci giocato Francesco l'ha voluta un po' più lunga. Resta entro il raggio dell'onda, e un test lo controlla.
+- **Il graffio sceglie il capo.** Quando un capo è a tiro, il graffio colpisce lui e non il nemico più vicino. Se i capi a tiro sono due, il più vicino dei due. Senza capi a tiro tutto è come prima. L'ha deciso Francesco giocando: i nemici fanno mucchio intorno al gatto, e il graffio al capo non arrivava mai.
+- **Tre passivi nuovi.** Con questi, gli otto potenziamenti del progetto ci sono tutti, in sette carte: la rigenerazione sta dentro pancia piena.
+
+| Carta | Rarità | Cosa fa | Per livello | Al quinto livello |
+|---|---|---|---|---|
+| Riflessi pronti | rara | tutte le armi partono più spesso | l'8% in più | il 40% in più: chi aspettava 1000 millisecondi ne aspetta 714 |
+| Pelo gonfio | comune | graffio, coda a frusta e miagolio arrivano più lontano | l'8% in più | il 40% in più: l'onda del miagolio passa da 60 a 84 pixel |
+| Zampa fortunata | comune | più carte rare e più casse triple | 1 di peso in più alle rare, 4 punti in più di probabilità alla cassa tripla | le rare pesano 9 contro 10 delle comuni (partivano da 4), la cassa è tripla 3 volte su 10 (partiva da 1) |
+
+- **Cosa non tocca il pelo gonfio.** Il pelo che vola arriva già al bordo dello schermo: per lui non cambia niente, e la carta lo dice.
 
 - **Nella schermata finale** c'è scritto «nemici», non più «piccioni».
 - **Per provare.** Nel pannello di debug il pulsante «+ nemici» fa nascere un gruppo di ogni tipo, anche di quelli che a quell'ora della notte non ci sarebbero, «+ capo» fa nascere un capo, a turno, e «+ miagolio» dà un livello di miagolio a ogni tocco. Con `?debug` lo stato della partita si legge anche da fuori, sul canvas: serve alla partita automatica che misura il bilanciamento, e dice anche a che livello è ogni carta e quanti nemici ha spinto il miagolio.
@@ -61,6 +73,7 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 | Una macchina a stati (`src/logic/dive.ts`) | La picchiata della cornacchia | Quattro fasi con regole chiare si provano una per una, senza aprire il gioco |
 | La stessa macchina a stati, altri numeri | La carica del gabbiano | È la picchiata della cornacchia con i numeri di un capo: nessuna regola nuova da scrivere e da provare |
 | Una seconda macchina a stati (`src/logic/scream.ts`) | L'urlo del gabbiano reale | Tre fasi: si avvicina, carica l'urlo, riprende fiato. In un fotogramma solo dice «adesso urla», e la scena fa il resto |
+| Una preferenza sopra la mira (`preferredIndex` in `src/logic/targeting.ts`) | Il graffio sceglie il capo quando è a tiro | La regola del più vicino resta com'era e la preferenza le sta sopra: sei test nuovi, nessuno di quelli vecchi toccato |
 | Una funzione pura per la spinta (`src/logic/knockback.ts`) | Dice chi è dentro l'onda del miagolio e a che velocità si allontana | Si prova con i numeri, senza aprire il gioco: dentro, sul bordo, fuori, in diagonale, esattamente sopra il gatto |
 | Il pool di Phaser | Lo stesso sprite fa prima il piccione e poi la zanzara | Niente oggetti creati e buttati a ogni nemico: si rimettono immagine e dati a chi esce dal pool |
 | Playwright fuori dai test | La partita automatica che gioca da sola | Misurare con venti partite a mano non è possibile; una macchina le gioca a velocità quadrupla |
@@ -74,6 +87,8 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 - **L'avviso prima del colpo.** Un attacco forte deve farsi vedere prima: il gabbiano si ferma, il cerchio del reale si allarga. Un test controlla che dall'urlo si possa uscire: nel tempo dell'avviso il gatto fa 72 pixel, più dei 60 del raggio.
 - **La vita che segue la durata della notte.** In una notte da 5 minuti le ondate corrono tre volte più in fretta e il gatto raccoglie meno crocchette: a due minuti, poco dopo l'arrivo del primo capo, è tra il livello 6 e l'8 (sei partite), mentre nella notte da 15 al quinto minuto è tra l'11 e il 15 (tre partite). Per questo la vita dei capi cala in proporzione.
 - **Chi comanda la velocità.** A ogni fotogramma la scena rimette la velocità di ogni nemico verso il gatto. Una spinta data una volta sola sparirebbe al fotogramma dopo. Per questo ogni nemico porta un dato, «spinto fino a»: finché vale, l'inseguimento lo lascia stare.
+- **Un moltiplicatore al posto di tanti numeri.** Riflessi pronti e pelo gonfio non riscrivono le tabelle delle armi: danno un moltiplicatore, e una funzione sola (`tuneWeapon` in `src/logic/stats.ts`) lo applica ai numeri di ogni arma prima che parta. Una carta nuova così non tocca i livelli delle armi, e un'arma nuova li eredita senza fare niente.
+- **Più spesso non è meno attesa.** «Il 40% più spesso» non vuol dire «il 40% di attesa in meno»: l'attesa si divide per 1,4, quindi cala del 29%. Con la sottrazione, cinque livelli da 20% porterebbero l'attesa a zero.
 - **Misurare prima di credere.** Una spiegazione che sembra giusta va provata con un numero. Qui sotto ce n'è una che era giusta solo a metà.
 
 ## Cosa è stato difficile
@@ -84,6 +99,7 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 - **Una difesa che era l'arma più forte.** Il miagolio è nato come difesa, con un danno da 4 a 10. Colpisce però tutti quelli intorno al gatto insieme, e nella prova con l'onda al livello 3 dal primo secondo il gatto in tondo ha preso da 2002 a 2440 nemici ed è arrivato al livello 35, 39 e 40 in cinque minuti. Senza miagolio, nelle partite dei capi, erano da 189 a 657 nemici e livello 9, 14 e 19. Il danno è sceso a 2, 2, 3, 3, 4, e un test dice che il danno di base non supera la vita di una zanzara, che è 4. La carta unghie affilate lo alza comunque, come per le altre armi. Le misure sono più sotto.
 - **Un disegno da 32 pixel per un'onda da 80.** Nelle tavole l'anello del miagolio arriva a 13 pixel e mezzo dal centro. Per farlo coincidere con il bordo vero dell'onda lo sprite si ingrandisce da tre a quattro volte e mezza, e i suoi pixel diventano più grossi di quelli del resto del gioco. È disegnato un po' trasparente per non coprire il gatto. Resta da decidere con Francesco se ridisegnarlo più grande.
 - **Le partite buttate.** Il server di sviluppo ricarica la pagina a ogni file cambiato. Una modifica al codice mentre le partite automatiche giravano le ha fatte ripartire dal titolo: quel giro è stato buttato e rifatto. Mentre si misura non si tocca il codice.
+- **Più carte nel mazzo, e la prima vita se ne va prima.** Con tre carte in più, nelle tre partite del gatto in tondo le vite perse sono salite da 2, 3 e 2 a 4, 5 e 6, e la prima è andata via a 71, 80 e 72 secondi invece che a 111, 97 e 109: prima che nasca il primo capo, quindi la mira nuova del graffio lì non c'entra. Restano due sospetti, non misurati: le tre carte in più e la spinta più lunga del miagolio, entrata nello stesso passo. Per le carte: il gatto automatico prende sempre la prima carta, e con undici carte al posto di otto gli capita più spesso una che non lo aiuta subito. La zampa fortunata è stata presa in tutte e sette le partite. Tre partite sono poche, e una persona le carte le sceglie.
 - **Lo sprite del pool che cambia taglia.** Un capo è 32 per 32, gli altri 16 per 16, e vivono nello stesso pool. A ogni nascita si rimettono immagine e scatola delle collisioni: uno sprite che ha fatto il capo torna piccione senza portarsi dietro la scatola grande.
 - **Il gatto automatico che si fermava.** Dopo la scelta di una carta il gioco non vede più premuto il tasto che era giù. Una tastiera vera lo ripete da sola; la partita automatica deve ripremerlo.
 
@@ -139,6 +155,21 @@ Con il miagolio, notte da 5 minuti. «Dal primo secondo» vuol dire che il pulsa
 
 Cosa dicono. Con la carta nel mazzo e il danno di adesso le partite stanno nella fascia di prima: in tondo 2, 3 e 2 vite perse e livello tra 10 e 18, contro 3, 1 e 3 e livello tra 9 e 19 senza miagolio. In quelle tre partite il gatto ha preso il miagolio fino al livello 2, 5 e 2, e l'onda ha spinto 592, 1269 e 609 nemici. Con il primo danno, regalato dal primo secondo, il miagolio moltiplicava i nemici presi. Abbassato il danno, al gatto che scappa dritto con il miagolio regalato il livello scende a 12, 10 e 11: senza miagolio era 13, 16 e 11. Al gatto in tondo non scende altrettanto: in due partite su tre arriva al livello 29 e 34, e proprio in quelle due finisce le vite prima dell'alba. Il perché non è misurato: manca una partita di controllo con tre livelli regalati di un'altra carta, e tre partite sono poche. Va guardato nella bilanciatura. Nelle 31 partite di questo passo nessun errore in console, e il punto più basso dei fotogrammi al secondo è stato 53.
 
+Con il graffio che sceglie il capo, i tre passivi nuovi e la spinta più lunga, notte da 5 minuti. La riga «prima» è quella del miagolio nel mazzo, qui sopra. Nella notte da 5 minuti il gabbiano ha 100 di vita e il reale 300.
+
+| Gatto | Quando | Partite | Vite perse | Come finisce | Livello alla fine | Nemici presi | Il gabbiano | Il gabbiano reale |
+|---|---|---|---|---|---|---|---|---|
+| In tondo | prima | 3 | 2, 3, 2 | alba | 10, 18, 15 | 238, 662, 456 | cade a 198 e 298 secondi, vivo in una con 48 di vita | vivo con 300, 286 e 300 |
+| In tondo | ora | 3 | 4, 5, 6 | alba | 11, 14, 18 | 262, 342, 577 | cade a 178, 148 e 134 secondi | cade a 270 secondi in una, vivo con 22 e 72 nelle altre |
+| Dritto | prima | 3 | 7, 7, 7 | senza vite a 271, 204 e 192 secondi | 12, 9, 12 | 282, 183, 283 | vivo con 53, 100 e 87 | vivo con 300 e 300, in una partita non è nato |
+| Dritto | ora | 3 | 7, 7, 7 | senza vite a 202, 222 e 213 secondi | 11, 12, 10 | 236, 283, 205 | cade a 181 secondi in una, vivo con 74 e 8 | vivo con 300, 261 e 300 |
+| Fermo | prima | 1 | 7 | senza vite a 98 secondi | 11 | 243 | non è nato | non è nato |
+| Fermo | ora | 1 | 7 | senza vite a 139 secondi | 8 | 122 | cade a 117 secondi | non è nato |
+
+Cosa dicono. Sui capi il cambio si vede: al gatto in tondo il gabbiano cade in tutte e tre le partite, e il reale, che prima restava quasi intero, cade in una e resta con 22 e 72 su 300 nelle altre due. Il prezzo, nelle stesse tre partite, sono più vite perse: 4, 5 e 6 contro 2, 3 e 2. Da cosa venga non è misurato: la mira nuova, le tre carte in più e la spinta più lunga sono entrate insieme. La prima vita persa arriva prima che nasca un capo: lì la mira non c'entra, restano le carte e la spinta. Livello e nemici presi restano nella fascia di prima. Nelle sette partite il gatto ha preso la zampa fortunata sempre, il pelo gonfio in quattro e i riflessi pronti in due. Nessun errore in console, e il punto più basso dei fotogrammi al secondo è stato 56.
+
+Dopo queste sette partite i numeri delle armi con i potenziamenti sono passati in una funzione provata dai test, senza cambiare cosa fa il gioco. Una partita di conferma, in tondo: alba, 4 vite perse, livello 13, il gabbiano caduto a 141 secondi e il reale a 287, nessun errore in console.
+
 ## La domanda da colloquio
 «Come hai tenuto 500 nemici a 60 fotogrammi al secondo?» La risposta completa arriva con la prova dei 500, che è ancora da fare. Quello che c'è già: i nemici vivono in un pool con un tetto, quindi il gioco non crea e non butta oggetti mentre si gioca; ogni nemico fa pochi conti a fotogramma, la distanza dal gatto e la direzione per raggiungerlo; le collisioni con il gatto e con i ciuffi di pelo le cerca l'indice spaziale di Phaser, e i nemici tra loro non si urtano. Con 300 nemici vivi, nelle partite automatiche il punto più basso è stato tra 52 e 59 fotogrammi al secondo, con tre partite insieme sullo stesso computer.
 
@@ -146,10 +177,12 @@ Cosa dicono. Con la carta nel mazzo e il danno di adesso le partite stanno nella
 Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da solo, e i numeri hanno detto un'altra cosa.
 
 ## Da fare
-- I capi con una persona che gioca: se la vita è giusta, e se il graffio deve scegliere il capo quando è a tiro invece del nemico più vicino.
-- Il miagolio con una persona che gioca: se la spinta si sente, quanto danno deve fare, e se l'onda ingrandita va bene o va ridisegnata più grande.
+- I capi con una persona che gioca: se la vita è giusta, adesso che il graffio li sceglie.
+- Il miagolio con una persona che gioca: quanto danno deve fare, se la spinta più lunga va bene, e se l'onda ingrandita va bene o va ridisegnata più grande.
+- I tre passivi con una persona che gioca: nomi, rarità e numeri sono di partenza. Da guardare se con undici carte le armi arrivano troppo tardi.
+- Separare, con le partite automatiche, quanto pesano sulle vite perse la mira nuova del graffio, le tre carte in più e la spinta più lunga.
 - Capire perché, con il miagolio regalato dal primo secondo, il gatto in tondo sale tanto di livello e perde più vite: serve una partita di controllo.
-- I passivi che mancano e il supplì a terra.
+- Il supplì a terra.
 - Le categorie di collisione.
 - La prova con 500 nemici sul computer e sul telefono, con i numeri qui.
 - Il tetto dei 300: con il gatto in tondo si tocca quasi sempre. Da decidere insieme alla prova dei 500.

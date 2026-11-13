@@ -28,7 +28,7 @@ import {
 import { BOSS_TEXTS, TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
 import { bossHealth, dueBoss } from "../logic/boss";
-import { drawCards } from "../logic/cards";
+import { drawCards, luckyWeights } from "../logic/cards";
 import { chestPoint, chestTimes, openChest } from "../logic/chest";
 import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { formatClock } from "../logic/clock";
@@ -41,8 +41,8 @@ import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
 import { groupOffset, spawnPoint, tooFar } from "../logic/spawn";
-import { computeStats, type Stats } from "../logic/stats";
-import { nearestIndex } from "../logic/targeting";
+import { computeStats, tuneWeapon, type Stats } from "../logic/stats";
+import { preferredIndex } from "../logic/targeting";
 import { dueSpawns, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
@@ -667,25 +667,27 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Ogni arma ha il suo orologio: quando arriva il suo momento parte, e il prossimo colpo si sposta avanti.
+  // I numeri di ogni arma passano da tuneWeapon: riflessi pronti accorcia l'attesa, pelo gonfio allunga
+  // portata e raggio.
   private fireWeapons(time: number) {
     const w = this.stats.weapons;
     if (w.scratch > 0 && time >= this.nextFire.scratch) {
-      const lv = SCRATCH_LEVELS[Math.min(w.scratch, SCRATCH_LEVELS.length) - 1];
+      const lv = tuneWeapon(SCRATCH_LEVELS[Math.min(w.scratch, SCRATCH_LEVELS.length) - 1], this.stats);
       this.scratch(lv);
       this.nextFire.scratch = time + lv.cooldownMs;
     }
     if (w.tail > 0 && time >= this.nextFire.tail) {
-      const lv = TAIL_LEVELS[Math.min(w.tail, TAIL_LEVELS.length) - 1];
+      const lv = tuneWeapon(TAIL_LEVELS[Math.min(w.tail, TAIL_LEVELS.length) - 1], this.stats);
       this.tail(lv);
       this.nextFire.tail = time + lv.cooldownMs;
     }
     if (w.fur > 0 && time >= this.nextFire.fur) {
-      const lv = FUR_LEVELS[Math.min(w.fur, FUR_LEVELS.length) - 1];
+      const lv = tuneWeapon(FUR_LEVELS[Math.min(w.fur, FUR_LEVELS.length) - 1], this.stats);
       this.fur(lv);
       this.nextFire.fur = time + lv.cooldownMs;
     }
     if (w.meow > 0 && time >= this.nextFire.meow) {
-      const lv = MEOW_LEVELS[Math.min(w.meow, MEOW_LEVELS.length) - 1];
+      const lv = tuneWeapon(MEOW_LEVELS[Math.min(w.meow, MEOW_LEVELS.length) - 1], this.stats);
       this.meow(lv);
       this.nextFire.meow = time + lv.cooldownMs;
     }
@@ -703,10 +705,12 @@ export class GameScene extends Phaser.Scene {
     fx.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => this.effects.killAndHide(fx));
   }
 
-  // Il graffio: colpisce il nemico più vicino, se è abbastanza vicino.
+  // Il graffio: colpisce il capo, se è a tiro; altrimenti il nemico più vicino, se è abbastanza vicino.
+  // I nemici fanno mucchio intorno al gatto: senza questa scelta il graffio non arriverebbe mai al capo.
   private scratch(lv: (typeof SCRATCH_LEVELS)[number]) {
     const alive = this.aliveEnemies();
-    const i = nearestIndex({ x: this.cat.x, y: this.cat.y }, alive, lv.range);
+    const isBoss = alive.map((e) => this.bosses.includes(e));
+    const i = preferredIndex({ x: this.cat.x, y: this.cat.y }, alive, isBoss, lv.range);
     if (i === -1) return;
     this.playEffect("graffio", alive[i].x, alive[i].y);
     this.damageEnemy(alive[i], lv.damage);
@@ -828,7 +832,7 @@ export class GameScene extends Phaser.Scene {
     this.joystick = null;
     this.joystickGfx.clear();
     this.pullAllKibbles();
-    const choices = drawCards(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS);
+    const choices = drawCards(CARDS, this.levels, this.rng, luckyWeights(CARD_WEIGHTS, this.stats.rareWeightBonus), FALLBACK_CARDS);
     const data: LevelUpData = { choices, levels: { ...this.levels } };
     this.scene.pause();
     this.scene.launch("LevelUp", data);
@@ -889,8 +893,10 @@ export class GameScene extends Phaser.Scene {
     this.chestsTaken++;
     const levels = { ...this.levels };
     // la cassa del gabbiano reale è tripla di sicuro: con probabilità 1 il tiro è sempre sotto
-    const tripleChance = chest.getData("triple") ? 1 : CHEST.tripleChance;
-    const gained = openChest(CARDS, this.levels, this.rng, CARD_WEIGHTS, FALLBACK_CARDS, tripleChance);
+    // zampa fortunata alza la probabilità delle altre e il peso delle carte rare, come nella scelta al livello
+    const tripleChance = chest.getData("triple") ? 1 : CHEST.tripleChance + this.stats.tripleChanceBonus;
+    const weights = luckyWeights(CARD_WEIGHTS, this.stats.rareWeightBonus);
+    const gained = openChest(CARDS, this.levels, this.rng, weights, FALLBACK_CARDS, tripleChance);
     for (const id of gained) this.gainCard(id);
     this.drawHud();
     this.joystick = null;

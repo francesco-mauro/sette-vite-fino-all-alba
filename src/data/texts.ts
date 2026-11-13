@@ -58,6 +58,9 @@ export const CARD_TEXTS: Record<string, { name: string; first: string; more: str
   health: { name: "pancia piena", first: "più vita, un po' di cura, e si rigenera piano", more: "più vita, un po' di cura, e si rigenera piano" },
   damage: { name: "unghie affilate", first: "tutte le armi fanno più danno", more: "tutte le armi fanno più danno" },
   magnet: { name: "naso fino", first: "le crocchette arrivano da più lontano", more: "le crocchette arrivano da più lontano" },
+  haste: { name: "riflessi pronti", first: "tutte le armi partono più spesso", more: "tutte le armi partono più spesso" },
+  area: { name: "pelo gonfio", first: "graffio, coda e miagolio arrivano più lontano", more: "graffio, coda e miagolio arrivano più lontano" },
+  luck: { name: "zampa fortunata", first: "più carte rare e più casse triple", more: "più carte rare e più casse triple" },
   heal: { name: "supplì", first: "cura 30 di vita", more: "cura 30 di vita" },
   points: { name: "mancia", first: "100 punti", more: "100 punti" },
 };

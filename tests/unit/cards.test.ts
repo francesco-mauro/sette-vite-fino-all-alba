@@ -1,7 +1,9 @@
 // I test della scelta tra tre carte: niente doppioni, niente carte al massimo, la carta di ripiego,
 // lo stesso seme che dà le stesse carte, le rare più difficili da trovare.
 import { describe, expect, it } from "vitest";
-import { drawCards, type CardDef } from "../../src/logic/cards";
+import { CARDS } from "../../src/data/cards";
+import { CARD_TEXTS } from "../../src/data/texts";
+import { drawCards, luckyWeights, type CardDef } from "../../src/logic/cards";
 import { createRng } from "../../src/logic/rng";
 
 const POOL: CardDef[] = [
@@ -69,5 +71,48 @@ describe("le tre carte", () => {
     }
     expect(rare).toBeLessThan(common / 2);
     expect(rare).toBeGreaterThan(0);
+  });
+});
+
+describe("la fortuna", () => {
+  it("aggiunge peso alle rare e lascia le comuni com'erano", () => {
+    expect(luckyWeights(WEIGHTS, 2)).toEqual({ common: 10, rare: 5 });
+  });
+
+  it("senza fortuna i pesi restano gli stessi, e quelli di partenza non vengono toccati", () => {
+    expect(luckyWeights(WEIGHTS, 0)).toEqual(WEIGHTS);
+    luckyWeights(WEIGHTS, 5);
+    expect(WEIGHTS).toEqual({ common: 10, rare: 3 });
+  });
+
+  it("con la fortuna le rare escono più spesso di prima", () => {
+    const count = (weights: typeof WEIGHTS) => {
+      const rng = createRng(7);
+      let rare = 0;
+      for (let i = 0; i < 2000; i++) if (drawCards(POOL, {}, rng, weights, FALLBACK, 1)[0] === "d") rare++;
+      return rare;
+    };
+    expect(count(luckyWeights(WEIGHTS, 5))).toBeGreaterThan(count(WEIGHTS) * 1.5);
+  });
+});
+
+describe("le carte del gioco", () => {
+  it("ci sono le quattro armi e i sette potenziamenti, senza doppioni", () => {
+    const ids = CARDS.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(expect.arrayContaining(["scratch", "tail", "fur", "meow", "speed", "health", "damage", "magnet", "haste", "area", "luck"]));
+    expect(ids).toHaveLength(11);
+  });
+
+  it("ogni carta ha il suo nome e le due descrizioni", () => {
+    for (const card of CARDS) {
+      expect(CARD_TEXTS[card.id].name.length).toBeGreaterThan(0);
+      expect(CARD_TEXTS[card.id].first.length).toBeGreaterThan(0);
+      expect(CARD_TEXTS[card.id].more.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("cadenza, area e fortuna hanno cinque livelli come gli altri potenziamenti", () => {
+    for (const id of ["haste", "area", "luck"]) expect(CARDS.find((c) => c.id === id)?.maxLevel).toBe(5);
   });
 });

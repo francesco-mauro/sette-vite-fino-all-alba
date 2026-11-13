@@ -1,4 +1,4 @@
-// La scelta tra tre carte: quali escono. Logica pura, senza Phaser.
+// La scelta tra tre carte: quali escono, e come la fortuna sposta i pesi. Logica pura, senza Phaser.
 import type { Rng } from "./rng";
 
 export type Rarity = "common" | "rare";
@@ -40,4 +40,10 @@ export function drawCards(
     picked.push(id);
   }
   return picked;
+}
+
+// luckyWeights: i pesi dell'estrazione con la fortuna. `rareBonus` si aggiunge al peso delle rare, le comuni
+// restano com'erano: con più fortuna le rare escono più spesso. Non tocca i pesi di partenza.
+export function luckyWeights(weights: Readonly<Record<Rarity, number>>, rareBonus: number): Record<Rarity, number> {
+  return { ...weights, rare: weights.rare + rareBonus };
 }

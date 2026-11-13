@@ -1,6 +1,7 @@
 // I test delle statistiche: dai livelli delle carte ai numeri del gatto e delle armi.
 import { describe, expect, it } from "vitest";
-import { computeStats } from "../../src/logic/stats";
+import { FUR_LEVELS, MEOW_LEVELS, SCRATCH_LEVELS, TAIL_LEVELS } from "../../src/data/balance";
+import { computeStats, tuneWeapon } from "../../src/logic/stats";
 
 describe("le statistiche dalle carte", () => {
   it("senza carte: il gatto di base e solo il graffio", () => {
@@ -33,8 +34,71 @@ describe("le statistiche dalle carte", () => {
     expect(computeStats({ tail: 1 }).weapons.tail).toBe(1);
   });
 
+  it("senza carte cadenza, area e fortuna non cambiano niente", () => {
+    const s = computeStats({});
+    expect(s.cooldownMultiplier).toBe(1);
+    expect(s.areaMultiplier).toBe(1);
+    expect(s.rareWeightBonus).toBe(0);
+    expect(s.tripleChanceBonus).toBe(0);
+  });
+
+  it("riflessi pronti: le armi partono più spesso, l'8% in più per livello, quindi l'attesa si accorcia", () => {
+    expect(computeStats({ haste: 1 }).cooldownMultiplier).toBeCloseTo(1 / 1.08);
+    expect(computeStats({ haste: 5 }).cooldownMultiplier).toBeCloseTo(1 / 1.4);
+  });
+
+  it("riflessi pronti non porta mai l'attesa sotto la metà", () => {
+    for (let lv = 0; lv <= 5; lv++) expect(computeStats({ haste: lv }).cooldownMultiplier).toBeGreaterThan(0.5);
+  });
+
+  it("pelo gonfio: le armi arrivano più lontano, l'8% in più per livello", () => {
+    expect(computeStats({ area: 1 }).areaMultiplier).toBeCloseTo(1.08);
+    expect(computeStats({ area: 5 }).areaMultiplier).toBeCloseTo(1.4);
+  });
+
+  it("zampa fortunata: ogni livello aggiunge peso alle carte rare e probabilità alla cassa tripla", () => {
+    expect(computeStats({ luck: 1 }).rareWeightBonus).toBe(1);
+    expect(computeStats({ luck: 5 }).rareWeightBonus).toBe(5);
+    expect(computeStats({ luck: 2 }).tripleChanceBonus).toBeCloseTo(0.08);
+  });
+
   it("il miagolio parte da zero e sale con la sua carta", () => {
     expect(computeStats({}).weapons.meow).toBe(0);
     expect(computeStats({ meow: 2 }).weapons.meow).toBe(2);
+  });
+});
+
+describe("i numeri di un'arma dopo i potenziamenti", () => {
+  it("senza carte l'arma resta com'è", () => {
+    expect(tuneWeapon(SCRATCH_LEVELS[0], computeStats({}))).toEqual(SCRATCH_LEVELS[0]);
+  });
+
+  it("riflessi pronti accorcia l'attesa di tutte e quattro le armi", () => {
+    const stats = computeStats({ haste: 5 });
+    for (const lv of [SCRATCH_LEVELS[0], TAIL_LEVELS[0], FUR_LEVELS[0], MEOW_LEVELS[0]]) {
+      expect(tuneWeapon(lv, stats).cooldownMs).toBeCloseTo(lv.cooldownMs / 1.4);
+    }
+  });
+
+  it("pelo gonfio allunga la portata del graffio e il raggio di coda e miagolio", () => {
+    const stats = computeStats({ area: 5 });
+    expect(tuneWeapon(SCRATCH_LEVELS[0], stats).range).toBeCloseTo(SCRATCH_LEVELS[0].range * 1.4);
+    expect(tuneWeapon(TAIL_LEVELS[0], stats).radius).toBeCloseTo(TAIL_LEVELS[0].radius * 1.4);
+    expect(tuneWeapon(MEOW_LEVELS[4], stats).radius).toBeCloseTo(84);
+  });
+
+  it("pelo gonfio non cambia il pelo che vola, che arriva già al bordo dello schermo", () => {
+    expect(tuneWeapon(FUR_LEVELS[2], computeStats({ area: 5 }))).toEqual(FUR_LEVELS[2]);
+  });
+
+  it("danno, spinta e larghezza dell'arco non cambiano, e la tabella di partenza non viene toccata", () => {
+    const stats = computeStats({ haste: 5, area: 5 });
+    const tail = tuneWeapon(TAIL_LEVELS[0], stats);
+    const meow = tuneWeapon(MEOW_LEVELS[0], stats);
+    expect(tail.damage).toBe(TAIL_LEVELS[0].damage);
+    expect(tail.halfAngle).toBe(TAIL_LEVELS[0].halfAngle);
+    expect(meow.push).toBe(MEOW_LEVELS[0].push);
+    expect(MEOW_LEVELS[0].radius).toBe(40);
+    expect(TAIL_LEVELS[0].cooldownMs).toBe(2000);
   });
 });

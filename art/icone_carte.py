@@ -1,4 +1,4 @@
-"""Le icone provvisorie dei quattro potenziamenti, disegnate qui con forme semplici.
+"""Le icone provvisorie dei sette potenziamenti, disegnate qui con forme semplici.
 
 Nelle tavole le icone delle carte non ci sono ancora (docs/ASSET.md, «Cosa manca»): finché non
 arrivano, questo script le disegna 16×16 con i colori della palette Lampione e il contorno
@@ -6,10 +6,12 @@ d'inchiostro di 1 pixel, come gli altri sprite. Le armi usano già un fotogramma
 
 Ordine dei fotogrammi in public/assets/carte.png:
   0 zampe veloci (l'impronta che corre), 1 pancia piena (la ciotola piena),
-  2 unghie affilate (la zampa con le unghie fuori), 3 naso fino (il muso che annusa).
+  2 unghie affilate (la zampa con le unghie fuori), 3 naso fino (il muso che annusa),
+  4 riflessi pronti (il lampo), 5 pelo gonfio (il gatto gonfio dentro un cerchio che si allarga),
+  6 zampa fortunata (il quadrifoglio).
 
 Uso:  python art/icone_carte.py [--anteprima FILE]
-  --anteprima FILE  scrive anche le quattro icone ingrandite otto volte, per guardarle.
+  --anteprima FILE  scrive anche le icone ingrandite otto volte, per guardarle.
 Serve Pillow.
 """
 import os
@@ -125,8 +127,44 @@ def magnet():
     return i.image()
 
 
+def haste():
+    i = Icon()
+    # il lampo: un tratto che scende verso sinistra, il gradino, e un secondo tratto fino alla punta
+    for y in range(1, 6):
+        i.fill(rect(10 - y, y, 12 - y, y), ORANGE_LIGHT)
+    i.fill(rect(4, 6, 10, 6), ORANGE_LIGHT)
+    for n, y in enumerate(range(7, 12)):
+        i.fill(rect(8 - n, y, 10 - n, y), ORANGE_LIGHT)
+    i.fill({(3, 12), (4, 12), (3, 13)}, ORANGE_LIGHT)
+    # il riflesso chiaro lungo il bordo alto
+    i.fill({(10, 1), (9, 2), (8, 3), (9, 7), (8, 8)}, CREAM)
+    return i.image()
+
+
+def area():
+    i = Icon()
+    # il gatto col pelo gonfio, tondo al centro, e intorno il cerchio che si allarga
+    i.fill(ellipse(8, 8, 3.2, 3.2), ORANGE)
+    i.fill(ellipse(7.5, 7.5, 1.6, 1.6), ORANGE_LIGHT)
+    ring = {(x, y) for x in range(SIZE) for y in range(SIZE)
+            if 6.4 <= ((x + 0.5 - 8) ** 2 + (y + 0.5 - 8) ** 2) ** 0.5 <= 7.4}
+    # il cerchio è tratteggiato: si legge come un'onda, non come un bordo
+    i.mark({(x, y) for (x, y) in ring if (x + y) % 3 != 0}, WINGS)
+    return i.image()
+
+
+def luck():
+    i = Icon()
+    # il quadrifoglio: quattro foglie tonde, il centro chiaro e il gambo
+    for cx, cy in ((5.5, 5), (10.5, 5), (5.5, 10), (10.5, 10)):
+        i.fill(ellipse(cx, cy, 2.4, 2.4), LIME)
+    i.fill(rect(7, 7, 8, 8), CREAM)
+    i.fill({(8, 12), (8, 13), (9, 14)}, LIME)
+    return i.image()
+
+
 def main():
-    icons = [speed(), health(), damage(), magnet()]
+    icons = [speed(), health(), damage(), magnet(), haste(), area(), luck()]
     strip = Image.new("RGBA", (SIZE * len(icons), SIZE), (0, 0, 0, 0))
     for n, icon in enumerate(icons):
         strip.paste(icon, (n * SIZE, 0))

@@ -19,6 +19,9 @@ const ICONS: Record<string, { key: string; frame: number }> = {
   health: { key: "carte", frame: 1 },
   damage: { key: "carte", frame: 2 },
   magnet: { key: "carte", frame: 3 },
+  haste: { key: "carte", frame: 4 },
+  area: { key: "carte", frame: 5 },
+  luck: { key: "carte", frame: 6 },
   heal: { key: "crocchetta", frame: 0 },
   points: { key: "crocchetta", frame: 1 },
 };

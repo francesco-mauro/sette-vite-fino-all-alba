@@ -94,6 +94,15 @@ describe("i numeri del miagolio", () => {
     expect(MEOW_LEVELS[0].damage).toBeLessThan(ENEMIES.zanzara.health);
   });
 
+  it("la spinta è più lunga di quella provata all'inizio (24 pixel al primo livello, 42 all'ultimo)", () => {
+    expect(MEOW_LEVELS[0].push).toBeGreaterThan(24);
+    expect(MEOW_LEVELS[MEOW_LEVELS.length - 1].push).toBeGreaterThan(42);
+  });
+
+  it("la spinta non supera mai il raggio dell'onda: chi è spinto non finisce fuori dallo schermo", () => {
+    for (const lv of MEOW_LEVELS) expect(lv.push).toBeLessThanOrEqual(lv.radius);
+  });
+
   it("i capi prendono il danno ma non si spostano", () => {
     const lv = MEOW_LEVELS[MEOW_LEVELS.length - 1];
     expect(knockback(cat, { x: 110, y: 100 }, lv.radius, lv.push * MEOW.bossPush, MEOW.pushMs)).toBeNull();

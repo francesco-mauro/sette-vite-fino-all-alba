@@ -223,13 +223,14 @@ export const FUR_LEVELS = [
 // come per le altre armi). Con il primo danno provato
 // (4, 5, 6, 8, 10) e l'onda al livello 3 dal primo secondo, il gatto automatico in tondo prendeva da 2002 a 2440
 // nemici e arrivava al livello 35-40 in una notte da 5 minuti, contro 189-657 nemici e livello 9-19 senza miagolio
-// (misura del 13 novembre 2026).
+// (misura del 13 novembre 2026). La spinta all'inizio era 24, 28, 32, 36, 42: dopo averci giocato Francesco
+// l'ha voluta un po' più lunga (13 novembre 2026). Resta entro il raggio dell'onda.
 export const MEOW_LEVELS = [
-  { cooldownMs: 3000, damage: 2, radius: 40, push: 24 },
-  { cooldownMs: 2800, damage: 2, radius: 44, push: 28 },
-  { cooldownMs: 2600, damage: 3, radius: 48, push: 32 },
-  { cooldownMs: 2400, damage: 3, radius: 54, push: 36 },
-  { cooldownMs: 2200, damage: 4, radius: 60, push: 42 },
+  { cooldownMs: 3000, damage: 2, radius: 40, push: 32 },
+  { cooldownMs: 2800, damage: 2, radius: 44, push: 36 },
+  { cooldownMs: 2600, damage: 3, radius: 48, push: 42 },
+  { cooldownMs: 2400, damage: 3, radius: 54, push: 48 },
+  { cooldownMs: 2200, damage: 4, radius: 60, push: 56 },
 ];
 
 export const MEOW = {
@@ -248,6 +249,16 @@ export const PASSIVES = {
   healthPerLevel: 20,
   // pancia piena rende anche vita piano: al secondo, per ogni livello della carta (al quinto, 1 al secondo)
   regenPerLevel: 0.2,
+  // riflessi pronti: quanto più spesso partono tutte le armi, per livello (al quinto, il 40% in più:
+  // un'arma che aspettava 1000 millisecondi ne aspetta 714)
+  hastePerLevel: 0.08,
+  // pelo gonfio: quanto più lontano arrivano graffio, coda a frusta e miagolio, per livello. Il pelo che vola
+  // arriva già al bordo dello schermo, quindi non cambia
+  areaPerLevel: 0.08,
+  // zampa fortunata: quanto peso in più hanno le carte rare nell'estrazione, per livello (le rare partono da
+  // CARD_WEIGHTS.rare, le comuni restano ferme), e quanta probabilità in più ha una cassa di essere tripla
+  luckRareWeightPerLevel: 1,
+  luckTriplePerLevel: 0.04,
 };
 
 // Le crocchette: quanta esperienza vale ognuna, e da che distanza la calamita le tira verso il gatto.

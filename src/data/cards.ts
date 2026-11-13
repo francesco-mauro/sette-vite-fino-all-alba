@@ -11,6 +11,9 @@ export const CARDS: CardDef[] = [
   { id: "health", rarity: "common", maxLevel: 5 },
   { id: "damage", rarity: "rare", maxLevel: 5 },
   { id: "magnet", rarity: "common", maxLevel: 5 },
+  { id: "haste", rarity: "rare", maxLevel: 5 },
+  { id: "area", rarity: "common", maxLevel: 5 },
+  { id: "luck", rarity: "common", maxLevel: 5 },
 ];
 
 // Le carte di ripiego, quando tutte le altre sono al massimo o ne restano meno di tre.
