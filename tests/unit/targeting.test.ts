@@ -1,6 +1,6 @@
 // I test della mira: il nemico più vicino, entro la portata, e il bersaglio preferito (il capo) quando è a tiro.
 import { describe, expect, it } from "vitest";
-import { nearestIndex, preferredIndex } from "../../src/logic/targeting";
+import { farthestIndex, nearestIndex, preferredIndex } from "../../src/logic/targeting";
 
 describe("il nemico più vicino", () => {
   const cat = { x: 0, y: 0 };
@@ -54,5 +54,24 @@ describe("il bersaglio preferito: il graffio sceglie il capo", () => {
 
   it("il capo esattamente sul bordo della portata vale", () => {
     expect(preferredIndex(cat, [{ x: 10, y: 0 }, { x: 72, y: 0 }], [false, true], 72)).toBe(1);
+  });
+});
+
+describe("il punto più lontano", () => {
+  const cat = { x: 0, y: 0 };
+  it("sceglie il più lontano dal gatto", () => {
+    expect(farthestIndex(cat, [{ x: 10, y: 0 }, { x: -80, y: 0 }, { x: 0, y: 30 }])).toBe(1);
+  });
+
+  it("conta la distanza vera: 50 e 50 è più lontano di 60 su un asse solo", () => {
+    expect(farthestIndex(cat, [{ x: 60, y: 0 }, { x: 50, y: 50 }])).toBe(1);
+  });
+
+  it("a parità tiene il primo", () => {
+    expect(farthestIndex(cat, [{ x: 40, y: 0 }, { x: 0, y: 40 }])).toBe(0);
+  });
+
+  it("con la lista vuota dà -1", () => {
+    expect(farthestIndex(cat, [])).toBe(-1);
   });
 });

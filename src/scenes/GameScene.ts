@@ -2,7 +2,7 @@
 // (piccioni, poi zanzare, pantegane e cornacchie in picchiata), a un terzo e a due terzi della notte arrivano
 // i due capi (il gabbiano che carica, il gabbiano reale che urla), le armi partono
 // da sole (graffio, coda a frusta, pelo che vola, miagolio), le crocchette fanno salire di livello e a ogni livello si sceglie
-// una carta (LevelUpScene); le casse del tesoro mostrano le carte vinte (ChestScene). Il gatto ha sette vite; all'alba, dopo la durata scelta nel titolo (5, 10 o 15 minuti),
+// una carta (LevelUpScene); ogni tanto un nemico eliminato lascia un supplì, che cura; le casse del tesoro mostrano le carte vinte (ChestScene). Il gatto ha sette vite; all'alba, dopo la durata scelta nel titolo (5, 10 o 15 minuti),
 // si vince (EndScene).
 // Le regole stanno in src/logic/ e sono testate; i numeri in src/data/; qui si disegna e si collega.
 //
@@ -15,6 +15,7 @@
 // - i capi: spawnBossOnSchedule, spawnBoss, makeRoom, e più sotto dropBossChest, drawBossBars, hurt
 // - le armi: fireWeapons, scratch, tail, fur, furHit, meow (l'onda che spinge via), damageEnemy, killEnemy
 // - crescere: collect, openLevelUp, pullAllKibbles, applyCard, gainCard
+// - il supplì a terra: dropSnack, moveSnacks, eatSnack
 // - casse e mappa: spawnChestOnSchedule, takeChest, onChestClosed, drawMinimap, openMap
 // - vite, pausa e fine: onTouch, loseLife, onResume, openPause, endRun
 // - l'interfaccia: drawHud, drawJoystick, createDebug, updateDebug
@@ -22,7 +23,7 @@ import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
   BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, ENEMIES, FALLBACK, FUR_LEVELS, KIBBLE, MEOW, MEOW_LEVELS, PIGEON, RUN,
-  SCRATCH_LEVELS, SPAWN, TAIL_LEVELS,
+  SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
   type BossId, type EnemyId, type FoeKind, type ScreamConfig,
 } from "../data/balance";
 import { BOSS_TEXTS, TEXTS } from "../data/texts";
@@ -40,9 +41,10 @@ import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
+import { dropsSnack, isHungry } from "../logic/snack";
 import { groupOffset, spawnPoint, tooFar } from "../logic/spawn";
 import { computeStats, tuneWeapon, type Stats } from "../logic/stats";
-import { preferredIndex } from "../logic/targeting";
+import { farthestIndex, preferredIndex } from "../logic/targeting";
 import { dueSpawns, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
@@ -88,6 +90,7 @@ export class GameScene extends Phaser.Scene {
   private kibbles!: Phaser.Physics.Arcade.Group;
   private furs!: Phaser.Physics.Arcade.Group;
   private chests!: Phaser.Physics.Arcade.Group;
+  private snacks!: Phaser.Physics.Arcade.Group;
   private minimap!: Phaser.GameObjects.Graphics;
   private minimapCenter: Vec = { x: 0, y: 0 };
   private effects!: Phaser.GameObjects.Group;
@@ -116,6 +119,12 @@ export class GameScene extends Phaser.Scene {
   private levels: Record<string, number> = {};
   private stats: Stats = computeStats({});
   private rng: Rng = Math.random;
+  // il supplì ha un dado suo: non prende numeri dalla fila di nascite e carte
+  private snackRng: Rng = Math.random;
+  // quando è caduto l'ultimo supplì (in millisecondi di notte), quanti ne sono caduti e quanti mangiati
+  private lastSnackAt = -Infinity;
+  private snacksDropped = 0;
+  private snacksEaten = 0;
   private pendingLevels = 0;
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
   private facing = 0;
@@ -171,6 +180,9 @@ export class GameScene extends Phaser.Scene {
     this.nextSpawnAt = {};
     this.chestsTaken = 0;
     this.chestsSpawned = 0;
+    this.lastSnackAt = -Infinity;
+    this.snacksDropped = 0;
+    this.snacksEaten = 0;
     this.bosses = [];
     this.bossesSpawned = 0;
     this.bossLog = [];
@@ -213,7 +225,10 @@ export class GameScene extends Phaser.Scene {
     this.createAnimations();
     // Il seme: con ?seme=123 nell'indirizzo la partita estrae sempre le stesse carte e le stesse nascite.
     const seedParam = params.get("seme");
-    this.rng = createRng(seedParam ? Number(seedParam) : Date.now());
+    const seed = seedParam ? Number(seedParam) : Date.now();
+    this.rng = createRng(seed);
+    // lo stesso seme, mescolato con un numero fisso: un secondo dado, che non prende numeri dal primo
+    this.snackRng = createRng(seed ^ 0x5bd1e995);
     // La durata scelta nel titolo; per provare, con ?corta la notte dura 3 minuti qualunque sia la scelta.
     // Le ondate seguono la frazione di notte passata (spawnPlan): in 5 minuti arrivano alla stessa ondata finale dei 15.
     if (params.has("corta")) this.nightMinutes = RUN.shortDurationMs / 60_000;
@@ -233,6 +248,7 @@ export class GameScene extends Phaser.Scene {
     // senza crearli e distruggerli ogni volta.
     this.enemies = this.physics.add.group({ maxSize: SPAWN.maxEnemies });
     this.kibbles = this.physics.add.group({ maxSize: KIBBLE.maxOnGround });
+    this.snacks = this.physics.add.group({ maxSize: SNACK.maxOnGround });
     this.furs = this.physics.add.group({ maxSize: 60 });
     // un posto in più per ogni capo: la sua cassa nasce anche se due stanno già aspettando
     this.chests = this.physics.add.group({ maxSize: CHEST.maxOnGround + BOSS_ORDER.length });
@@ -241,6 +257,7 @@ export class GameScene extends Phaser.Scene {
 
     this.physics.add.overlap(this.cat, this.enemies, (_c, enemy) => this.onTouch(enemy as Sprite));
     this.physics.add.overlap(this.cat, this.kibbles, (_c, kibble) => this.collect(kibble as Sprite));
+    this.physics.add.overlap(this.cat, this.snacks, (_c, snack) => this.eatSnack(snack as Sprite));
     this.physics.add.overlap(this.cat, this.chests, (_c, chest) => this.takeChest(chest as Sprite));
     this.physics.add.overlap(this.furs, this.enemies, (fur, enemy) => this.furHit(fur as Sprite, enemy as Sprite));
     this.nextFire = { scratch: 0, tail: 0, fur: 0, meow: 0 };
@@ -273,6 +290,8 @@ export class GameScene extends Phaser.Scene {
     // la cornacchia non ha un'animazione: un fotogramma in volo e uno in picchiata, scelti in moveEnemies
     this.anims.create({ key: "crocchetta-brilla", frames: strip("crocchetta", 0, 1), frameRate: 2, repeat: -1 });
     this.anims.create({ key: "cassa-brilla", frames: strip("cassa", 0, 1), frameRate: 2, repeat: -1 });
+    // il supplì: fermo, poi con la croce rossa della cura sopra
+    this.anims.create({ key: "suppli-brilla", frames: strip("suppli", 0, 1), frameRate: 2, repeat: -1 });
     this.anims.create({ key: "graffio", frames: strip("graffio", 0, 2), frameRate: 15, repeat: 0 });
     this.anims.create({ key: "coda", frames: strip("coda", 0, 2), frameRate: 15, repeat: 0 });
     this.anims.create({ key: "pelo-vola", frames: strip("pelo", 0, 1), frameRate: 8, repeat: -1 });
@@ -386,6 +405,7 @@ export class GameScene extends Phaser.Scene {
     this.moveCat(time);
     this.moveEnemies();
     this.moveKibbles();
+    this.moveSnacks();
     this.expireFur();
     this.fireWeapons(time);
     this.spawnOnSchedule();
@@ -789,6 +809,7 @@ export class GameScene extends Phaser.Scene {
     this.kills++;
     this.killsText.setText(String(this.kills));
     if (this.bosses.includes(enemy)) this.dropBossChest(enemy, x, y);
+    this.dropSnack(x, y);
     // non tutti la lasciano sempre: la zanzara solo ogni tanto (kibbleChance)
     if (kind.kibbleChance < 1 && this.rng() >= kind.kibbleChance) return;
     const k = this.kibbles.get(x, y, "crocchetta") as Sprite | null;
@@ -867,6 +888,55 @@ export class GameScene extends Phaser.Scene {
       const gained = this.stats.maxHealthBonus - before;
       if (gained > 0) this.health = heal({ ...this.health, max: CAT.maxHealth + this.stats.maxHealthBonus }, gained);
     }
+  }
+
+  // Ogni tanto un nemico eliminato lascia un supplì (dropsSnack), un po' di lato rispetto alla crocchetta.
+  // Se a terra ce ne sono già SNACK.maxOnGround, quello nuovo prende il posto del più lontano dal gatto.
+  private dropSnack(x: number, y: number) {
+    if (!dropsSnack(this.snackRng(), SNACK.chance, this.elapsed, this.lastSnackAt, SNACK.minGapMs)) return;
+    let snack = this.snacks.get(x, y, "suppli") as Sprite | null;
+    if (!snack) {
+      const onGround = (this.snacks.getChildren() as Sprite[]).filter((c) => c.active);
+      snack = onGround[farthestIndex({ x: this.cat.x, y: this.cat.y }, onGround)] ?? null;
+    }
+    if (!snack) return;
+    this.lastSnackAt = this.elapsed;
+    this.snacksDropped++;
+    snack.enableBody(true, x + SNACK.offset, y, true, true);
+    snack.setSize(10, 8).setDepth(4).setVelocity(0, 0);
+    snack.anims.play("suppli-brilla", true);
+  }
+
+  // Il supplì sta fermo. Quando il gatto ha fame (isHungry: gli mancano almeno SNACK.minMissing punti di vita)
+  // ed è nel raggio della calamita, gli vola incontro come una crocchetta. Altrimenti resta a terra, per dopo.
+  private moveSnacks() {
+    const hungry = isHungry(this.health, SNACK.minMissing);
+    const radius = KIBBLE.magnetRadius * this.stats.magnetMultiplier;
+    const target = { x: this.cat.x, y: this.cat.y };
+    for (const child of this.snacks.getChildren()) {
+      const snack = child as Sprite;
+      if (!snack.active) continue;
+      if (!hungry || Phaser.Math.Distance.Between(snack.x, snack.y, target.x, target.y) > radius) {
+        snack.setVelocity(0, 0);
+        continue;
+      }
+      const v = chase({ x: snack.x, y: snack.y }, target, KIBBLE.pullSpeed);
+      snack.setVelocity(v.x, v.y);
+    }
+  }
+
+  // Il gatto tocca un supplì: se ha fame lo mangia e si cura, e sopra di lui sale per un attimo quanto ha curato.
+  private eatSnack(snack: Sprite) {
+    if (!snack.active || this.over || !isHungry(this.health, SNACK.minMissing)) return;
+    snack.disableBody(true, true);
+    this.snacksEaten++;
+    const before = this.health.current;
+    this.health = heal(this.health, SNACK.heal);
+    this.drawHud();
+    // quanto ha curato davvero: vicino alla vita massima è meno di SNACK.heal
+    const gained = Math.round(this.health.current - before);
+    const note = this.add.text(this.cat.x, this.cat.y - 12, `+${gained}`, { ...FONT, color: "#e23a4f", stroke: "#0e0c16", strokeThickness: 2 }).setOrigin(0.5).setDepth(30);
+    this.tweens.add({ targets: note, y: note.y - 12, alpha: 0, duration: 700, onComplete: () => note.destroy() });
   }
 
   // Le casse: ne nasce una al suo momento, lontano dal gatto. Se ne aspettano già due, la prossima aspetta
@@ -1129,7 +1199,7 @@ export class GameScene extends Phaser.Scene {
   // Con ?debug lo stato della partita si legge anche da fuori, sul canvas: serve alla partita automatica
   // che misura il bilanciamento (quante vite perse, a che livello, quanti nemici insieme, quanti sullo schermo,
   // quanti riportati vicino, quanti spinti via dal miagolio, a che livello è ogni carta, quando è nato e quando
-  // è caduto ogni capo).
+  // è caduto ogni capo, quanti supplì sono caduti e quanti ne ha mangiati).
   private writeDebugState(fps: number, alive: number) {
     const view = this.cameras.main.worldView;
     const inView = this.aliveEnemies().filter((e) => view.contains(e.x, e.y)).length;
@@ -1140,7 +1210,7 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.dataset.stato = JSON.stringify({
       ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
       presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, spinti: this.pushes, carte: this.levels,
-      capi: this.bossLog, fps,
+      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, fps,
     });
   }
 }

@@ -52,6 +52,8 @@ SPRITE = {
     "gabbiano-reale.png": ("corpo", ["Gabbiano reale fermo", "Gabbiano reale che urla"]),
     # tappa 4: la quarta arma
     "miagolio.png": ("effetto", ["Miagolio, fotogramma 1", "Miagolio, fotogramma 2", "Miagolio, fotogramma 3"]),
+    # tappa 4: il secondo oggetto a terra, che cura
+    "suppli.png": ("corpo", ["Supplì con il filo di mozzarella", "Supplì con la croce della cura"]),
 }
 
 # Pixel di sampietrini rimasti chiusi dentro un corpo, da svuotare a mano: per file, per fotogramma (da 0).

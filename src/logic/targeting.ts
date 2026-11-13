@@ -1,4 +1,5 @@
-// La mira: quale nemico colpire, il più vicino oppure il preferito (il capo) quando è a tiro. Logica pura, senza Phaser.
+// La mira: quale nemico colpire, il più vicino oppure il preferito (il capo) quando è a tiro, e qual è
+// il punto più lontano. Logica pura, senza Phaser.
 import type { Vec } from "./movement";
 
 // nearestIndex: l'indice del punto più vicino a origin entro maxDistance, oppure -1 se non ce n'è.
@@ -26,4 +27,22 @@ export function preferredIndex(origin: Vec, points: readonly Vec[], preferred: r
   const indexes = points.map((_, i) => i).filter((i) => preferred[i]);
   const best = nearestIndex(origin, indexes.map((i) => points[i]), maxDistance);
   return best === -1 ? nearestIndex(origin, points, maxDistance) : indexes[best];
+}
+
+// farthestIndex: l'indice del punto più lontano da origin, oppure -1 se la lista è vuota.
+// A parità di distanza tiene il primo. Serve al supplì: quando a terra ce ne sono già troppi,
+// quello nuovo prende il posto del più lontano dal gatto.
+export function farthestIndex(origin: Vec, points: readonly Vec[]): number {
+  let best = -1;
+  let bestSq = -1;
+  for (let i = 0; i < points.length; i++) {
+    const dx = points[i].x - origin.x;
+    const dy = points[i].y - origin.y;
+    const sq = dx * dx + dy * dy;
+    if (sq > bestSq) {
+      best = i;
+      bestSq = sq;
+    }
+  }
+  return best;
 }

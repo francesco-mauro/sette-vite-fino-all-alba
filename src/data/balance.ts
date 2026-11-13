@@ -8,6 +8,7 @@
 // - SCRATCH_LEVELS, TAIL_LEVELS, FUR_LEVELS, MEOW_LEVELS e MEOW: le quattro armi, livello per livello
 // - PASSIVES: quanto aggiunge ogni carta dei potenziamenti
 // - KIBBLE, LEVELS: crocchette e curva dei livelli
+// - SNACK: il supplì a terra, che cura
 // - CARD_WEIGHTS, FALLBACK: rarità delle carte e carte di ripiego
 // - RUN: durata della notte, vite, riga dei primi secondi
 // - WAVES: quanto crescono danno e velocità dei nemici nella notte (chi arriva e quando è in waves.ts)
@@ -268,6 +269,24 @@ export const KIBBLE = {
   // la velocità con cui volano verso il gatto, una volta prese dalla calamita
   pullSpeed: 220,
   maxOnGround: 300,
+};
+
+// Il supplì a terra: ogni tanto lo lascia un nemico eliminato, e cura. Numeri di partenza, da provare giocando.
+export const SNACK = {
+  // quanto cura: come il supplì delle carte di ripiego (FALLBACK.healAmount, un test li tiene uguali)
+  heal: 30,
+  // la probabilità che un nemico eliminato ne lasci uno
+  chance: 0.02,
+  // dopo un supplì, per quanto non ne cadono altri: senza questa pausa a fine notte, con i nemici eliminati
+  // a decine al minuto, ne pioverebbero
+  minGapMs: 30_000,
+  // il gatto lo mangia solo se gli mancano almeno questi punti di vita: a vita piena, o per un graffietto,
+  // resta a terra per dopo
+  minMissing: 10,
+  // quanti ne stanno a terra insieme: oltre, quello nuovo prende il posto del più lontano dal gatto
+  maxOnGround: 5,
+  // cade un po' di lato, per non coprire la crocchetta dello stesso nemico
+  offset: 8,
 };
 
 // La curva dei livelli: per salire dal livello 1 servono `first` crocchette, poi `growth` in più a ogni livello.

@@ -51,6 +51,7 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `piccione.png` | 32×16 | Due fotogrammi da 16×16: i due passi (tappa 2) |
 | `graffio.png` | 96×32 | Tre fotogrammi da 32×32: parte, colpisce, svanisce (tappa 2) |
 | `crocchetta.png` | 32×16 | Due fotogrammi da 16×16: ferma e che brilla (pronta per la tappa 3a) |
+| `suppli.png` | 32×16 | Due fotogrammi da 16×16: il supplì con il filo di mozzarella, e lo stesso con la croce rossa della cura sopra (tappa 4) |
 | `coda.png` | 96×32 | Tre fotogrammi da 32×32 della coda a frusta (pronta per la tappa 3a) |
 | `pelo.png` | 96×32 | Tre fotogrammi da 32×32 del pelo che vola (tappa 3a) |
 | `vita.png` | 9×8 | Il cuore delle sette vite (tappa 3b) |
@@ -94,7 +95,7 @@ La tappa è la prima che usa l'asset. «Pronto» vuol dire disegnato e ripulito,
 | Cornacchia grigia | 16×16 | 2: in volo, in picchiata | 4 | nel repository |
 | Gabbiano, capo del quinto minuto | 32×32 | 2: ali su, ali giù | 4 | nel repository |
 | Gabbiano reale, capo del decimo minuto | 32×32 | 2: fermo, urla | 4 | nel repository, senza il pezzetto di pietra tra le zampe |
-| Supplì | 16×16 | 2: con il filo, con la croce della cura | 4 | pronto |
+| Supplì | 16×16 | 2: con il filo, con la croce della cura | 4 | nel repository |
 | Miagolio | 32×32 | 3 | 4 | nel repository. Nel gioco si ingrandisce fino al raggio dell'onda |
 
 ## I caratteri
@@ -105,7 +106,7 @@ Alla tappa 0 si è visto che il testo disegnato dal browser ha sempre i bordi sf
 ## I conti
 - **Immagini fino alla tappa 4:** 5 del gatto, 8 dei nemici, 4 dei capi, 4 degli oggetti, 12 degli attacchi, 3 caselle, 3 pezzi del lampione, 12 icone delle carte, 2 icone dell'interfaccia. In tutto **53**.
 - **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 resta un ritocco da guardare, l'icona della vita; quello del gabbiano reale è fatto. I due sfondi delle schermate sono fuori dal conto.
-- **Nel repository:** 22 file. Valgono 36 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, gli 8 dei quattro nemici, i 4 dei due capi, i 2 della crocchetta, i 12 di graffio, coda a frusta, pelo che vola e miagolio, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le sette icone provvisorie dei potenziamenti e la cassa del tesoro provvisoria, che stanno fuori dal conto.
+- **Nel repository:** 23 file. Valgono 38 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, gli 8 dei quattro nemici, i 4 dei due capi, i 2 della crocchetta, i 2 del supplì, i 12 di graffio, coda a frusta, pelo che vola e miagolio, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le sette icone provvisorie dei potenziamenti e la cassa del tesoro provvisoria, che stanno fuori dal conto.
 
 ## Cosa manca
 1. Le 12 icone delle carte. Per ora le armi usano un fotogramma del loro effetto e i potenziamenti le icone provvisorie di `art/icone_carte.py`. Le carte nel gioco sono 11, quattro armi e sette potenziamenti: la rigenerazione sta dentro pancia piena, quindi una delle 12 icone previste non serve.

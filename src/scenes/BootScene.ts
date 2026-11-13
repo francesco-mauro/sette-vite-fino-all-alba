@@ -35,6 +35,7 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet("gabbiano-reale", "assets/gabbiano-reale.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("crocchetta", "assets/crocchetta.png", { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet("cassa", "assets/cassa.png", { frameWidth: 16, frameHeight: 16 });
+    this.load.spritesheet("suppli", "assets/suppli.png", { frameWidth: 16, frameHeight: 16 });
     this.load.spritesheet("graffio", "assets/graffio.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("coda", "assets/coda.png", { frameWidth: 32, frameHeight: 32 });
     this.load.spritesheet("pelo", "assets/pelo.png", { frameWidth: 32, frameHeight: 32 });
