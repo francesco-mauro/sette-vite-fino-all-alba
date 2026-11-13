@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CROWD, ENEMIES } from "../../src/data/balance";
 import type { Vec } from "../../src/logic/movement";
 import { createRng } from "../../src/logic/rng";
-import { crowding, separation, withPush } from "../../src/logic/separation";
+import { crowding, largestClump, separation, withPush } from "../../src/logic/separation";
 
 // la stessa regola fatta nel modo più semplice, tutte le coppie: serve a controllare quella con la griglia
 function separationByPairs(points: readonly Vec[], radius: number, strength: number): Vec[] {
@@ -144,6 +144,30 @@ describe("la misura del mucchio", () => {
 
   it("è uno quando sono tutti uno sopra l'altro", () => {
     expect(crowding([{ x: 1, y: 1 }, { x: 1, y: 1 }, { x: 2, y: 1 }], 4)).toBe(1);
+  });
+});
+
+describe("la misura della massa unica", () => {
+  it("conta il gruppo più grande di nemici legati a catena, anche se i due capi della catena sono lontani", () => {
+    // una fila di cinque a 15 pixel l'uno dall'altro è una massa sola; i due più in là sono un'altra
+    const row = [0, 15, 30, 45, 60].map((x) => ({ x, y: 0 }));
+    const apart = [{ x: 200, y: 0 }, { x: 210, y: 0 }];
+    expect(largestClump([...row, ...apart], 20)).toBe(5);
+  });
+
+  it("è zero senza nemici e uno con un nemico solo o con tutti lontani", () => {
+    expect(largestClump([], 20)).toBe(0);
+    expect(largestClump([{ x: 0, y: 0 }], 20)).toBe(1);
+    expect(largestClump([{ x: 0, y: 0 }, { x: 20, y: 0 }, { x: 40, y: 0 }], 20)).toBe(1);
+  });
+
+  it("due gruppi che si toccano diventano uno", () => {
+    const a = [{ x: 0, y: 0 }, { x: 10, y: 0 }];
+    const b = [{ x: 50, y: 0 }, { x: 60, y: 0 }];
+    expect(largestClump([...a, ...b], 20)).toBe(2);
+    // a 20 pixel esatti non si toccano: servono due nemici in mezzo, a 15, 13 e 12 pixel
+    expect(largestClump([...a, ...b, { x: 30, y: 0 }], 20)).toBe(2);
+    expect(largestClump([...a, ...b, { x: 25, y: 0 }, { x: 38, y: 0 }], 20)).toBe(6);
   });
 });
 

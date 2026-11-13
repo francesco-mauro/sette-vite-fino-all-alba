@@ -1,6 +1,6 @@
 // I test della vita: il danno, l'attimo di invulnerabilità dopo un colpo e quello alla ripresa del gioco.
 import { describe, expect, it } from "vitest";
-import { createHealth, heal, isDead, protect, regenerate, takeHit } from "../../src/logic/health";
+import { contactHit, createHealth, heal, isDead, protect, regenerate, takeHit } from "../../src/logic/health";
 
 describe("la vita del gatto", () => {
   it("un colpo toglie vita e apre l'attimo di invulnerabilità", () => {
@@ -74,5 +74,50 @@ describe("la rigenerazione", () => {
   it("non fa rialzare un gatto a terra", () => {
     const down = takeHit(createHealth(10), 10, 0, 800).health;
     expect(regenerate(down, 1, 1000).current).toBe(0);
+  });
+});
+
+// Un secondo di contatto, un fotogramma ogni 16 millisecondi: quanti colpi prende il gatto da `n` nemici appoggiati.
+function hitsInOneSecond(n: number, perEnemyMs: number, gapMs: number): number {
+  let health = createHealth(10_000);
+  const readyAt = Array.from({ length: n }, () => 0);
+  let hits = 0;
+  for (let now = 0; now < 1000; now += 16) {
+    for (let i = 0; i < n; i++) {
+      const step = contactHit(health, readyAt[i], 1, now, perEnemyMs, gapMs);
+      health = step.health;
+      readyAt[i] = step.readyAt;
+      if (step.hit) hits++;
+    }
+  }
+  return hits;
+}
+
+describe("la folla fa male", () => {
+  it("un nemico solo colpisce una volta ogni sua pausa, come prima", () => {
+    // a 0 e a 704 (il primo fotogramma dopo i 700)
+    expect(hitsInOneSecond(1, 700, 250)).toBe(2);
+  });
+
+  it("una folla colpisce più di un nemico solo, fino al tetto", () => {
+    // il tetto: un colpo ogni 250 millisecondi, quattro al secondo, anche con trenta nemici addosso
+    expect(hitsInOneSecond(3, 700, 250)).toBe(4);
+    expect(hitsInOneSecond(30, 700, 250)).toBe(4);
+  });
+
+  it("un nemico fermato dal tetto colpisce appena il tetto lo lascia, senza aspettare un'altra pausa sua", () => {
+    const first = contactHit(createHealth(100), 0, 10, 0, 700, 250);
+    const blocked = contactHit(first.health, 0, 10, 100, 700, 250);
+    expect(blocked.hit).toBe(false);
+    expect(blocked.readyAt).toBe(0);
+    const later = contactHit(blocked.health, blocked.readyAt, 10, 260, 700, 250);
+    expect(later.hit).toBe(true);
+    expect(later.health.current).toBe(80);
+    expect(later.readyAt).toBe(960);
+  });
+
+  it("durante la protezione (ripresa, vita persa) nessun nemico colpisce", () => {
+    const safe = protect(createHealth(100), 0, 1000);
+    expect(contactHit(safe, 0, 10, 500, 700, 250).hit).toBe(false);
   });
 });

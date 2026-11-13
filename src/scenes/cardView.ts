@@ -3,6 +3,7 @@
 import * as Phaser from "phaser";
 import { CARD_ICONS, CARDS } from "../data/cards";
 import { CARD_TEXTS, TEXTS } from "../data/texts";
+import { cardDescription } from "../logic/cards";
 import { FONT } from "./font";
 
 export { FONT };
@@ -28,7 +29,7 @@ export function drawCard(scene: Phaser.Scene, id: string, x: number, y: number, 
   if (icon) parts.push(scene.add.image(x, y - 36, icon.key, icon.frame));
   parts.push(scene.add.text(x, y - 12, text.name, { ...FONT, color: `#${color.toString(16).padStart(6, "0")}`, align: "center", wordWrap: { width: CARD_W - 12 } }).setOrigin(0.5, 0));
   if (def) parts.push(scene.add.text(x, y + 2, `${TEXTS.level} ${level}`, FONT).setOrigin(0.5, 0));
-  parts.push(scene.add.text(x, y + 18, start + taken === 0 ? text.first : text.more, { ...FONT, color: "#cfe0ff", align: "center", wordWrap: { width: CARD_W - 16 } }).setOrigin(0.5, 0));
+  parts.push(scene.add.text(x, y + 18, cardDescription(id, level), { ...FONT, color: "#cfe0ff", align: "center", wordWrap: { width: CARD_W - 16 } }).setOrigin(0.5, 0));
   if (rarity === "rare") parts.push(scene.add.text(x, y + CARD_H / 2 - 14, TEXTS.rare, { ...FONT, color: "#ffc85a" }).setOrigin(0.5, 0));
   return { frame, parts };
 }

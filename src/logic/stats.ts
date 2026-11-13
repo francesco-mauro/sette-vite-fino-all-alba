@@ -1,6 +1,12 @@
 // Le statistiche: dai livelli delle carte scelte ai numeri che usa la partita, e i numeri di un'arma
 // dopo i potenziamenti. Logica pura, senza Phaser.
-import { PASSIVES } from "../data/balance";
+import { CHEST, PASSIVES } from "../data/balance";
+
+// tripleChance: la probabilità che una cassa sia tripla con il quadrifoglio a `luckLevel`, da 0 a 1.
+// Senza è CHEST.tripleChance; ogni livello aggiunge PASSIVES.luckTriplePerLevel. La carta la scrive (cardDescription).
+export function tripleChance(luckLevel: number): number {
+  return CHEST.tripleChance + PASSIVES.luckTriplePerLevel * luckLevel;
+}
 
 export interface Stats {
   speedMultiplier: number;

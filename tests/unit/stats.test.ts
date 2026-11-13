@@ -1,7 +1,7 @@
 // I test delle statistiche: dai livelli delle carte ai numeri del gatto e delle armi.
 import { describe, expect, it } from "vitest";
 import { FUR_LEVELS, MEOW_LEVELS, SCRATCH_LEVELS, TAIL_LEVELS } from "../../src/data/balance";
-import { computeStats, tuneWeapon } from "../../src/logic/stats";
+import { computeStats, tripleChance, tuneWeapon } from "../../src/logic/stats";
 
 describe("le statistiche dalle carte", () => {
   it("senza carte: il gatto di base e solo il graffio", () => {
@@ -56,10 +56,16 @@ describe("le statistiche dalle carte", () => {
     expect(computeStats({ area: 5 }).areaMultiplier).toBeCloseTo(1.4);
   });
 
-  it("zampa fortunata: ogni livello aggiunge peso alle carte rare e probabilità alla cassa tripla", () => {
+  it("quadrifoglio: ogni livello aggiunge peso alle carte rare e 8 punti su 100 alla cassa tripla", () => {
     expect(computeStats({ luck: 1 }).rareWeightBonus).toBe(1);
     expect(computeStats({ luck: 5 }).rareWeightBonus).toBe(5);
-    expect(computeStats({ luck: 2 }).tripleChanceBonus).toBeCloseTo(0.08);
+    expect(computeStats({ luck: 2 }).tripleChanceBonus).toBeCloseTo(0.16);
+  });
+
+  it("quadrifoglio: la cassa tripla va da 10 su 100 senza a 50 su 100 al livello 5", () => {
+    expect(tripleChance(0)).toBeCloseTo(0.1);
+    expect(tripleChance(1)).toBeCloseTo(0.18);
+    expect(tripleChance(5)).toBeCloseTo(0.5);
   });
 
   it("il miagolio parte da zero e sale con la sua carta", () => {

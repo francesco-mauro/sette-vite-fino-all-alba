@@ -9,7 +9,7 @@ Ordine dei fotogrammi in public/assets/carte.png:
   0 zampe veloci (l'impronta che corre), 1 pancia piena (la ciotola piena),
   2 unghie affilate (la zampa con le unghie fuori), 3 naso fino (il muso che annusa),
   4 riflessi pronti (il lampo), 5 pelo gonfio (il gatto gonfio dentro un cerchio che si allarga),
-  6 zampa fortunata (il quadrifoglio), 7 spicci (la monetina che luccica).
+  6 quadrifoglio (fino al 13 novembre 2026 la carta si chiamava zampa fortunata), 7 spicci (la monetina che luccica).
 
 Uso:  python art/icone_carte.py [--anteprima FILE]
   --anteprima FILE  scrive anche le icone ingrandite otto volte, per guardarle.

@@ -31,6 +31,23 @@ export function takeHit(
   };
 }
 
+// contactHit: un nemico appoggiato al gatto all'istante `now`. Ogni nemico ha la sua pausa: colpisce al massimo una
+// volta ogni `perEnemyMs` (`readyAt` è suo: da quando può colpire di nuovo). Il tetto è l'attimo dopo ogni colpo,
+// `gapMs`, in cui nessun colpo conta, da nessuno: così una folla fa più male di un nemico solo, ma non all'infinito.
+// Un nemico fermato dal tetto non consuma la sua pausa: colpisce appena il tetto lo lascia.
+export function contactHit(
+  health: Health,
+  readyAt: number,
+  damage: number,
+  now: number,
+  perEnemyMs: number,
+  gapMs: number,
+): { health: Health; readyAt: number; hit: boolean } {
+  if (now < readyAt) return { health, readyAt, hit: false };
+  const step = takeHit(health, damage, now, gapMs);
+  return { health: step.health, readyAt: step.hit ? now + perEnemyMs : readyAt, hit: step.hit };
+}
+
 // protect: un attimo in cui i colpi non contano, alla ripresa dopo una carta o una pausa, per riprendere in mano
 // il gatto. Se è già invulnerabile più a lungo (una vita appena persa) resta così.
 export function protect(health: Health, now: number, ms: number): Health {

@@ -3,7 +3,7 @@
 import { describe, expect, it } from "vitest";
 import { ENEMIES, WAVES, type EnemyId } from "../../src/data/balance";
 import { WAVE_TABLE } from "../../src/data/waves";
-import { dueSpawns, spawnPlan, waveRow, type WaveRow } from "../../src/logic/waves";
+import { dueSpawns, hordeTime, scaleRow, spawnPlan, waveRow, type WaveRow } from "../../src/logic/waves";
 
 const KINDS = Object.keys(ENEMIES) as EnemyId[];
 
@@ -167,5 +167,40 @@ describe("i quattro nemici", () => {
   it("il primo graffio basta ancora per un piccione", () => {
     // se la vita del piccione supera il primo graffio le uccisioni si dimezzano (misura del 12 novembre 2026)
     expect(ENEMIES.piccione.health).toBeLessThanOrEqual(10);
+  });
+});
+
+describe("le orde: un'onda, poi si respira", () => {
+  const CYCLE = 20_000;
+  const ARRIVE = 8_000;
+
+  it("a ogni fine giro l'orologio delle ondate è pari alla notte: nascono gli stessi nemici di prima", () => {
+    for (const k of [0, 1, 2, 7]) expect(hordeTime(k * CYCLE, CYCLE, ARRIVE)).toBeCloseTo(k * CYCLE);
+  });
+
+  it("durante l'onda corre più in fretta: in 8 secondi passa un giro intero", () => {
+    expect(hordeTime(4_000, CYCLE, ARRIVE)).toBeCloseTo(10_000);
+    expect(hordeTime(ARRIVE, CYCLE, ARRIVE)).toBeCloseTo(CYCLE);
+  });
+
+  it("dopo l'onda si ferma fino al giro dopo: non nasce nessuno", () => {
+    expect(hordeTime(9_000, CYCLE, ARRIVE)).toBeCloseTo(CYCLE);
+    expect(hordeTime(19_999, CYCLE, ARRIVE)).toBeCloseTo(CYCLE);
+  });
+
+  it("non torna mai indietro", () => {
+    let last = -1;
+    for (let t = 0; t < 5 * CYCLE; t += 137) {
+      const h = hordeTime(t, CYCLE, ARRIVE);
+      expect(h).toBeGreaterThanOrEqual(last);
+      last = h;
+    }
+  });
+
+  it("gruppi più grandi e più rari: stessi nemici al secondo", () => {
+    const row = WAVE_TABLE[6];
+    const big = scaleRow(row, 2);
+    for (const kind of KINDS) expect(perSecond(big, kind)).toBeCloseTo(perSecond(row, kind));
+    for (const kind of KINDS.filter((k) => row[k])) expect(big[kind]?.size).toBe((row[kind]?.size ?? 0) * 2);
   });
 });

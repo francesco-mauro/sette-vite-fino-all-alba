@@ -3,14 +3,21 @@
 // Al centro il pulsante grande «riprendi»; riprende anche un tocco in un punto qualsiasi, o Esc.
 // «Esci dalla partita» è piccolo, in basso, e vale solo al secondo tocco (src/logic/confirm.ts):
 // il primo chiede «sicuro?», così un tocco d'istinto non butta via la notte.
+// In alto a sinistra, come nel titolo, il pulsante dello schermo intero; anche F lo accende e lo spegne. Sul PC
+// Esc fa uscire dallo schermo intero (lo fa il browser) e apre la pausa: da qui si rientra senza riprendere
+// (Francesco, 13 novembre 2026: «se premo esc sis ese dallo schermo intero e ppoi non posso rinetrare»).
 import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
 import { createConfirm } from "../logic/confirm";
+import { fullscreenButton } from "../logic/fullscreenButton";
 import { createTapGuard } from "../logic/tap";
+import { fullscreenState, toggleFullscreen } from "./fullscreen";
 import { FONT } from "./font";
 
 // quanto resta aperta la domanda «sicuro?»
 const CONFIRM_MS = 3000;
+// il margine dai bordi, come nel titolo
+const SAFE = 12;
 
 export class PauseScene extends Phaser.Scene {
   constructor() {
@@ -60,12 +67,39 @@ export class PauseScene extends Phaser.Scene {
         if (!done && ask === asks) quit.setText(TEXTS.quit).setColor("#cfe0ff").setBackgroundColor("#1c2133");
       });
     });
+    this.createFullscreenButton(() => ready);
     // un attimo prima di accettare il tocco: il dito che ha messo in pausa non deve riprendere subito
     this.time.delayedCall(300, () => {
       ready = true;
       this.input.on("pointerup", resume);
       this.input.keyboard?.on("keydown-ESC", resume);
       this.input.keyboard?.on("keydown-P", resume);
+      this.input.keyboard?.on("keydown-F", () => toggleFullscreen(this));
+    });
+  }
+
+  // Il pulsante dello schermo intero, come nel titolo: il nome segue lo stato vero, e non c'è dove lo schermo
+  // intero non serve (il gioco installato) o non si può (l'iPhone). Il suo tocco non riprende la partita.
+  private createFullscreenButton(ready: () => boolean) {
+    if (!fullscreenButton(fullscreenState(this))) return;
+    const tap = createTapGuard();
+    const button = this.add.text(SAFE, SAFE, "", { ...FONT, backgroundColor: "#2c3550" })
+      .setOrigin(0, 0).setPadding(4, 4, 4, 4).setInteractive();
+    const label = () => button.setText(fullscreenButton(fullscreenState(this)) === "exit" ? TEXTS.fullscreenExit : TEXTS.fullscreen);
+    label();
+    this.scale.on(Phaser.Scale.Events.ENTER_FULLSCREEN, label);
+    this.scale.on(Phaser.Scale.Events.LEAVE_FULLSCREEN, label);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.scale.off(Phaser.Scale.Events.ENTER_FULLSCREEN, label);
+      this.scale.off(Phaser.Scale.Events.LEAVE_FULLSCREEN, label);
+    });
+    button.on("pointerdown", (p: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
+      event.stopPropagation();
+      if (ready()) tap.down(p.id, 0);
+    });
+    button.on("pointerup", (p: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
+      event.stopPropagation();
+      if (tap.up(p.id, 0)) toggleFullscreen(this);
     });
   }
 }

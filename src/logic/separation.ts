@@ -91,3 +91,31 @@ export function crowding(points: readonly Vec[], distance: number): number {
   });
   return close.size / points.length;
 }
+
+// largestClump: quanti nemici ha la massa più grande. Due nemici più vicini di `distance` stanno nella stessa
+// massa, e la massa passa di vicino in vicino: una fila lunga, dove ognuno tocca il prossimo, è una massa sola.
+// È la misura della «palla unica» (Francesco, 13 novembre 2026) che la partita automatica legge prima e dopo i
+// gruppi: quasi tutti i nemici in vista in una massa sola vuol dire una palla.
+export function largestClump(points: readonly Vec[], distance: number): number {
+  // ogni punto all'inizio è il capo di sé stesso; unire due masse vuol dire dare a una il capo dell'altra
+  const head = points.map((_, i) => i);
+  const find = (i: number): number => {
+    while (head[i] !== i) {
+      head[i] = head[head[i]];
+      i = head[i];
+    }
+    return i;
+  };
+  forEachClosePair(points, distance, (i, j) => {
+    head[find(i)] = find(j);
+  });
+  const sizes = new Map<number, number>();
+  let best = 0;
+  for (let i = 0; i < points.length; i++) {
+    const h = find(i);
+    const n = (sizes.get(h) ?? 0) + 1;
+    sizes.set(h, n);
+    best = Math.max(best, n);
+  }
+  return best;
+}

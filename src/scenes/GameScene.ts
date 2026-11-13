@@ -10,21 +10,22 @@
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita con erba e tombino, comandi, interfaccia
-// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici), walk (zanzara che ondeggia, pantegana a scatti, piccione che becca), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
-// - spawnGroup, dress: un gruppo di nemici di un tipo, da fuori dello schermo; lo sprite del pool rivestito da capo
+// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici), moveFlocks e recallFlock (i gruppi che restano gruppi: stormo, sciame, fila), walk (chi cammina da solo), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule (le orde): un fotogramma di gioco
+// - spawnGroup, hordePoint, dress: un gruppo di nemici di un tipo, dal lato dell'onda; lo sprite del pool rivestito da capo
 // - i capi: spawnBossOnSchedule, spawnBoss, makeRoom, e più sotto dropBossChest, drawBossBars, hurt
 // - le armi: fireWeapons, scratch, tail, fur, furHit, meow (l'onda che spinge via), damageEnemy, killEnemy
 // - crescere: collect, openLevelUp, pullAllKibbles, applyCard, gainCard
 // - il supplì a terra: dropSnack, moveSnacks, eatSnack
 // - casse e mappa: spawnChestOnSchedule, takeChest, onChestClosed, drawMinimap, openMap
-// - vite, pausa e fine: onTouch, loseLife, onResume, openPause, endRun
+// - vite, pausa e fine: onTouch (la folla fa male), hurt, afterHit, loseLife, onResume, openPause, endRun; una scena
+//   sopra la partita alla volta (halt)
 // - l'interfaccia: drawHud, drawJoystick, createDebug, updateDebug
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
-  BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, CROWD, ENEMIES, FALLBACK, FUR_LEVELS, KIBBLE, MEOW, MEOW_LEVELS, PIGEON, RUN,
-  SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
-  type BossId, type EnemyId, type FoeKind, type ScreamConfig,
+  BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, CROWD, ENEMIES, FALLBACK, FUR_LEVELS, HORDE, KIBBLE, MEOW, MEOW_LEVELS, PIGEON,
+  RUN, SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
+  type BossId, type EnemyId, type EnemyKind, type FoeKind, type GroupConfig, type ScreamConfig,
 } from "../data/balance";
 import { BOSS_TEXTS, TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
@@ -34,20 +35,22 @@ import { chestPoint, chestTimes, openChest } from "../logic/chest";
 import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { dashStep, peckStep, startDash, startPeck, zigzag, type DashState, type PeckState } from "../logic/patterns";
 import { formatClock } from "../logic/clock";
+import { createHalt, type Halt } from "../logic/halt";
 import { inReach, knockback } from "../logic/knockback";
 import { DEFAULT_NIGHT } from "../logic/night";
-import { createHealth, heal, isDead, protect, regenerate, takeHit, type Health } from "../logic/health";
+import { contactHit, createHealth, heal, isDead, protect, regenerate, takeHit, type Health } from "../logic/health";
 import { chase, joystickVector, keyboardVector, type Vec } from "../logic/movement";
 import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
-import { crowding, separation, withPush } from "../logic/separation";
+import { crowding, largestClump, separation, withPush } from "../logic/separation";
 import { dropsSnack, isHungry } from "../logic/snack";
-import { groupOffset, spawnPoint, tooFar } from "../logic/spawn";
+import { nextSide, sidePoint, spawnPoint, tooFar, type Side } from "../logic/spawn";
+import { centroid, flockSlot, followSlot, groupPushes, groupRadius, swarmSlot, trailTarget } from "../logic/flock";
 import { computeStats, tuneWeapon, type Stats } from "../logic/stats";
 import { farthestIndex, preferredIndex } from "../logic/targeting";
-import { dueSpawns, spawnPlan } from "../logic/waves";
+import { dueSpawns, hordeTime, scaleRow, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
 import { hintDone } from "../logic/hint";
@@ -60,6 +63,18 @@ type Sprite = Phaser.Physics.Arcade.Sprite;
 
 // la spinta di chi non ne riceve: in mira, in picchiata, o senza vicini
 const NO_PUSH: Vec = { x: 0, y: 0 };
+// Lo stato comune di un gruppo: lo scatto della fila di pantegane, la sosta dello stormo di piccioni, e un numero
+// suo tra 0 e 1 (phase), così due gruppi non ondeggiano e non beccano nello stesso istante.
+interface FlockState {
+  dash: DashState;
+  peck: PeckState;
+  phase: number;
+}
+// lo spazio tra chi nasce insieme in un gruppo senza forma sua (le cornacchie): come la scatola della pantegana
+const LOOSE_SPACING = 14;
+// di quanto al massimo un gruppo riportato vicino nasce più in fuori: con 70 il centro resta sotto i 420 pixel del
+// ritorno (SPAWN.recallDistance) anche nell'angolo della cornice, a circa 394 (margine 32 + 140: 326 e 221 dal centro)
+const RECALL_SPREAD = 70;
 // Una riga del diario dei capi, per il debug: tempi in millisecondi di notte.
 interface BossLogEntry {
   id: BossId;
@@ -131,6 +146,8 @@ export class GameScene extends Phaser.Scene {
   private snacksDropped = 0;
   private snacksEaten = 0;
   private pendingLevels = 0;
+  // chi tiene ferma la partita (scelta al livello, cassa, pausa, mappa): una scena sopra alla volta
+  private halt: Halt = createHalt();
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
   private facing = 0;
   private nextFire = { scratch: 0, tail: 0, fur: 0, meow: 0 };
@@ -140,8 +157,14 @@ export class GameScene extends Phaser.Scene {
   private duration = RUN.durationMs;
   // i minuti della notte scelti nel titolo (3 con ?corta): decidono la durata e quale record si gioca
   private nightMinutes = DEFAULT_NIGHT;
-  // per ogni tipo di nemico, da che momento della notte tocca di nuovo a lui (dueSpawns)
+  // per ogni tipo di nemico, da che momento dell'orologio delle orde tocca di nuovo a lui (dueSpawns, hordeTime)
   private nextSpawnAt: Partial<Record<EnemyId, number>> = {};
+  // l'onda di adesso: quale giro di HORDE.cycleMs e da che lato arriva
+  private hordeCycle = -1;
+  private hordeSide: Side = "left";
+  // i gruppi vivi (src/logic/flock.ts): per ognuno il passo comune, lo scatto della fila o la sosta dello stormo
+  private flocks = new Map<number, FlockState>();
+  private nextFlock = 0;
   // quando nascono le casse di questa notte (chestTimes), e quante ne sono già nate
   private chestSchedule: number[] = [];
   private chestsSpawned = 0;
@@ -183,9 +206,14 @@ export class GameScene extends Phaser.Scene {
     this.levels = {};
     this.stats = computeStats({});
     this.pendingLevels = 0;
+    this.halt = createHalt();
     this.facing = 0;
     this.elapsed = 0;
     this.nextSpawnAt = {};
+    this.hordeCycle = -1;
+    this.hordeSide = "left";
+    this.flocks = new Map();
+    this.nextFlock = 0;
     this.chestsTaken = 0;
     this.chestsSpawned = 0;
     this.lastSnackAt = -Infinity;
@@ -480,9 +508,11 @@ export class GameScene extends Phaser.Scene {
     const target = { x: this.cat.x, y: this.cat.y };
     this.bossFx.clear();
     const pushes = this.crowdPushes();
+    this.moveFlocks(target, pushes);
     for (const child of this.enemies.getChildren()) {
       const enemy = child as Sprite;
-      if (!enemy.active) continue;
+      // chi sta in un gruppo lo muove moveFlocks
+      if (!enemy.active || enemy.getData("flock") !== null) continue;
       if (tooFar(enemy, target, SPAWN.recallDistance)) this.recall(enemy);
       // chi è stato spinto dal miagolio scivola all'indietro finché dura la spinta: qui nessuno gli cambia la velocità
       if (this.elapsed < ((enemy.getData("pushedUntil") as number | undefined) ?? 0)) continue;
@@ -528,8 +558,100 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  // Come cammina chi non ha un attacco suo (src/logic/patterns.ts): la zanzara ondeggia, la pantegana va a scatti,
-  // il piccione si ferma ogni tanto a beccare; chi non ha un modo suo va dritto sul gatto.
+  // I gruppi che restano gruppi (src/logic/flock.ts). Il gruppo ha un centro, la media dei vivi, che si muove a modo
+  // suo: lo stormo cammina e becca tutto insieme, il centro dello sciame ondeggia verso il gatto, la prima della fila
+  // decide lo scatto. Ognuno rincorre il suo posto: nello stormo intorno al centro, nello sciame girandogli intorno,
+  // nella fila dietro a quella davanti. Un gruppo rimasto troppo lontano torna vicino tutto insieme.
+  private moveFlocks(target: Vec, pushes: Map<Sprite, Vec>) {
+    const members = new Map<number, Sprite[]>();
+    for (const child of this.enemies.getChildren()) {
+      const enemy = child as Sprite;
+      const id = enemy.getData("flock") as number | null;
+      if (!enemy.active || id === null) continue;
+      const list = members.get(id);
+      if (list) list.push(enemy);
+      else members.set(id, [enemy]);
+    }
+    // i gruppi senza più nessuno vivo si dimenticano
+    for (const id of this.flocks.keys()) if (!members.has(id)) this.flocks.delete(id);
+    const live: { group: Sprite[]; state: FlockState; kind: FoeKind; cfg: GroupConfig; center: Vec; radius: number }[] = [];
+    for (const [id, group] of members) {
+      const state = this.flocks.get(id);
+      const kind = this.kindOf(group[0]);
+      const cfg = kind.group;
+      if (!state || !cfg) continue;
+      // in ordine di posto: la prima della fila è quella col posto più basso tra le vive
+      group.sort((a, b) => (a.getData("slot") as number) - (b.getData("slot") as number));
+      const center = centroid(group.map((e) => ({ x: e.x, y: e.y })));
+      if (tooFar(center, target, SPAWN.recallDistance)) {
+        this.recallFlock(group, center, state);
+        continue;
+      }
+      // quanto è largo: lo stormo come la sua spirale, lo sciame come il suo giro; la fila stretta, così passa tra gli altri
+      const radius = cfg.formation === "flock" ? groupRadius(group.length, cfg.spacing) : cfg.formation === "swarm" ? (cfg.radius ?? cfg.spacing) : cfg.spacing;
+      live.push({ group, state, kind, cfg, center, radius });
+    }
+    const apart = groupPushes(live.map((g) => g.center), live.map((g) => g.radius), CROWD.groupGap);
+    live.forEach(({ group, state, kind, cfg, center }, g) => {
+      const speed = (group[0].getData("speed") as number | undefined) ?? kind.speed;
+      const maxSpeed = speed * cfg.catchUp;
+      // il passo comune del gruppo
+      let pace: Vec;
+      if (cfg.formation === "line" && kind.dash) {
+        const step = dashStep(state.dash, { x: group[0].x, y: group[0].y }, target, this.elapsed, speed, kind.dash);
+        state.dash = step.state;
+        pace = step.velocity;
+      } else if (cfg.formation === "swarm" && kind.zigzag) {
+        pace = zigzag(center, target, speed, this.elapsed + state.phase * kind.zigzag.periodMs, kind.zigzag);
+      } else if (kind.peck) {
+        const step = peckStep(state.peck, this.elapsed, kind.peck, state.phase);
+        state.peck = step.state;
+        pace = step.moving ? chase(center, target, speed) : NO_PUSH;
+      } else {
+        pace = chase(center, target, speed);
+      }
+      // gli altri gruppi lo scostano: intorno al gatto i gruppi restano più staccati
+      pace = withPush(pace, apart[g], speed, CROWD.push);
+      // nello stormo i posti si centrano sui vivi: chi cade lascia un buco, non sposta il gruppo
+      const slots = group.map((e) => flockSlot(e.getData("slot") as number, cfg.spacing));
+      const mid = centroid(slots);
+      group.forEach((enemy, i) => {
+        // chi è stato spinto dal miagolio scivola all'indietro finché dura la spinta
+        if (this.elapsed < ((enemy.getData("pushedUntil") as number | undefined) ?? 0)) return;
+        const pos = { x: enemy.x, y: enemy.y };
+        let v: Vec;
+        if (cfg.formation === "line") {
+          v = i === 0 ? pace : followSlot(pos, trailTarget(group[i - 1], pos, cfg.spacing), pace, maxSpeed, cfg.pull);
+        } else if (cfg.formation === "swarm") {
+          const orbit = swarmSlot(enemy.getData("slot") as number, this.elapsed, cfg.radius ?? cfg.spacing * 2, cfg.periodMs ?? 2500);
+          v = followSlot(pos, { x: center.x + orbit.x, y: center.y + orbit.y }, pace, maxSpeed, cfg.pull);
+        } else {
+          v = followSlot(pos, { x: center.x + slots[i].x - mid.x, y: center.y + slots[i].y - mid.y }, pace, maxSpeed, cfg.pull);
+        }
+        const moved = withPush(v, pushes.get(enemy) ?? NO_PUSH, maxSpeed, CROWD.push);
+        enemy.setVelocity(moved.x, moved.y);
+        // guarda il gatto; la pantegana guarda dove corre
+        const look = cfg.formation === "line" ? v.x : target.x - pos.x;
+        if (look !== 0) enemy.setFlipX(look < 0);
+      });
+    });
+  }
+
+  // Un gruppo rimasto troppo lontano torna in un punto di nascita nuovo tutto insieme, con la sua forma: sono gli
+  // stessi nemici, con la vita che avevano, solo spostati. Il punto va in fuori di quanto il gruppo è largo, come alla
+  // nascita, perché nessuno spunti in vista; al massimo RECALL_SPREAD, così il centro resta sotto la distanza del
+  // ritorno anche con una fila lunga o uno rimasto indietro, e non torna di nuovo al fotogramma dopo.
+  private recallFlock(group: Sprite[], center: Vec, state: FlockState) {
+    const spread = Math.min(RECALL_SPREAD, Math.max(...group.map((e) => Math.hypot(e.x - center.x, e.y - center.y))));
+    const cam = this.cameras.main;
+    const p = spawnPoint({ x: cam.midPoint.x, y: cam.midPoint.y }, this.scale.width / 2, this.scale.height / 2, SPAWN.margin + 2 * spread, this.rng);
+    for (const enemy of group) enemy.body?.reset(enemy.x + p.x - center.x, enemy.y + p.y - center.y);
+    state.dash = startDash();
+    this.recalls += group.length;
+  }
+
+  // Come cammina chi non ha un attacco suo e non sta in un gruppo (src/logic/patterns.ts): la zanzara ondeggia, la
+  // pantegana va a scatti, il piccione si ferma ogni tanto a beccare; chi non ha un modo suo va dritto sul gatto.
   private walk(enemy: Sprite, kind: FoeKind, from: Vec, target: Vec, speed: number): Vec {
     const jitter = (enemy.getData("jitter") as number | undefined) ?? 0;
     if (kind.zigzag) return zigzag(from, target, speed, this.elapsed + jitter * kind.zigzag.periodMs, kind.zigzag);
@@ -654,26 +776,47 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Le ondate: la riga della tabella per questo momento della notte dice chi c'è; ogni tipo ha il suo orologio,
-  // e quando tocca a lui nasce il suo gruppo (dueSpawns).
+  // e quando tocca a lui nasce il suo gruppo (dueSpawns). Con le orde (HORDE) l'orologio corre a onde (hordeTime),
+  // i gruppi sono più grandi e più rari (scaleRow), e ogni onda arriva da un lato solo, mai lo stesso di fila.
   private spawnOnSchedule() {
     const plan = spawnPlan(this.elapsed / this.duration);
-    const due = dueSpawns(plan.row, this.nextSpawnAt, this.elapsed);
+    const cycle = Math.floor(this.elapsed / HORDE.cycleMs);
+    if (cycle !== this.hordeCycle) {
+      this.hordeCycle = cycle;
+      this.hordeSide = nextSide(this.hordeSide, this.rng());
+    }
+    const clock = hordeTime(this.elapsed, HORDE.cycleMs, HORDE.arriveMs);
+    const due = dueSpawns(scaleRow(plan.row, HORDE.sizeScale), this.nextSpawnAt, clock);
     this.nextSpawnAt = due.nextAt;
     for (const { kind, size } of due.spawns) this.spawnGroup(kind, size, plan);
   }
 
-  // Un gruppo di nemici dello stesso tipo, tutti dallo stesso punto fuori dallo schermo.
+  // Un gruppo di nemici dello stesso tipo, nato vicino in un mucchietto (flockSlot) fuori dallo schermo, dal lato
+  // dell'onda di adesso. Chi ha una forma sua (stormo, sciame, fila) resta in gruppo: lo muove moveFlocks.
   // scale moltiplica danno e velocità: cresce con la notte (spawnPlan). La picchiata non accelera: resta schivabile.
   private spawnGroup(id: EnemyId, size: number, scale: { damageScale: number; speedScale: number } = spawnPlan(this.elapsed / this.duration)) {
     if (this.over) return;
-    const kind = ENEMIES[id];
-    const center = this.spawnCenter();
+    const kind: EnemyKind = ENEMIES[id];
+    const spacing = kind.group?.spacing ?? LOOSE_SPACING;
+    const center = this.hordePoint(groupRadius(size, spacing));
+    const flock = kind.group ? this.nextFlock++ : null;
+    if (flock !== null) this.flocks.set(flock, { dash: startDash(), peck: startPeck(), phase: (flock * 0.6180339887) % 1 });
     for (let i = 0; i < size; i++) {
-      const offset = groupOffset(i);
+      const offset = flockSlot(i, spacing);
       const enemy = this.enemies.get(center.x + offset.x, center.y + offset.y, kind.key) as Sprite | null;
       if (!enemy) return;
       this.dress(enemy, kind, kind.health, scale);
+      enemy.setData("flock", flock);
+      enemy.setData("slot", i);
     }
+  }
+
+  // Un punto sul lato dell'onda di adesso, a caso lungo il lato, spostato in fuori di `radius`: il raggio del gruppo,
+  // perché nessuno nasca dentro la vista.
+  private hordePoint(radius: number): Vec {
+    const cam = this.cameras.main;
+    const center = { x: cam.midPoint.x, y: cam.midPoint.y };
+    return sidePoint(center, this.scale.width / 2, this.scale.height / 2, SPAWN.margin + 2 * radius, this.hordeSide, this.rng());
   }
 
   // Lo sprite esce dal pool: prima poteva essere un altro nemico, anche un capo grande il doppio, quindi
@@ -695,6 +838,10 @@ export class GameScene extends Phaser.Scene {
     enemy.setData("jitter", (this.born++ * 0.6180339887) % 1);
     enemy.setData("log", null);
     enemy.setData("pushedUntil", 0);
+    enemy.setData("hitReadyAt", 0);
+    // fuori da ogni gruppo finché spawnGroup non lo mette nel suo (i capi restano soli)
+    enemy.setData("flock", null);
+    enemy.setData("slot", 0);
     const walk = `${kind.key}-cammina`;
     if (!kind.dive && this.anims.exists(walk)) enemy.anims.play(walk, true);
   }
@@ -908,13 +1055,14 @@ export class GameScene extends Phaser.Scene {
     this.xp = state;
     this.pendingLevels += levelsGained;
     this.drawHud();
-    // con la partita già ferma (una cassa presa nello stesso istante) la scelta aspetta che riprenda
-    if (this.pendingLevels > 0 && this.scene.isActive() && !this.scene.isActive("LevelUp")) this.openLevelUp();
+    // con la partita già ferma (una cassa presa nello stesso istante) la scelta aspetta che riprenda (openLevelUp)
+    if (this.pendingLevels > 0) this.openLevelUp();
   }
 
-  // Si sale di livello: la partita si ferma e sopra compare la scelta tra tre carte.
+  // Si sale di livello: la partita si ferma e sopra compare la scelta tra tre carte. Se la partita è già ferma
+  // (una cassa, la pausa, la mappa, o un'altra scelta nello stesso istante) il livello aspetta: lo riapre onResume.
   private openLevelUp() {
-    if (this.over) return;
+    if (this.over || this.pendingLevels <= 0 || !this.halt.stop("LevelUp")) return;
     this.pendingLevels--;
     this.joystick = null;
     this.joystickGfx.clear();
@@ -936,9 +1084,8 @@ export class GameScene extends Phaser.Scene {
   private applyCard(id: string) {
     this.gainCard(id);
     this.drawHud();
+    // più livelli in una volta: le scelte arrivano una dopo l'altra, le apre onResume
     this.scene.resume();
-    // più livelli in una volta: le scelte arrivano una dopo l'altra
-    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
   }
 
   // gainCard: l'effetto di una carta, scelta al livello o trovata in una cassa.
@@ -1021,15 +1168,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Presa una cassa: un potere, a volte tre, dalle stesse carte della scelta al livello. Sono presi subito;
-  // poi la partita si ferma e ChestScene mostra quali, finché non si tocca. Se la scelta di una carta si è
-  // appena aperta, la cassa resta a terra e si prende alla ripresa.
+  // poi la partita si ferma e ChestScene mostra quali, finché non si tocca. Se la partita è già ferma (la scelta
+  // di una carta aperta nello stesso istante, src/logic/halt.ts), la cassa resta a terra e si prende alla ripresa.
   private takeChest(chest: Sprite) {
-    if (!chest.active || this.over || !this.scene.isActive() || this.scene.isActive("LevelUp")) return;
+    if (!chest.active || this.over || !this.halt.stop("Chest")) return;
     chest.disableBody(true, true);
     this.chestsTaken++;
     const levels = { ...this.levels };
     // la cassa del gabbiano reale è tripla di sicuro: con probabilità 1 il tiro è sempre sotto
-    // zampa fortunata alza la probabilità delle altre e il peso delle carte rare, come nella scelta al livello
+    // il quadrifoglio alza la probabilità delle altre e il peso delle carte rare, come nella scelta al livello
     const tripleChance = chest.getData("triple") ? 1 : CHEST.tripleChance + this.stats.tripleChanceBonus;
     const weights = luckyWeights(CARD_WEIGHTS, this.stats.rareWeightBonus);
     const gained = openChest(CARDS, this.levels, this.rng, weights, FALLBACK_CARDS, tripleChance);
@@ -1043,10 +1190,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   // Chiusa la cassa la partita riprende (con la protezione di onResume); un livello arrivato insieme alla
-  // cassa apre adesso la sua scelta.
+  // cassa apre la sua scelta alla ripresa, in onResume.
   private onChestClosed() {
     this.scene.resume();
-    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
   }
 
   // La minimappa: il gatto al centro, i nemici come puntini, le casse in oro, sempre: sul bordo se sono
@@ -1107,7 +1253,7 @@ export class GameScene extends Phaser.Scene {
 
   // La mappa grande: la partita si ferma e sopra compare MapScene, come la pausa.
   private openMap() {
-    if (this.over || !this.scene.isActive() || this.scene.isActive("LevelUp") || this.scene.isActive("Pause") || this.scene.isActive("Map")) return;
+    if (this.over || !this.halt.stop("Map")) return;
     this.joystick = null;
     this.joystickGfx.clear();
     const point = (s: Sprite) => ({ x: s.x, y: s.y });
@@ -1121,16 +1267,25 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch("Map", data);
   }
 
+  // Un nemico appoggiato al gatto: colpisce se la sua pausa è finita e il tetto lo lascia (contactHit). Così una
+  // folla fa più male di un nemico solo.
   private onTouch(enemy: Sprite) {
     if (this.over || this.invincible || !enemy.active) return;
-    this.hurt((enemy.getData("damage") as number | undefined) ?? PIGEON.damage);
+    const damage = (enemy.getData("damage") as number | undefined) ?? PIGEON.damage;
+    const readyAt = (enemy.getData("hitReadyAt") as number | undefined) ?? 0;
+    const step = contactHit(this.health, readyAt, damage, this.elapsed, CAT.contactMs, CAT.hitGapMs);
+    enemy.setData("hitReadyAt", step.readyAt);
+    if (step.hit) this.afterHit(step.health);
   }
 
-  // Un colpo al gatto, da un contatto o dall'urlo: non conta durante l'invulnerabilità.
+  // Un colpo dall'urlo del gabbiano reale: conta il tetto, come per i contatti.
   private hurt(damage: number) {
     if (this.over || this.invincible) return;
-    const { health, hit } = takeHit(this.health, damage, this.elapsed, CAT.invulnerabilityMs);
-    if (!hit) return;
+    const { health, hit } = takeHit(this.health, damage, this.elapsed, CAT.hitGapMs);
+    if (hit) this.afterHit(health);
+  }
+
+  private afterHit(health: Health) {
     this.health = health;
     if (isDead(this.health)) this.loseLife();
     this.drawHud();
@@ -1151,15 +1306,19 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(1200, () => note.destroy());
   }
 
-  // La ripresa dopo una carta o una pausa: un attimo di protezione, sull'orologio della notte.
+  // La ripresa dopo una carta, una cassa, la pausa o la mappa: la partita torna libera, un attimo di protezione
+  // sull'orologio della notte, e un livello che aspettava apre adesso la sua scelta.
   private onResume() {
+    this.halt.release();
     if (this.over) return;
     this.health = protect(this.health, this.elapsed, CAT.resumeInvulnerabilityMs);
+    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
   }
 
-  // La pausa: la partita si ferma e sopra compare PauseScene. Non si apre sopra la scelta delle carte.
+  // La pausa: la partita si ferma e sopra compare PauseScene. Non si apre sopra la scelta delle carte, la cassa o
+  // la mappa.
   private openPause() {
-    if (this.over || !this.scene.isActive() || this.scene.isActive("LevelUp") || this.scene.isActive("Pause")) return;
+    if (this.over || !this.halt.stop("Pause")) return;
     this.joystick = null;
     this.joystickGfx.clear();
     this.scene.pause();
@@ -1266,11 +1425,13 @@ export class GameScene extends Phaser.Scene {
   // che misura il bilanciamento (quante vite perse, a che livello, quanti nemici insieme, quanti sullo schermo,
   // quanti riportati vicino, quanti spinti via dal miagolio, a che livello è ogni carta, quando è nato e quando
   // è caduto ogni capo, quanti supplì sono caduti e quanti ne ha mangiati, e il mucchio: su cento nemici, quanti
-  // ne hanno un altro quasi addosso).
+  // ne hanno un altro quasi addosso; la massa: su cento nemici in vista, quanti stanno nella massa più grande).
   private writeDebugState(fps: number, alive: number) {
     const view = this.cameras.main.worldView;
     const inView = this.aliveEnemies().filter((e) => view.contains(e.x, e.y)).length;
     const pile = Math.round(crowding(this.crowd().map((e) => ({ x: e.x, y: e.y })), CROWD.overlapDistance) * 100);
+    const seen = this.crowd().filter((e) => view.contains(e.x, e.y)).map((e) => ({ x: e.x, y: e.y }));
+    const clump = seen.length ? Math.round((largestClump(seen, CROWD.clumpDistance) / seen.length) * 100) : 0;
     for (const b of this.bosses) {
       const log = b.getData("log") as BossLogEntry | null | undefined;
       if (log) log.vita = Math.round(b.getData("hp") as number);
@@ -1278,7 +1439,7 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.dataset.stato = JSON.stringify({
       ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
       presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, spinti: this.pushes, carte: this.levels,
-      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, fps,
+      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, massa: clump, fps,
     });
   }
 }

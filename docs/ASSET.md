@@ -58,7 +58,7 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `uccisioni.png` | 16×16 | L'icona dei piccioni presi (tappa 3b) |
 | `titolo.png` | 480×270 | Lo sfondo del titolo, Roma di notte (tappa 3b) |
 | `alba.png` | 480×270 | Lo sfondo della fine, l'alba su Roma (tappa 3b) |
-| `carte.png` | 128×16 | Otto icone provvisorie da 16×16: zampe veloci, pancia piena, unghie affilate, naso fino, riflessi pronti, pelo gonfio, zampa fortunata e la monetina degli spicci (dal 13 novembre 2026). Le disegna `art/icone_carte.py`, non vengono dalle tavole |
+| `carte.png` | 128×16 | Otto icone provvisorie da 16×16: zampe veloci, pancia piena, unghie affilate, naso fino, riflessi pronti, pelo gonfio, quadrifoglio (la carta che si chiamava zampa fortunata) e la monetina degli spicci (dal 13 novembre 2026). Le disegna `art/icone_carte.py`, non vengono dalle tavole |
 | `cassa.png` | 32×16 | La cassa del tesoro provvisoria, due fotogrammi da 16×16: ferma, luccica. La disegna `art/cassa.py`, non viene dalle tavole |
 | `zanzara.png` | 32×16 | Due fotogrammi da 16×16: ali alzate, ali abbassate (tappa 4) |
 | `pantegana.png` | 32×16 | Due fotogrammi da 16×16: i due passi della corsa (tappa 4) |

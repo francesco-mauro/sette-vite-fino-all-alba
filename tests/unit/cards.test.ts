@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { CARD_ICONS, CARDS, FALLBACK_CARDS } from "../../src/data/cards";
 import { CARD_TEXTS } from "../../src/data/texts";
-import { drawCards, luckyWeights, type CardDef } from "../../src/logic/cards";
+import { cardDescription, drawCards, luckyWeights, type CardDef } from "../../src/logic/cards";
 import { createRng } from "../../src/logic/rng";
 
 const POOL: CardDef[] = [
@@ -146,5 +146,21 @@ describe("le icone delle carte", () => {
 
   it("le carte di ripiego hanno un nome che si capisce: supplì e spicci", () => {
     expect(FALLBACK_CARDS.map((id) => CARD_TEXTS[id].name)).toEqual(["supplì", "spicci"]);
+  });
+});
+
+describe("il quadrifoglio", () => {
+  it("si chiama quadrifoglio, come la sua icona, e non più zampa fortunata", () => {
+    expect(CARD_TEXTS.luck.name).toBe("quadrifoglio");
+  });
+
+  it("la carta dice quanto è probabile la cassa tripla al livello che dà", () => {
+    expect(cardDescription("luck", 1)).toBe("casse triple 18 su 100, più carte rare");
+    expect(cardDescription("luck", 5)).toBe("casse triple 50 su 100, più carte rare");
+  });
+
+  it("le altre carte dicono la frase della prima volta, poi quella delle volte dopo", () => {
+    expect(cardDescription("tail", 1)).toBe(CARD_TEXTS.tail.first);
+    expect(cardDescription("tail", 2)).toBe(CARD_TEXTS.tail.more);
   });
 });

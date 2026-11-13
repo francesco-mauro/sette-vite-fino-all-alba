@@ -31,6 +31,26 @@ export function spawnPlan(progress: number, table: readonly WaveRow[] = WAVE_TAB
   };
 }
 
+// hordeTime: l'orologio delle ondate con le orde. In ogni giro di `cycleMs`, per i primi `arriveMs` corre più in
+// fretta, tanto da fare un giro intero; poi resta fermo fino al giro dopo. Così nasce lo stesso numero di nemici di
+// prima, ma tutti insieme in un'onda, e dopo l'onda per un po' non nasce nessuno: si respira.
+export function hordeTime(elapsed: number, cycleMs: number, arriveMs: number): number {
+  const cycle = Math.floor(elapsed / cycleMs);
+  const into = elapsed - cycle * cycleMs;
+  return cycle * cycleMs + Math.min(into, arriveMs) * (cycleMs / arriveMs);
+}
+
+// scaleRow: la riga con gruppi `k` volte più grandi e `k` volte più rari. Gli stessi nemici al secondo, a gruppi
+// più grossi: l'orda. Non tocca la riga ricevuta.
+export function scaleRow(row: WaveRow, k: number): WaveRow {
+  const out: WaveRow = {};
+  for (const kind of Object.keys(row) as EnemyId[]) {
+    const group = row[kind];
+    if (group) out[kind] = { size: group.size * k, everyMs: group.everyMs * k };
+  }
+  return out;
+}
+
 // dueSpawns: i gruppi che devono nascere adesso. `nextAt` dice, per ogni tipo, da che momento della notte
 // tocca di nuovo a lui; un tipo che non c'è ancora (appena entrato nella tabella) nasce subito.
 // Restituisce i gruppi e gli orologi aggiornati, senza toccare quelli ricevuti.

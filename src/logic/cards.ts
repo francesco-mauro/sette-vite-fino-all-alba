@@ -1,5 +1,17 @@
-// La scelta tra tre carte: quali escono, e come la fortuna sposta i pesi. Logica pura, senza Phaser.
+// La scelta tra tre carte: quali escono, come la fortuna sposta i pesi, e cosa c'è scritto sulla carta.
+// Logica pura, senza Phaser.
+import { CARD_TEXTS, TEXTS } from "../data/texts";
 import type { Rng } from "./rng";
+import { tripleChance } from "./stats";
+
+// cardDescription: cosa dice la carta `id` al livello `level`, quello che avrà dopo averla presa. Al primo livello
+// la frase della prima volta, poi quella delle volte dopo. Il quadrifoglio dice quante casse su cento sono triple
+// a quel livello: la fortuna non si vede, così si sa cosa si prende.
+export function cardDescription(id: string, level: number): string {
+  if (id === "luck") return TEXTS.luckOdds(Math.round(tripleChance(level) * 100));
+  const text = CARD_TEXTS[id];
+  return level <= 1 ? text.first : text.more;
+}
 
 export type Rarity = "common" | "rare";
 

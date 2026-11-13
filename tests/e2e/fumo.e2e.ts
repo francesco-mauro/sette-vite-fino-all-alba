@@ -53,3 +53,23 @@ test("dal titolo parte la partita, senza errori", async ({ page }) => {
   await page.waitForTimeout(3000);
   expect(errors).toEqual([]);
 });
+
+// Francesco, 13 novembre 2026: «se premo esc sis ese dallo schermo intero e ppoi non posso rinetrare».
+// In pausa F non faceva niente: lo schermo intero si rimetteva solo riprendendo la partita.
+test("in pausa F rimette lo schermo intero", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  const canvas = page.locator("#gioco canvas");
+  await expect(canvas).toHaveAttribute("data-scena", "pronta");
+  await expect(async () => {
+    await page.keyboard.press("Space");
+    await expect(canvas).toHaveAttribute("data-scena", "partita", { timeout: 500 });
+  }).toPass({ timeout: 5000 });
+  await page.waitForTimeout(500);
+  // Esc apre la pausa; la pausa accetta i tasti dopo un attimo
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(600);
+  await page.keyboard.press("f");
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null), { timeout: 2000 }).toBe(true);
+  expect(errors).toEqual([]);
+});

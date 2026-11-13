@@ -2,8 +2,8 @@
 // non il codice. Distanze in pixel della scena (480x270), tempi in millisecondi, velocità in pixel al secondo.
 //
 // Contenuti:
-// - CAT: velocità, vita e invulnerabilità del gatto
-// - ENEMIES: i quattro nemici (piccione, zanzara, pantegana, cornacchia) e la picchiata
+// - CAT: velocità, vita, quanto fa male la folla e invulnerabilità del gatto
+// - ENEMIES: i quattro nemici (piccione, zanzara, pantegana, cornacchia), la picchiata, i modi di camminare e i gruppi
 // - BOSSES, BOSS_ORDER, BOSS: i due capi (gabbiano con la carica, gabbiano reale con l'urlo), quando nascono, quanta vita
 // - SCRATCH_LEVELS, TAIL_LEVELS, FUR_LEVELS, MEOW_LEVELS e MEOW: le quattro armi, livello per livello
 // - PASSIVES: quanto aggiunge ogni carta dei potenziamenti
@@ -12,6 +12,7 @@
 // - CARD_WEIGHTS, FALLBACK: rarità delle carte e carte di ripiego
 // - RUN: durata della notte, vite, riga dei primi secondi
 // - WAVES: quanto crescono danno e velocità dei nemici nella notte (chi arriva e quando è in waves.ts)
+// - HORDE: le orde, un'onda da un lato solo e poi il respiro
 // - SPAWN: dove nascono, quanti al massimo e da che distanza tornano vicino
 // - CROWD: le spinte leggere tra nemici, perché non finiscano uno sopra l'altro
 // - CHEST: le casse del tesoro
@@ -20,10 +21,13 @@ export const CAT = {
   speed: 80,
   // il gatto ha sette vite: questa è la barra di una vita
   maxHealth: 100,
-  // dopo un colpo, per quanto i colpi non contano (il gatto lampeggia). È il tetto del danno: circondato da
-  // cinquanta piccioni il gatto prende un colpo ogni 0,7 secondi, come con uno solo. Era 1000: con quel tetto
-  // il gatto reggeva troppo (misura del 12 novembre 2026 nelle ondate, sotto).
-  invulnerabilityMs: 700,
+  // la folla fa male (src/logic/health.ts, contactHit). Ogni nemico appoggiato colpisce una volta ogni `contactMs`,
+  // per conto suo; il tetto è `hitGapMs`, l'attimo dopo ogni colpo in cui nessun colpo conta (il gatto lampeggia):
+  // al massimo quattro colpi al secondo. Prima c'era solo un attimo di 0,7 secondi dopo ogni colpo, da chiunque:
+  // circondato da cinquanta piccioni il gatto prendeva un colpo ogni 0,7 secondi, come con uno solo, e si passava
+  // in mezzo alla folla (Francesco, 13 novembre 2026: «ci si passa semplicemente attraverso»).
+  contactMs: 700,
+  hitGapMs: 250,
   // alla ripresa dopo la scelta di una carta o una pausa, per riprendere in mano il gatto
   resumeInvulnerabilityMs: 1000,
 };
@@ -65,6 +69,22 @@ export interface PeckConfig {
   peckMs: number;
 }
 
+// Come sta insieme un gruppo (src/logic/flock.ts), approvato da Francesco il 13 novembre 2026: lo stormo di piccioni
+// cammina e becca tutto insieme, lo sciame di zanzare gira intorno a un centro che ondeggia verso il gatto, le
+// pantegane corrono in fila dietro alla prima, che decide lo scatto.
+export interface GroupConfig {
+  formation: "flock" | "swarm" | "line";
+  // lo spazio tra due vicini, nello stormo e nella fila; anche come nascono, prima di prendere la forma
+  spacing: number;
+  // quanto forte ognuno rincorre il suo posto, per secondo: 3 vuol dire 30 pixel al secondo in più a 10 dal posto
+  pull: number;
+  // fino a quante volte la sua velocità corre chi è rimasto indietro
+  catchUp: number;
+  // solo lo sciame: quanto è largo e ogni quanto una zanzara fa il giro del centro
+  radius?: number;
+  periodMs?: number;
+}
+
 // Quello che hanno in comune nemici e capi.
 export interface FoeKind {
   speed: number;
@@ -83,6 +103,8 @@ export interface FoeKind {
   zigzag?: ZigzagConfig;
   dash?: DashConfig;
   peck?: PeckConfig;
+  // solo per chi arriva in gruppo e resta in gruppo: piccione, zanzara, pantegana
+  group?: GroupConfig;
 }
 
 export interface EnemyKind extends FoeKind {
@@ -103,8 +125,11 @@ export const ENEMIES: Record<EnemyId, EnemyKind> = {
     xp: 1,
     kibbleChance: 1,
     body: { width: 12, height: 10 },
-    // cammina un paio di secondi, poi si ferma un attimo: la folla arriva meno compatta, e resta il nemico facile
+    // cammina un paio di secondi, poi si ferma un attimo: la folla arriva meno compatta, e resta il nemico facile.
+    // Con lo stormo cammina e si ferma tutto il gruppo insieme
     peck: { walkMs: 2000, peckMs: 400 },
+    // lo stormo: un mucchietto tondo, i vicini a 16 pixel, appena oltre le spinte (CROWD.radius)
+    group: { formation: "flock", spacing: 16, pull: 3, catchUp: 1.5 },
   },
   // veloce, poca vita: uno sciame che arriva addosso, ma cade con qualsiasi colpo
   zanzara: {
@@ -118,8 +143,11 @@ export const ENEMIES: Record<EnemyId, EnemyKind> = {
     kibbleChance: 0.35,
     body: { width: 8, height: 8 },
     // piega fino a 50 gradi da una parte e dall'altra, un giro ogni 0,8 secondi: verso il gatto va sempre ad
-    // almeno 0,64 della sua velocità
+    // almeno 0,64 della sua velocità. Con lo sciame è il centro dello sciame che ondeggia
     zigzag: { periodMs: 800, swing: 1.2 },
+    // lo sciame: ogni zanzara gira intorno al centro tra 12 e 24 pixel, un giro ogni due secondi e mezzo (60 pixel
+    // al secondo sul giro più largo, sotto i 110 a cui può correre)
+    group: { formation: "swarm", spacing: 12, pull: 4, catchUp: 2, radius: 24, periodMs: 2500 },
   },
   // resistente: lenta, cade solo al quarto graffio del primo livello e fa male
   pantegana: {
@@ -130,8 +158,11 @@ export const ENEMIES: Record<EnemyId, EnemyKind> = {
     xp: 3,
     kibbleChance: 1,
     body: { width: 14, height: 9 },
-    // corre dritta per un secondo e mezzo verso dove eri: si schiva spostandosi di lato
+    // corre dritta per un secondo e mezzo verso dove eri: si schiva spostandosi di lato. In fila lo scatto lo
+    // decide la prima, le altre la seguono
     dash: { dashMs: 1500 },
+    // la fila: ognuna a 16 pixel dietro a quella davanti
+    group: { formation: "line", spacing: 16, pull: 3, catchUp: 1.5 },
   },
   // scende in picchiata: va schivata di lato, e si colpisce mentre riprende fiato
   cornacchia: {
@@ -289,10 +320,13 @@ export const PASSIVES = {
   // pelo gonfio: quanto più lontano arrivano graffio, coda a frusta e miagolio, per livello. Il pelo che vola
   // arriva già al bordo dello schermo, quindi non cambia
   areaPerLevel: 0.08,
-  // zampa fortunata: quanto peso in più hanno le carte rare nell'estrazione, per livello (le rare partono da
-  // CARD_WEIGHTS.rare, le comuni restano ferme), e quanta probabilità in più ha una cassa di essere tripla
+  // quadrifoglio: quanto peso in più hanno le carte rare nell'estrazione, per livello (le rare partono da
+  // CARD_WEIGHTS.rare, le comuni restano ferme), e quanta probabilità in più ha una cassa di essere tripla.
+  // Era 0,04 (3 casse su 10 triple al livello 5): con otto casse per notte, anche al massimo dall'inizio una notte
+  // su venti finiva senza nessuna tripla, e la carta sembrava non fare niente (Francesco, 13 novembre 2026: «poco
+  // efficiente perchè non si è attivata mai»). Con 0,08 al livello 5 è tripla una cassa su due.
   luckRareWeightPerLevel: 1,
-  luckTriplePerLevel: 0.04,
+  luckTriplePerLevel: 0.08,
 };
 
 // Le crocchette: quanta esperienza vale ognuna, e da che distanza la calamita le tira verso il gatto.
@@ -361,6 +395,18 @@ export const WAVES = {
   endSpeedScale: 1.6,
 };
 
+// Le orde (src/logic/waves.ts, hordeTime e scaleRow), approvate da Francesco il 13 novembre 2026: invece di una
+// pioggia continua da tutti i lati, un'onda da un lato solo, poi una pausa. Arriva un'onda, la affronti, poi respiri.
+// Numeri di partenza: in tutta la notte nascono gli stessi nemici di prima, a gruppi due volte più grandi.
+export const HORDE = {
+  // ogni quanto arriva un'onda
+  cycleMs: 20_000,
+  // per quanto nasce l'onda: in questi 8 secondi nasce quello che prima nasceva in 20, poi 12 secondi di respiro
+  arriveMs: 8_000,
+  // gruppi così tante volte più grandi, e così tante volte più rari, dei numeri della tabella delle ondate
+  sizeScale: 2,
+};
+
 export const SPAWN = {
   // quanto lontano, fuori dallo schermo, nascono
   margin: 32,
@@ -388,6 +434,14 @@ export const CROWD = {
   push: 2,
   // la misura del mucchio, nello stato di debug: due nemici più vicini di così sono «uno sopra l'altro»
   overlapDistance: 4,
+  // lo spazio libero tra due gruppi (src/logic/flock.ts, groupPushes): più vicini della somma dei raggi più questo,
+  // si spingono via. Così intorno al gatto i gruppi restano più staccati: la massa più grande scende, ma col gatto
+  // fermo restano un anello intorno a lui (misura del 13 novembre 2026)
+  groupGap: 12,
+  // la misura della massa unica, nello stato di debug: due nemici più vicini di così stanno nella stessa massa
+  // (src/logic/separation.ts, largestClump). Poco più del raggio delle spinte: in una folla spinta i vicini stanno
+  // a 14-16 pixel
+  clumpDistance: 20,
 };
 
 // Le casse del tesoro: compaiono sulla mappa lontano dal gatto, da cercare con la minimappa.
