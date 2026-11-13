@@ -10,7 +10,7 @@
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita con erba e tombino, comandi, interfaccia
-// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia), kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
+// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup, dress: un gruppo di nemici di un tipo, da fuori dello schermo; lo sprite del pool rivestito da capo
 // - i capi: spawnBossOnSchedule, spawnBoss, makeRoom, e più sotto dropBossChest, drawBossBars, hurt
 // - le armi: fireWeapons, scratch, tail, fur, furHit, meow (l'onda che spinge via), damageEnemy, killEnemy
@@ -22,7 +22,7 @@
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
-  BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, ENEMIES, FALLBACK, FUR_LEVELS, KIBBLE, MEOW, MEOW_LEVELS, PIGEON, RUN,
+  BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, CROWD, ENEMIES, FALLBACK, FUR_LEVELS, KIBBLE, MEOW, MEOW_LEVELS, PIGEON, RUN,
   SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
   type BossId, type EnemyId, type FoeKind, type ScreamConfig,
 } from "../data/balance";
@@ -41,6 +41,7 @@ import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
+import { crowding, separation, withPush } from "../logic/separation";
 import { dropsSnack, isHungry } from "../logic/snack";
 import { groupOffset, spawnPoint, tooFar } from "../logic/spawn";
 import { computeStats, tuneWeapon, type Stats } from "../logic/stats";
@@ -55,6 +56,9 @@ import type { MapData } from "./MapScene";
 import { FONT } from "./font";
 
 type Sprite = Phaser.Physics.Arcade.Sprite;
+
+// la spinta di chi non ne riceve: in mira, in picchiata, o senza vicini
+const NO_PUSH: Vec = { x: 0, y: 0 };
 // Una riga del diario dei capi, per il debug: tempi in millisecondi di notte.
 interface BossLogEntry {
   id: BossId;
@@ -255,6 +259,10 @@ export class GameScene extends Phaser.Scene {
     this.effects = this.add.group({ maxSize: 60 });
     this.bossFx = this.add.graphics().setDepth(3);
 
+    // Chi urta chi: solo queste cinque coppie, perché Arcade controlla soltanto le coppie dichiarate. I nemici tra
+    // loro non si urtano (si scostano con le spinte leggere di moveEnemies), e graffio, coda e miagolio colpiscono
+    // con i loro conti, non con la fisica. Le categorie di collisione di Phaser (setCollisionCategory) filtrano solo
+    // dentro una coppia già dichiarata: qui non toglierebbero niente.
     this.physics.add.overlap(this.cat, this.enemies, (_c, enemy) => this.onTouch(enemy as Sprite));
     this.physics.add.overlap(this.cat, this.kibbles, (_c, kibble) => this.collect(kibble as Sprite));
     this.physics.add.overlap(this.cat, this.snacks, (_c, snack) => this.eatSnack(snack as Sprite));
@@ -460,9 +468,12 @@ export class GameScene extends Phaser.Scene {
   // Tutti vanno dritti verso il gatto, tranne chi ha un attacco suo. Chi ha la picchiata (la cornacchia, e il
   // gabbiano con la sua carica) segue le fasi di src/logic/dive.ts e cambia fotogramma quando prende la mira e
   // si lancia. Il gabbiano reale segue quelle dell'urlo (scream, qui sotto).
+  // Chi va verso il gatto riceve anche la spinta leggera dei vicini (crowdPushes): si scosta invece di finire
+  // sopra un altro. In mira, in picchiata e spinti dal miagolio no: lì la strada è già decisa.
   private moveEnemies() {
     const target = { x: this.cat.x, y: this.cat.y };
     this.bossFx.clear();
+    const pushes = this.crowdPushes();
     for (const child of this.enemies.getChildren()) {
       const enemy = child as Sprite;
       if (!enemy.active) continue;
@@ -478,13 +489,21 @@ export class GameScene extends Phaser.Scene {
       }
       if (!kind.dive) {
         const v = chase(from, target, speed);
-        enemy.setVelocity(v.x, v.y);
+        const moved = withPush(v, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push);
+        enemy.setVelocity(moved.x, moved.y);
+        // guarda il gatto, non dove lo spingono: una spinta di lato non lo fa girare avanti e indietro
         enemy.setFlipX(v.x < 0);
         continue;
       }
       const step = diveStep(enemy.getData("dive") as DiveState, from, target, this.elapsed, speed, kind.dive);
       enemy.setData("dive", step.state);
-      enemy.setVelocity(step.velocity.x, step.velocity.y);
+      // la spinta solo mentre si avvicina: in picchiata va a 190, e withPush la riporterebbe alla sua velocità
+      if (step.state.phase === "approach") {
+        const moved = withPush(step.velocity, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push);
+        enemy.setVelocity(moved.x, moved.y);
+      } else {
+        enemy.setVelocity(step.velocity.x, step.velocity.y);
+      }
       // chi ha un'animazione (il gabbiano) batte le ali mentre si avvicina; in mira e in picchiata il disegno
       // è fermo sul secondo fotogramma, e quello è l'avviso
       const flap = `${kind.key}-cammina`;
@@ -499,6 +518,16 @@ export class GameScene extends Phaser.Scene {
       const lookX = step.velocity.x !== 0 ? step.velocity.x : target.x - from.x;
       enemy.setFlipX(lookX < 0);
     }
+  }
+
+  // Le spinte leggere di questo fotogramma: per ogni nemico della folla (i capi no), quanto lo scostano i vicini.
+  // Lunghe al massimo 1: moveEnemies le moltiplica per la velocità di ognuno e per CROWD.push.
+  private crowdPushes(): Map<Sprite, Vec> {
+    const crowd = this.crowd();
+    const pushes = separation(crowd.map((e) => ({ x: e.x, y: e.y })), CROWD.radius, 1);
+    const out = new Map<Sprite, Vec>();
+    crowd.forEach((e, i) => out.set(e, pushes[i]));
+    return out;
   }
 
   // Che nemico è questo sprite: un capo, uno dei quattro nemici, o il piccione di riserva.
@@ -715,6 +744,11 @@ export class GameScene extends Phaser.Scene {
 
   private aliveEnemies(): Sprite[] {
     return this.enemies.getChildren().filter((c) => c.active) as Sprite[];
+  }
+
+  // I nemici vivi senza i capi: sono loro che fanno folla, e che si spingono tra loro.
+  private crowd(): Sprite[] {
+    return this.aliveEnemies().filter((e) => !BOSSES[e.getData("kind") as BossId]);
   }
 
   private playEffect(key: string, x: number, y: number, rotation = 0, scale = 1, alpha = 1) {
@@ -1199,10 +1233,12 @@ export class GameScene extends Phaser.Scene {
   // Con ?debug lo stato della partita si legge anche da fuori, sul canvas: serve alla partita automatica
   // che misura il bilanciamento (quante vite perse, a che livello, quanti nemici insieme, quanti sullo schermo,
   // quanti riportati vicino, quanti spinti via dal miagolio, a che livello è ogni carta, quando è nato e quando
-  // è caduto ogni capo, quanti supplì sono caduti e quanti ne ha mangiati).
+  // è caduto ogni capo, quanti supplì sono caduti e quanti ne ha mangiati, e il mucchio: su cento nemici, quanti
+  // ne hanno un altro quasi addosso).
   private writeDebugState(fps: number, alive: number) {
     const view = this.cameras.main.worldView;
     const inView = this.aliveEnemies().filter((e) => view.contains(e.x, e.y)).length;
+    const pile = Math.round(crowding(this.crowd().map((e) => ({ x: e.x, y: e.y })), CROWD.overlapDistance) * 100);
     for (const b of this.bosses) {
       const log = b.getData("log") as BossLogEntry | null | undefined;
       if (log) log.vita = Math.round(b.getData("hp") as number);
@@ -1210,7 +1246,7 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.dataset.stato = JSON.stringify({
       ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
       presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, spinti: this.pushes, carte: this.levels,
-      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, fps,
+      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, fps,
     });
   }
 }

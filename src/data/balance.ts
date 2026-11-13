@@ -13,6 +13,7 @@
 // - RUN: durata della notte, vite, riga dei primi secondi
 // - WAVES: quanto crescono danno e velocità dei nemici nella notte (chi arriva e quando è in waves.ts)
 // - SPAWN: dove nascono, quanti al massimo e da che distanza tornano vicino
+// - CROWD: le spinte leggere tra nemici, perché non finiscano uno sopra l'altro
 // - CHEST: le casse del tesoro
 
 export const CAT = {
@@ -339,6 +340,22 @@ export const SPAWN = {
   // Prima chi veniva seminato restava vivo lontano e occupava i posti: scappando sempre dritto il gatto
   // arrivava all'alba senza perdere una vita, con cinque nemici in vista (misura del 13 novembre 2026).
   recallDistance: 420,
+};
+
+// Le spinte leggere tra nemici (src/logic/separation.ts): chi sta troppo vicino a un altro si scosta un po'.
+// Prima tutti andavano dritti sul gatto e, con la stessa strada e quasi la stessa velocità, finivano uno sopra
+// l'altro: un mucchio solo, dove non si vedeva quanti erano (Francesco, 13 novembre 2026). I capi non spingono e
+// non vengono spinti. La cornacchia in mira, in picchiata o mentre riprende fiato, e chi è spinto via dal miagolio,
+// spingono i vicini ma non ricevono la spinta: hanno già una strada loro.
+export const CROWD = {
+  // sotto questa distanza tra due centri due nemici si spingono: la scatola del nemico più largo, la pantegana
+  radius: 14,
+  // quanto forte, in multipli della velocità di chi la riceve, quando due nemici sono uno sopra l'altro. Scende a
+  // zero alla distanza del raggio: a metà raggio vale quanto la sua corsa. Sotto 1 non basterebbe: la spinta non
+  // vincerebbe mai la corsa verso il gatto, e lì si impilerebbero lo stesso
+  push: 2,
+  // la misura del mucchio, nello stato di debug: due nemici più vicini di così sono «uno sopra l'altro»
+  overlapDistance: 4,
 };
 
 // Le casse del tesoro: compaiono sulla mappa lontano dal gatto, da cercare con la minimappa.
