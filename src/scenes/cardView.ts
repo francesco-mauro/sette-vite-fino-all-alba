@@ -1,7 +1,7 @@
 // Il disegno di una carta: cornice, icona, nome, livello e cosa fa. Lo usano la scelta al livello
 // (LevelUpScene) e la cassa del tesoro (ChestScene), così una carta si legge uguale ovunque.
 import * as Phaser from "phaser";
-import { CARDS } from "../data/cards";
+import { CARD_ICONS, CARDS } from "../data/cards";
 import { CARD_TEXTS, TEXTS } from "../data/texts";
 import { FONT } from "./font";
 
@@ -9,22 +9,6 @@ export { FONT };
 export const CARD_W = 128;
 export const CARD_H = 132;
 export const COLORS = { common: 0xcfe0ff, rare: 0xffc85a, fallback: 0xa6f05a, selected: 0xffffff };
-// le armi hanno come icona un fotogramma del loro effetto; i potenziamenti le icone provvisorie di art/icone_carte.py
-const ICONS: Record<string, { key: string; frame: number }> = {
-  scratch: { key: "graffio", frame: 1 },
-  tail: { key: "coda", frame: 1 },
-  fur: { key: "pelo", frame: 0 },
-  meow: { key: "miagolio", frame: 1 },
-  speed: { key: "carte", frame: 0 },
-  health: { key: "carte", frame: 1 },
-  damage: { key: "carte", frame: 2 },
-  magnet: { key: "carte", frame: 3 },
-  haste: { key: "carte", frame: 4 },
-  area: { key: "carte", frame: 5 },
-  luck: { key: "carte", frame: 6 },
-  heal: { key: "crocchetta", frame: 0 },
-  points: { key: "crocchetta", frame: 1 },
-};
 
 // drawCard: disegna la carta `id` centrata in (x, y), con il livello che avrà dopo averla presa,
 // partendo da `levels` (i livelli prima). Restituisce la cornice e tutti i pezzi, per animarli insieme.
@@ -40,7 +24,7 @@ export function drawCard(scene: Phaser.Scene, id: string, x: number, y: number, 
 
   const frame = scene.add.rectangle(x, y, CARD_W, CARD_H, 0x1c2133, 1).setStrokeStyle(2, color);
   const parts: Phaser.GameObjects.GameObject[] = [frame];
-  const icon = ICONS[id];
+  const icon = CARD_ICONS[id];
   if (icon) parts.push(scene.add.image(x, y - 36, icon.key, icon.frame));
   parts.push(scene.add.text(x, y - 12, text.name, { ...FONT, color: `#${color.toString(16).padStart(6, "0")}`, align: "center", wordWrap: { width: CARD_W - 12 } }).setOrigin(0.5, 0));
   if (def) parts.push(scene.add.text(x, y + 2, `${TEXTS.level} ${level}`, FONT).setOrigin(0.5, 0));

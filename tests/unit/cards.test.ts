@@ -1,7 +1,8 @@
 // I test della scelta tra tre carte: niente doppioni, niente carte al massimo, la carta di ripiego,
-// lo stesso seme che dà le stesse carte, le rare più difficili da trovare.
+// lo stesso seme che dà le stesse carte, le rare più difficili da trovare, le icone delle carte.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CARDS } from "../../src/data/cards";
+import { CARD_ICONS, CARDS, FALLBACK_CARDS } from "../../src/data/cards";
 import { CARD_TEXTS } from "../../src/data/texts";
 import { drawCards, luckyWeights, type CardDef } from "../../src/logic/cards";
 import { createRng } from "../../src/logic/rng";
@@ -114,5 +115,36 @@ describe("le carte del gioco", () => {
 
   it("cadenza, area e fortuna hanno cinque livelli come gli altri potenziamenti", () => {
     for (const id of ["haste", "area", "luck"]) expect(CARDS.find((c) => c.id === id)?.maxLevel).toBe(5);
+  });
+});
+
+// La larghezza e l'altezza di un PNG stanno nell'intestazione, ai byte 16-23.
+function pngSize(key: string) {
+  const head = readFileSync(`public/assets/${key}.png`);
+  return { width: head.readUInt32BE(16), height: head.readUInt32BE(20) };
+}
+
+describe("le icone delle carte", () => {
+  const ids = [...CARDS.map((c) => c.id), ...FALLBACK_CARDS];
+
+  it("ogni carta ha un'icona, anche quelle di ripiego, e le icone sono tutte diverse", () => {
+    for (const id of ids) expect(CARD_ICONS[id]).toBeDefined();
+    const seen = ids.map((id) => `${CARD_ICONS[id].key}:${CARD_ICONS[id].frame}`);
+    expect(new Set(seen).size).toBe(ids.length);
+  });
+
+  it("nessuna carta usa la crocchetta, che a terra è l'esperienza", () => {
+    for (const id of ids) expect(CARD_ICONS[id].key).not.toBe("crocchetta");
+  });
+
+  it("il fotogramma di ogni icona esiste nel suo disegno (strisce di fotogrammi quadrati)", () => {
+    for (const id of ids) {
+      const { width, height } = pngSize(CARD_ICONS[id].key);
+      expect(CARD_ICONS[id].frame).toBeLessThan(width / height);
+    }
+  });
+
+  it("le carte di ripiego hanno un nome che si capisce: supplì e spicci", () => {
+    expect(FALLBACK_CARDS.map((id) => CARD_TEXTS[id].name)).toEqual(["supplì", "spicci"]);
   });
 });

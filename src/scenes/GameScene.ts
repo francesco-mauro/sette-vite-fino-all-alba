@@ -10,7 +10,7 @@
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita con erba e tombino, comandi, interfaccia
-// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
+// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici), walk (zanzara che ondeggia, pantegana a scatti, piccione che becca), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule: un fotogramma di gioco
 // - spawnGroup, dress: un gruppo di nemici di un tipo, da fuori dello schermo; lo sprite del pool rivestito da capo
 // - i capi: spawnBossOnSchedule, spawnBoss, makeRoom, e più sotto dropBossChest, drawBossBars, hurt
 // - le armi: fireWeapons, scratch, tail, fur, furHit, meow (l'onda che spinge via), damageEnemy, killEnemy
@@ -32,6 +32,7 @@ import { bossHealth, dueBoss } from "../logic/boss";
 import { drawCards, luckyWeights } from "../logic/cards";
 import { chestPoint, chestTimes, openChest } from "../logic/chest";
 import { diveStep, startDive, type DiveState } from "../logic/dive";
+import { dashStep, peckStep, startDash, startPeck, zigzag, type DashState, type PeckState } from "../logic/patterns";
 import { formatClock } from "../logic/clock";
 import { inReach, knockback } from "../logic/knockback";
 import { DEFAULT_NIGHT } from "../logic/night";
@@ -149,6 +150,9 @@ export class GameScene extends Phaser.Scene {
   // quanta vita gli resta, quante volte è stato riportato vicino)
   private bosses: Sprite[] = [];
   private bossesSpawned = 0;
+  // quanti nemici sono nati: dà a ognuno un numero suo (jitter), così un gruppo nato insieme non ondeggia e non si
+  // ferma a beccare tutto nello stesso istante
+  private born = 0;
   private bossLog: BossLogEntry[] = [];
   private points = 0;
   private kills = 0;
@@ -189,6 +193,7 @@ export class GameScene extends Phaser.Scene {
     this.snacksEaten = 0;
     this.bosses = [];
     this.bossesSpawned = 0;
+    this.born = 0;
     this.bossLog = [];
     this.bossNames = [];
     this.points = 0;
@@ -465,7 +470,8 @@ export class GameScene extends Phaser.Scene {
     this.cat.setAlpha(blinking && Math.floor(time / 80) % 2 === 0 ? 0.3 : 1);
   }
 
-  // Tutti vanno dritti verso il gatto, tranne chi ha un attacco suo. Chi ha la picchiata (la cornacchia, e il
+  // Chi non ha un attacco suo cammina a modo suo (walk): la zanzara ondeggia, la pantegana va a scatti, il piccione
+  // si ferma a beccare. Chi ha la picchiata (la cornacchia, e il
   // gabbiano con la sua carica) segue le fasi di src/logic/dive.ts e cambia fotogramma quando prende la mira e
   // si lancia. Il gabbiano reale segue quelle dell'urlo (scream, qui sotto).
   // Chi va verso il gatto riceve anche la spinta leggera dei vicini (crowdPushes): si scosta invece di finire
@@ -488,11 +494,13 @@ export class GameScene extends Phaser.Scene {
         continue;
       }
       if (!kind.dive) {
-        const v = chase(from, target, speed);
+        const v = this.walk(enemy, kind, from, target, speed);
         const moved = withPush(v, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push);
         enemy.setVelocity(moved.x, moved.y);
-        // guarda il gatto, non dove lo spingono: una spinta di lato non lo fa girare avanti e indietro
-        enemy.setFlipX(v.x < 0);
+        // guarda il gatto, non dove lo spingono né dove ondeggia: così non si gira avanti e indietro. La pantegana
+        // guarda dove corre, che in uno scatto è una linea dritta
+        const look = kind.dash ? v.x : target.x - from.x;
+        if (look !== 0) enemy.setFlipX(look < 0);
         continue;
       }
       const step = diveStep(enemy.getData("dive") as DiveState, from, target, this.elapsed, speed, kind.dive);
@@ -518,6 +526,24 @@ export class GameScene extends Phaser.Scene {
       const lookX = step.velocity.x !== 0 ? step.velocity.x : target.x - from.x;
       enemy.setFlipX(lookX < 0);
     }
+  }
+
+  // Come cammina chi non ha un attacco suo (src/logic/patterns.ts): la zanzara ondeggia, la pantegana va a scatti,
+  // il piccione si ferma ogni tanto a beccare; chi non ha un modo suo va dritto sul gatto.
+  private walk(enemy: Sprite, kind: FoeKind, from: Vec, target: Vec, speed: number): Vec {
+    const jitter = (enemy.getData("jitter") as number | undefined) ?? 0;
+    if (kind.zigzag) return zigzag(from, target, speed, this.elapsed + jitter * kind.zigzag.periodMs, kind.zigzag);
+    if (kind.dash) {
+      const step = dashStep((enemy.getData("dash") as DashState | undefined) ?? startDash(), from, target, this.elapsed, speed, kind.dash);
+      enemy.setData("dash", step.state);
+      return step.velocity;
+    }
+    if (kind.peck) {
+      const step = peckStep((enemy.getData("peck") as PeckState | undefined) ?? startPeck(), this.elapsed, kind.peck, jitter);
+      enemy.setData("peck", step.state);
+      return step.moving ? chase(from, target, speed) : { x: 0, y: 0 };
+    }
+    return chase(from, target, speed);
   }
 
   // Le spinte leggere di questo fotogramma: per ogni nemico della folla (i capi no), quanto lo scostano i vicini.
@@ -566,6 +592,8 @@ export class GameScene extends Phaser.Scene {
     // una cornacchia o un capo ripartono dall'avvicinamento, qualunque cosa stessero facendo
     enemy.setData("dive", startDive());
     enemy.setData("scream", startScream());
+    // la pantegana ripunta il gatto dal punto nuovo
+    enemy.setData("dash", startDash());
     this.recalls++;
     const log = enemy.getData("log") as BossLogEntry | null | undefined;
     if (log) log.richiami++;
@@ -661,6 +689,10 @@ export class GameScene extends Phaser.Scene {
     enemy.setData("speed", kind.speed * scale.speedScale);
     enemy.setData("dive", startDive());
     enemy.setData("scream", startScream());
+    enemy.setData("dash", startDash());
+    enemy.setData("peck", startPeck());
+    // la parte decimale dei multipli della sezione aurea: numeri tra 0 e 1 ben sparpagliati, senza dado
+    enemy.setData("jitter", (this.born++ * 0.6180339887) % 1);
     enemy.setData("log", null);
     enemy.setData("pushedUntil", 0);
     const walk = `${kind.key}-cammina`;

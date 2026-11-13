@@ -1,14 +1,15 @@
-"""Le icone provvisorie dei sette potenziamenti, disegnate qui con forme semplici.
+"""Le icone provvisorie dei sette potenziamenti e della carta spicci, disegnate qui con forme semplici.
 
 Nelle tavole le icone delle carte non ci sono ancora (docs/ASSET.md, «Cosa manca»): finché non
 arrivano, questo script le disegna 16×16 con i colori della palette Lampione e il contorno
-d'inchiostro di 1 pixel, come gli altri sprite. Le armi usano già un fotogramma del loro effetto.
+d'inchiostro di 1 pixel, come gli altri sprite. Le armi usano già un fotogramma del loro effetto,
+il supplì il suo disegno da terra.
 
 Ordine dei fotogrammi in public/assets/carte.png:
   0 zampe veloci (l'impronta che corre), 1 pancia piena (la ciotola piena),
   2 unghie affilate (la zampa con le unghie fuori), 3 naso fino (il muso che annusa),
   4 riflessi pronti (il lampo), 5 pelo gonfio (il gatto gonfio dentro un cerchio che si allarga),
-  6 zampa fortunata (il quadrifoglio).
+  6 zampa fortunata (il quadrifoglio), 7 spicci (la monetina che luccica).
 
 Uso:  python art/icone_carte.py [--anteprima FILE]
   --anteprima FILE  scrive anche le icone ingrandite otto volte, per guardarle.
@@ -33,6 +34,8 @@ WHITE = (0xFF, 0xFF, 0xFF)
 SCRATCH = (0x6F, 0xF2, 0xFF)
 LIME = (0xA6, 0xF0, 0x5A)
 WINGS = (0xCF, 0xE0, 0xFF)
+WARM = (0xFF, 0xC8, 0x5A)
+BULB = (0xFF, 0xF4, 0xC2)
 
 
 def ellipse(cx, cy, rx, ry):
@@ -163,8 +166,21 @@ def luck():
     return i.image()
 
 
+def coin():
+    i = Icon()
+    # la monetina: il disco color luce calda, il bordo inciso più scuro, l'uno al centro,
+    # il riflesso della lampadina in alto a sinistra e un luccichio bianco fuori, in alto a destra
+    i.fill(ellipse(8, 8.5, 6, 6), WARM)
+    i.fill({(x, y) for x in range(SIZE) for y in range(SIZE)
+            if 4.0 <= ((x + 0.5 - 8) ** 2 + (y + 0.5 - 8.5) ** 2) ** 0.5 <= 4.8}, ORANGE_DARK)
+    i.fill({(8, 6), (7, 7), (8, 7), (8, 8), (8, 9), (8, 10), (7, 11), (8, 11), (9, 11)}, ORANGE_DARK)
+    i.fill({(3, 5), (4, 4), (5, 3), (6, 3)}, BULB)
+    i.mark({(14, 1), (13, 2), (14, 2), (15, 2), (14, 3)}, WHITE)
+    return i.image()
+
+
 def main():
-    icons = [speed(), health(), damage(), magnet(), haste(), area(), luck()]
+    icons = [speed(), health(), damage(), magnet(), haste(), area(), luck(), coin()]
     strip = Image.new("RGBA", (SIZE * len(icons), SIZE), (0, 0, 0, 0))
     for n, icon in enumerate(icons):
         strip.paste(icon, (n * SIZE, 0))

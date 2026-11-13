@@ -2,16 +2,16 @@
 
 L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 1.0 e regge il carico.
 
-**Stato: in corso dal 13 novembre 2026.** Fatti i primi sette passi: chi arriva e quando (tre nemici nuovi e la tabella delle ondate), i nemici rimasti lontano che tornano vicino, i due capi, il miagolio, la quarta arma, i tre passivi che mancavano, con il graffio che sceglie il capo, il supplì a terra, che cura, e chi urta chi, con le spinte leggere tra i nemici. Online dal 13 novembre. Mancano la prova con 500 nemici e la bilanciatura.
+**Stato: in corso dal 13 novembre 2026.** Fatti i primi otto passi: chi arriva e quando (tre nemici nuovi e la tabella delle ondate), i nemici rimasti lontano che tornano vicino, i due capi, il miagolio, la quarta arma, i tre passivi che mancavano, con il graffio che sceglie il capo, il supplì a terra, che cura, chi urta chi, con le spinte leggere tra i nemici, e i modi di camminare di zanzara, pantegana e piccione. Insieme all'ottavo passo le carte di ripiego hanno avuto un'icona loro, che non è un passo a parte. Online dal 13 novembre. Mancano la prova con 500 nemici e la bilanciatura.
 
 **Fatto quando:** la misura con 500 nemici c'è, con numeri veri; i quindici minuti si giocano con la difficoltà che sale e tutti i contenuti; la partita di prova con una persona che non conosce il gioco è fatta e annotata; test verdi; online.
 
 ## Contenuti
-- Cosa c'è di nuovo: i tre nemici, la picchiata, la tabella delle ondate, chi resta lontano, i due capi, il miagolio, il graffio che sceglie il capo, i tre passivi nuovi, il supplì a terra, chi urta chi e le spinte leggere tra nemici
+- Cosa c'è di nuovo: i tre nemici, la picchiata, la tabella delle ondate, chi resta lontano, i due capi, il miagolio, il graffio che sceglie il capo, i tre passivi nuovi, il supplì a terra, chi urta chi e le spinte leggere tra nemici, i modi di camminare, le icone delle carte di ripiego
 - Le tecnologie di questa tappa, e perché
 - I concetti, in parole semplici
 - Cosa è stato difficile
-- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi, il supplì a terra, le spinte leggere
+- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi, il supplì a terra, le spinte leggere, i modi di camminare
 - La domanda da colloquio
 - Lo spunto per il post
 - Da fare
@@ -82,7 +82,18 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 | Forza | 2 volte la velocità di chi la riceve, uno sopra l'altro | scende a zero alla distanza del raggio: a metà raggio vale quanto la sua corsa. Con meno di 1 la spinta non vincerebbe mai la corsa verso il gatto, e lì si impilerebbero lo stesso |
 | Velocità con la spinta | mai più della sua | la spinta lo sposta di lato o lo frena, non lo fa correre di più |
 
+- **I modi di camminare.** Fino a qui piccione, zanzara e pantegana andavano tutti dritti sul gatto, e cambiava solo la velocità. Guardiana ha proposto quattro modi nuovi e Francesco ha approvato i movimenti. Ne sono entrati tre: il quarto, qualcuno che punta dove sarà il gatto, era proposto come leva per la bilanciatura, e lì resta (lettura di chi scrive il codice, detta a Francesco).
+
+| Nemico | Come cammina | Numeri |
+|---|---|---|
+| Zanzara | ondeggia di lato mentre insegue, senza perdere velocità | un giro ogni 0,8 secondi, fino a 50 gradi per parte: verso il gatto va sempre ad almeno 0,64 della sua velocità |
+| Pantegana | punta dove è il gatto e corre dritta per un secondo e mezzo, poi ricalcola: si schiva spostandosi di lato | 1,5 secondi per scatto |
+| Piccione | cammina un paio di secondi, poi si ferma un attimo a beccare | da 1,5 a 2,5 secondi di cammino, diverso per ogni piccione, e 0,4 di sosta |
+
+- **Perché non ondeggiano tutte insieme.** Ogni nemico riceve alla nascita un numero suo tra 0 e 1, preso dai multipli della sezione aurea: numeri ben sparpagliati, senza tirare un dado e senza toccare la fila del seme. Sposta l'ondeggio della zanzara e la camminata del piccione.
+- **Dove guardano.** Lo sprite guarda il gatto, non dove ondeggia o dove lo spingono, così non si gira avanti e indietro. La pantegana guarda dove corre: in uno scatto è una linea dritta.
 - **Chi spinge e chi no.** I capi, il gabbiano e il gabbiano reale, non spingono e non vengono spinti: sono grandi e hanno già una strada loro. La cornacchia riceve la spinta solo mentre si avvicina, mai in mira o in picchiata. Chi è spinto via dal miagolio scivola come prima. In mira, in picchiata, mentre riprendono fiato e spinti dal miagolio non ricevono la spinta, ma spingono i vicini.
+- **Le carte di ripiego con un'icona loro.** Francesco, giocando, ha trovato la carta supplì con il disegno della crocchetta, e così la mancia, e il nome «mancia» non si capiva. Le due carte usavano i due fotogrammi della crocchetta perché, quando sono nate nella 3a, il disegno del supplì non c'era ancora. Ora la carta supplì ha il disegno del supplì, e la mancia si chiama «spicci», le monetine in romano, con una monetina provvisoria disegnata da `art/icone_carte.py`. Il nome l'ha proposto chi scrive il codice, ed è entrato con il «pubblica tutto» di Francesco (lettura di chi scrive il codice, detta a Francesco). Le icone delle carte ora sono dati, in `src/data/cards.ts`, e un test controlla che ogni carta ne abbia una sua, mai la crocchetta, e che il fotogramma esista nel disegno.
 
 - **Nella schermata finale** c'è scritto «nemici», non più «piccioni».
 - **Per provare.** Nel pannello di debug il pulsante «+ nemici» fa nascere un gruppo di ogni tipo, anche di quelli che a quell'ora della notte non ci sarebbero, «+ capo» fa nascere un capo, a turno, e «+ miagolio» dà un livello di miagolio a ogni tocco. Con `?debug` lo stato della partita si legge anche da fuori, sul canvas: serve alla partita automatica che misura il bilanciamento, e dice anche a che livello è ogni carta e quanti nemici ha spinto il miagolio.
@@ -99,6 +110,7 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 | Una funzione pura per la spinta (`src/logic/knockback.ts`) | Dice chi è dentro l'onda del miagolio e a che velocità si allontana | Si prova con i numeri, senza aprire il gioco: dentro, sul bordo, fuori, in diagonale, esattamente sopra il gatto |
 | Un secondo dado, dallo stesso seme (`snackRng` nella scena) | Decide quando cade un supplì | Il supplì non prende numeri dalla fila di nascite e carte: la regola nuova non aggiunge un tiro a ogni nemico eliminato su quella fila. Non rende uguali due partite con lo stesso seme: quelle cambiano comunque |
 | Una griglia (`src/logic/separation.ts`) | Trova i nemici vicini tra loro per le spinte leggere | Ogni nemico va in una casella grande quanto il raggio, e si guardano solo le nove caselle intorno. Con trecento nemici sono poche migliaia di confronti, invece dei quarantacinquemila di tutte le coppie. Un test controlla che dia gli stessi numeri del conto su tutte le coppie |
+| Tre funzioni pure per camminare (`src/logic/patterns.ts`) | Zanzara che ondeggia, pantegana a scatti, piccione che becca | Due sono macchine a stati piccole, come la picchiata; la terza è un'onda. Si provano con i numeri, e un nemico nuovo sceglie come camminare con una riga di dati |
 | Il pool di Phaser | Lo stesso sprite fa prima il piccione e poi la zanzara | Niente oggetti creati e buttati a ogni nemico: si rimettono immagine e dati a chi esce dal pool |
 | Playwright fuori dai test | La partita automatica che gioca da sola | Misurare con venti partite a mano non è possibile; una macchina le gioca a velocità quadrupla |
 
@@ -233,6 +245,19 @@ Due foto con il gatto fermo e invincibile, a un minuto di notte. Prima: 74 nemic
 
 Cosa dicono. Il mucchio scende in tutti e tre i modi: al gatto in tondo da 64-91 nemici su cento a 9-11, al gatto fermo da 84 a 10. Il prezzo è che il gatto perde più vite. In tondo 5, 7 e 7 contro 2, 6 e 6, e due partite su tre restano senza vite prima dell'alba; anche dritto e fermo restano senza vite un po' prima (dritto a 189, 224 e 185 secondi contro 210, 232 e 216, fermo a 122 contro 152). Perché, non è misurato. La lettura: prima un mucchio di nemici uno sopra l'altro toccava il gatto quasi come un nemico solo, adesso la folla occupa più spazio e il gatto la incontra più spesso. Con il gatto fermo succede anche un'altra cosa: con le spinte ne elimina di più, 333 contro 133, e i vivi non arrivano mai al tetto, 65 al massimo contro 300. Il punto più basso dei fotogrammi al secondo in tondo è salito da 46-50 a 57-59; in dritto è 54-57 contro 57-58. Tre partite per riga sono poche, e con lo stesso seme le partite non vengono uguali. Quanto debba essere difficile si decide nella bilanciatura, con i numeri di Francesco: le leve sono la forza della spinta e il danno dei nemici. Nelle quattordici partite nessun errore in console.
 
+Con i modi di camminare, notte da 5 minuti, stessi semi. La riga «prima» è quella «con le spinte» della tabella qui sopra.
+
+| Gatto | Quando | Partite | Vite perse | Come finisce | Nemici presi | Mucchio medio | Fotogrammi al secondo, il più basso |
+|---|---|---|---|---|---|---|---|
+| In tondo | prima | 3 | 5, 7, 7 | alba, poi senza vite a 189 e a 297 secondi | 416, 520, 1594 | 9, 11, 11 | 57, 58, 59 |
+| In tondo | con i modi di camminare | 3 | 7, 7, 7 | senza vite a 232, 240 e 212 secondi | 988, 201, 191 | 10, 12, 10 | 54, 54, 54 |
+| Dritto | prima | 3 | 7, 7, 7 | senza vite a 189, 224 e 185 secondi | 237, 231, 186 | 0, 1, 0 | 57, 54, 57 |
+| Dritto | con i modi di camminare | 3 | 7, 7, 7 | senza vite a 247, 219 e 253 secondi | 338, 258, 252 | 1, 1, 1 | 57, 57, 58 |
+| Fermo | prima | 1 | 7 | senza vite a 122 secondi | 333 | 10 | 58 |
+| Fermo | con i modi di camminare | 1 | 7 | senza vite a 117 secondi | 109 | 28 | 57 |
+
+Cosa dicono. Al gatto che scappa dritto i modi di camminare danno respiro: resta senza vite più tardi in due partite su tre, e prende più nemici. Al gatto in tondo tolgono l'unica alba che restava: nessuna partita arriva all'alba, e finiscono a 232 e 212 secondi invece di 300 e 297, mentre la terza dura di più, 240 invece di 189. Il gatto fermo dura più o meno come prima, ma prende un terzo dei nemici, 109 contro 333, e il mucchio sale da 10 a 28. Perché, non è misurato: dentro ci sono tre cambi insieme, e la zanzara che ondeggia, la pantegana che non ti segue e il piccione che si ferma spostano tutti e tre dove sono i nemici quando le armi partono. Tre partite per riga sono poche, e qui più che mai conta come si muove una persona, non il gatto automatico. Nessun errore in console nelle sette partite. Come si vedono muoversi, una foto ferma non lo dice: è da guardare giocando.
+
 ## La domanda da colloquio
 «Come hai tenuto 500 nemici a 60 fotogrammi al secondo?» La risposta completa arriva con la prova dei 500, che è ancora da fare. Quello che c'è già: i nemici vivono in un pool con un tetto, quindi il gioco non crea e non butta oggetti mentre si gioca; ogni nemico fa pochi conti a fotogramma, la distanza dal gatto e la direzione per raggiungerlo; le collisioni con il gatto e con i ciuffi di pelo le cerca l'indice spaziale di Phaser, e i nemici tra loro non si urtano con la fisica: si scostano con una spinta calcolata su una griglia, che guarda solo le caselle vicine. Con 300 nemici vivi, nelle partite automatiche il punto più basso è stato tra 52 e 59 fotogrammi al secondo, con tre partite insieme sullo stesso computer.
 
@@ -247,7 +272,7 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 - Capire perché, con il miagolio regalato dal primo secondo, il gatto in tondo sale tanto di livello e perde più vite: serve una partita di controllo.
 - Il supplì con una persona che gioca: ogni quanto cade, quanto cura, e se si capisce perché a volte il gatto lo lascia a terra.
 - Le spinte leggere con una persona che gioca: se la folla si legge meglio, e se il gatto regge come prima.
-- La revisione dei movimenti: le proposte sono a Francesco, sceglie lui.
+- I modi di camminare con una persona che gioca: se si riconoscono, e quanto cambiano la difficoltà.
 - La prova con 500 nemici sul computer e sul telefono, con i numeri qui.
 - Il tetto dei 300: con il gatto in tondo si tocca quasi sempre. Da decidere insieme alla prova dei 500.
 - Portare la partita automatica nel repository, come strumento.

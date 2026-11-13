@@ -44,6 +44,27 @@ export interface DiveConfig {
   restMs: number;
 }
 
+// I modi di camminare (src/logic/patterns.ts), approvati da Francesco il 13 novembre 2026:
+// prima piccione, zanzara e pantegana andavano tutti dritti sul gatto e cambiava solo la velocità.
+// La zanzara ondeggia: ogni `periodMs` piega una volta da una parte e una dall'altra; `swing` è quanto, 1 vuol dire
+// fino a 45 gradi.
+export interface ZigzagConfig {
+  periodMs: number;
+  swing: number;
+}
+
+// La pantegana a scatti: punta dove è il gatto e tiene quella direzione per `dashMs`, poi ricalcola.
+export interface DashConfig {
+  dashMs: number;
+}
+
+// Il piccione cammina per circa `walkMs` (da tre quarti a cinque quarti, diverso per ognuno), poi si ferma a
+// beccare per `peckMs`.
+export interface PeckConfig {
+  walkMs: number;
+  peckMs: number;
+}
+
 // Quello che hanno in comune nemici e capi.
 export interface FoeKind {
   speed: number;
@@ -58,6 +79,10 @@ export interface FoeKind {
   body: { width: number; height: number };
   // solo per chi scende in picchiata (la cornacchia) o carica (il gabbiano)
   dive?: DiveConfig;
+  // solo per chi cammina a modo suo: la zanzara ondeggia, la pantegana va a scatti, il piccione becca
+  zigzag?: ZigzagConfig;
+  dash?: DashConfig;
+  peck?: PeckConfig;
 }
 
 export interface EnemyKind extends FoeKind {
@@ -78,6 +103,8 @@ export const ENEMIES: Record<EnemyId, EnemyKind> = {
     xp: 1,
     kibbleChance: 1,
     body: { width: 12, height: 10 },
+    // cammina un paio di secondi, poi si ferma un attimo: la folla arriva meno compatta, e resta il nemico facile
+    peck: { walkMs: 2000, peckMs: 400 },
   },
   // veloce, poca vita: uno sciame che arriva addosso, ma cade con qualsiasi colpo
   zanzara: {
@@ -90,6 +117,9 @@ export const ENEMIES: Record<EnemyId, EnemyKind> = {
     // quindici secondi (misura del 13 novembre 2026: livello 22 in 5 minuti)
     kibbleChance: 0.35,
     body: { width: 8, height: 8 },
+    // piega fino a 50 gradi da una parte e dall'altra, un giro ogni 0,8 secondi: verso il gatto va sempre ad
+    // almeno 0,64 della sua velocità
+    zigzag: { periodMs: 800, swing: 1.2 },
   },
   // resistente: lenta, cade solo al quarto graffio del primo livello e fa male
   pantegana: {
@@ -100,6 +130,8 @@ export const ENEMIES: Record<EnemyId, EnemyKind> = {
     xp: 3,
     kibbleChance: 1,
     body: { width: 14, height: 9 },
+    // corre dritta per un secondo e mezzo verso dove eri: si schiva spostandosi di lato
+    dash: { dashMs: 1500 },
   },
   // scende in picchiata: va schivata di lato, e si colpisce mentre riprende fiato
   cornacchia: {

@@ -62,5 +62,5 @@ export const CARD_TEXTS: Record<string, { name: string; first: string; more: str
   area: { name: "pelo gonfio", first: "graffio, coda e miagolio arrivano più lontano", more: "graffio, coda e miagolio arrivano più lontano" },
   luck: { name: "zampa fortunata", first: "più carte rare e più casse triple", more: "più carte rare e più casse triple" },
   heal: { name: "supplì", first: "cura 30 di vita", more: "cura 30 di vita" },
-  points: { name: "mancia", first: "100 punti", more: "100 punti" },
+  points: { name: "spicci", first: "100 punti", more: "100 punti" },
 };

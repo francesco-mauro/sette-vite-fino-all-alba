@@ -58,7 +58,7 @@ I file che ci sono, in `public/assets/`. Il 10 novembre 2026 un controllo ha con
 | `uccisioni.png` | 16×16 | L'icona dei piccioni presi (tappa 3b) |
 | `titolo.png` | 480×270 | Lo sfondo del titolo, Roma di notte (tappa 3b) |
 | `alba.png` | 480×270 | Lo sfondo della fine, l'alba su Roma (tappa 3b) |
-| `carte.png` | 112×16 | Sette icone provvisorie da 16×16: zampe veloci, pancia piena, unghie affilate, naso fino, riflessi pronti, pelo gonfio, zampa fortunata. Le disegna `art/icone_carte.py`, non vengono dalle tavole |
+| `carte.png` | 128×16 | Otto icone provvisorie da 16×16: zampe veloci, pancia piena, unghie affilate, naso fino, riflessi pronti, pelo gonfio, zampa fortunata e la monetina degli spicci (dal 13 novembre 2026). Le disegna `art/icone_carte.py`, non vengono dalle tavole |
 | `cassa.png` | 32×16 | La cassa del tesoro provvisoria, due fotogrammi da 16×16: ferma, luccica. La disegna `art/cassa.py`, non viene dalle tavole |
 | `zanzara.png` | 32×16 | Due fotogrammi da 16×16: ali alzate, ali abbassate (tappa 4) |
 | `pantegana.png` | 32×16 | Due fotogrammi da 16×16: i due passi della corsa (tappa 4) |
@@ -106,10 +106,10 @@ Alla tappa 0 si è visto che il testo disegnato dal browser ha sempre i bordi sf
 ## I conti
 - **Immagini fino alla tappa 4:** 5 del gatto, 8 dei nemici, 4 dei capi, 4 degli oggetti, 12 degli attacchi, 3 caselle, 3 pezzi del lampione, 12 icone delle carte, 2 icone dell'interfaccia. In tutto **53**.
 - **Pronte o quasi:** 38, cioè tutte tranne le 12 icone delle carte e i 3 pezzi del lampione da separare. Nelle 38 resta un ritocco da guardare, l'icona della vita; quello del gabbiano reale è fatto. I due sfondi delle schermate sono fuori dal conto.
-- **Nel repository:** 23 file. Valgono 38 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, gli 8 dei quattro nemici, i 4 dei due capi, i 2 della crocchetta, i 2 del supplì, i 12 di graffio, coda a frusta, pelo che vola e miagolio, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le sette icone provvisorie dei potenziamenti e la cassa del tesoro provvisoria, che stanno fuori dal conto.
+- **Nel repository:** 23 file. Valgono 38 delle 53 immagini (i 5 fotogrammi del gatto, le 3 caselle, gli 8 dei quattro nemici, i 4 dei due capi, i 2 della crocchetta, i 2 del supplì, i 12 di graffio, coda a frusta, pelo che vola e miagolio, le icone della vita e delle uccisioni), più il lampione intero, i due sfondi delle schermate, le otto icone provvisorie dei potenziamenti e degli spicci e la cassa del tesoro provvisoria, che stanno fuori dal conto.
 
 ## Cosa manca
-1. Le 12 icone delle carte. Per ora le armi usano un fotogramma del loro effetto e i potenziamenti le icone provvisorie di `art/icone_carte.py`. Le carte nel gioco sono 11, quattro armi e sette potenziamenti: la rigenerazione sta dentro pancia piena, quindi una delle 12 icone previste non serve.
+1. Le 12 icone delle carte. Per ora le armi usano un fotogramma del loro effetto e i potenziamenti le icone provvisorie di `art/icone_carte.py`. Le carte nel gioco sono 11, quattro armi e sette potenziamenti: la rigenerazione sta dentro pancia piena, quindi una delle 12 icone previste non serve. Le due carte di ripiego un'icona ce l'hanno già: il supplì il suo disegno da terra, gli spicci la monetina provvisoria dello stesso script.
 2. Il lampione diviso in palo, alone e pozza, per la tappa 4.
 3. Uno sguardo all'icona della vita. Il pezzetto di pietra tra le zampe del gabbiano reale è tolto dal 13 novembre 2026.
 4. La cassa del tesoro: per ora quella provvisoria di `art/cassa.py`.
