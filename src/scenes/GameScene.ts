@@ -54,6 +54,7 @@ import { dueSpawns, hordeTime, scaleRow, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
 import { hintDone } from "../logic/hint";
+import { alignedPosition } from "../logic/pixelAlign";
 import type { EndData } from "./EndScene";
 import type { LevelUpData } from "./LevelUpScene";
 import type { MapData } from "./MapScene";
@@ -89,6 +90,13 @@ const JOYSTICK_RADIUS = 24;
 // Distanza dai bordi per tutto ciò che sta fisso sullo schermo: sul telefono gli angoli sono arrotondati
 // e in orizzontale c'è il foro della fotocamera (lezione della scritta di prova della tappa 1b).
 const SAFE = 12;
+// Le cose fisse sullo schermo con i bordi su pixel interi, perché non tremino mentre la telecamera segue il gatto
+// (src/logic/pixelAlign.ts). x e y sono quelle volute, con l'origine già scelta; il testo va rimesso dopo setText.
+type Pinnable = { width: number; height: number; originX: number; originY: number; setPosition(x: number, y: number): unknown };
+function pin<T extends Pinnable>(o: T, x: number, y: number): T {
+  o.setPosition(alignedPosition(x, o.width, o.originX), alignedPosition(y, o.height, o.originY));
+  return o;
+}
 // Il lampione si ripete ogni tanto, in un punto diverso di ogni riquadro di strada.
 const LAMP_CHUNK = { width: 320, height: 240 };
 // Il pulsante della pausa, in alto a destra: grande abbastanza per il pollice.
@@ -363,7 +371,10 @@ export class GameScene extends Phaser.Scene {
       this.keys = kb.addKeys({
         up: "UP", down: "DOWN", left: "LEFT", right: "RIGHT", w: "W", a: "A", s: "S", d: "D",
       }) as typeof this.keys;
-      kb.on("keydown-ESC", this.openPause, this);
+      // Esc tenuto premuto (in Chrome si esce così dallo schermo intero) manda ripetizioni: non contano
+      kb.on("keydown-ESC", (e: KeyboardEvent) => {
+        if (!e.repeat) this.openPause();
+      });
       kb.on("keydown-P", this.openPause, this);
       kb.on("keydown-M", this.openMap, this);
       kb.on("keydown-F", () => toggleFullscreen(this));
@@ -395,9 +406,9 @@ export class GameScene extends Phaser.Scene {
     this.hud = this.add.graphics().setScrollFactor(0).setDepth(100);
     this.levelText = this.add.text(SAFE + 64, SAFE - 1, "", FONT).setScrollFactor(0).setDepth(100);
     for (let i = 0; i < RUN.lives; i++) {
-      this.hearts.push(this.add.image(SAFE + 5 + i * 11, SAFE + 21, "vita").setScrollFactor(0).setDepth(100));
+      this.hearts.push(pin(this.add.image(0, 0, "vita").setScrollFactor(0).setDepth(100), SAFE + 5 + i * 11, SAFE + 21));
     }
-    this.clockText = this.add.text(width / 2, SAFE, "00:00", { ...FONT, fontSize: "16px" }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100);
+    this.clockText = pin(this.add.text(0, 0, "00:00", { ...FONT, fontSize: "16px" }).setOrigin(0.5, 0).setScrollFactor(0).setDepth(100), width / 2, SAFE);
 
     const px = width - SAFE - PAUSE_SIZE;
     const pause = this.add.rectangle(px, SAFE, PAUSE_SIZE, PAUSE_SIZE, 0x0e0c16, 0.7).setOrigin(0, 0).setStrokeStyle(1, 0xcfe0ff).setScrollFactor(0).setDepth(100).setInteractive();
@@ -407,7 +418,7 @@ export class GameScene extends Phaser.Scene {
       event.stopPropagation();
       this.openPause();
     });
-    this.add.image(width - SAFE - 6, SAFE + PAUSE_SIZE + 12, "uccisioni").setScrollFactor(0).setDepth(100);
+    pin(this.add.image(0, 0, "uccisioni").setScrollFactor(0).setDepth(100), width - SAFE - 6, SAFE + PAUSE_SIZE + 12);
     this.killsText = this.add.text(width - SAFE - 16, SAFE + PAUSE_SIZE + 8, "0", FONT).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
 
     // la minimappa: un quadrato che si tocca per la mappa grande; il tocco non arriva al joystick
@@ -426,7 +437,7 @@ export class GameScene extends Phaser.Scene {
       this.bossNames.push(this.add.text(width / 2, height - SAFE - 9 - i * 18, "", { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(3, 1, 3, 1).setScrollFactor(0).setDepth(100).setVisible(false));
     }
 
-    this.hintText = this.add.text(width / 2, height - SAFE - 8, TEXTS.hint, { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(100);
+    this.hintText = pin(this.add.text(0, 0, TEXTS.hint, { ...FONT, backgroundColor: "#0e0c16" }).setOrigin(0.5, 1).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(100), width / 2, height - SAFE - 8);
     this.drawHud();
   }
 
@@ -456,7 +467,7 @@ export class GameScene extends Phaser.Scene {
     this.drawMinimap();
     this.drawBossBars();
     this.drawJoystick();
-    this.clockText.setText(formatClock(this.elapsed));
+    pin(this.clockText.setText(formatClock(this.elapsed)), this.scale.width / 2, SAFE);
     if (this.hintText && hintDone(this.moved, this.elapsed, RUN.hintMs)) {
       // svanisce in un attimo invece di sparire di colpo
       const hint = this.hintText;
@@ -872,7 +883,7 @@ export class GameScene extends Phaser.Scene {
     this.bossLog.push(log);
     boss.setData("log", log);
     const { width } = this.scale;
-    const note = this.add.text(width / 2, SAFE + 26, BOSS_TEXTS[id].arrives, { ...FONT, color: "#ffc85a", backgroundColor: "#0e0c16" }).setOrigin(0.5, 0).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
+    const note = pin(this.add.text(0, 0, BOSS_TEXTS[id].arrives, { ...FONT, color: "#ffc85a", backgroundColor: "#0e0c16" }).setOrigin(0.5, 0).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150), width / 2, SAFE + 26);
     this.time.delayedCall(BOSS.announceMs, () => note.destroy());
   }
 
@@ -1245,7 +1256,7 @@ export class GameScene extends Phaser.Scene {
       const left = Phaser.Math.Clamp((boss.getData("hp") as number) / max, 0, 1);
       const x = width / 2 - BOSS_BAR.width / 2;
       const y = height - SAFE - 7 - i * 18;
-      name.setText(BOSS_TEXTS[kind.key].name);
+      pin(name.setText(BOSS_TEXTS[kind.key].name), width / 2, height - SAFE - 9 - i * 18);
       g.fillStyle(0x0e0c16, 1).fillRect(x - 1, y - 1, BOSS_BAR.width + 2, BOSS_BAR.height + 2);
       g.fillStyle(0xe23a4f, 1).fillRect(x, y, Math.round(BOSS_BAR.width * left), BOSS_BAR.height);
     });
@@ -1302,7 +1313,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.health = { ...this.health, current: this.health.max, invulnerableUntil: this.elapsed + RUN.respawnInvulnerabilityMs };
     const { width, height } = this.scale;
-    const note = this.add.text(width / 2, height / 2 - 28, TEXTS.lifeLost, { ...FONT, color: "#e23a4f", backgroundColor: "#0e0c16" }).setOrigin(0.5).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150);
+    const note = pin(this.add.text(0, 0, TEXTS.lifeLost, { ...FONT, color: "#e23a4f", backgroundColor: "#0e0c16" }).setOrigin(0.5).setPadding(4, 3, 4, 3).setScrollFactor(0).setDepth(150), width / 2, height / 2 - 28);
     this.time.delayedCall(1200, () => note.destroy());
   }
 

@@ -6,12 +6,14 @@
 // In alto a sinistra, come nel titolo, il pulsante dello schermo intero; anche F lo accende e lo spegne. Sul PC
 // Esc fa uscire dallo schermo intero (lo fa il browser) e apre la pausa: da qui si rientra senza riprendere
 // (Francesco, 13 novembre 2026: «se premo esc sis ese dallo schermo intero e ppoi non posso rinetrare»).
+// Dal 14 novembre in Chrome ed Edge Esc resta al gioco (si esce tenendolo premuto 2 secondi), e altrove
+// «riprendi» rimette lo schermo intero spento da quell'Esc (src/scenes/fullscreen.ts).
 import * as Phaser from "phaser";
 import { TEXTS } from "../data/texts";
 import { createConfirm } from "../logic/confirm";
 import { fullscreenButton } from "../logic/fullscreenButton";
 import { createTapGuard } from "../logic/tap";
-import { fullscreenState, toggleFullscreen } from "./fullscreen";
+import { fullscreenState, restoreAfterPause, toggleFullscreen } from "./fullscreen";
 import { FONT } from "./font";
 
 // quanto resta aperta la domanda «sicuro?»
@@ -36,9 +38,14 @@ export class PauseScene extends Phaser.Scene {
       .setOrigin(0.5).setPadding(4, 3, 4, 3).setInteractive();
 
     let done = false;
+    const openedAt = performance.now();
     const resume = () => {
       if (done) return;
       done = true;
+      // se lo stesso Esc che ha aperto la pausa ha spento lo schermo intero, lo rimette. Il browser lo accetta
+      // solo dentro un gesto: un tocco, un clic, P. Esc per le regole dei browser non conta come gesto, quindi
+      // riprendere con Esc lo rimette solo se un gesto vero è arrivato da poco (in Chrome pochi secondi).
+      restoreAfterPause(this, openedAt);
       this.scene.resume("Game");
       this.scene.stop();
     };
@@ -72,7 +79,10 @@ export class PauseScene extends Phaser.Scene {
     this.time.delayedCall(300, () => {
       ready = true;
       this.input.on("pointerup", resume);
-      this.input.keyboard?.on("keydown-ESC", resume);
+      // Esc tenuto premuto (2 secondi per uscire dallo schermo intero) manda ripetizioni: non riprendono
+      this.input.keyboard?.on("keydown-ESC", (e: KeyboardEvent) => {
+        if (!e.repeat) resume();
+      });
       this.input.keyboard?.on("keydown-P", resume);
       this.input.keyboard?.on("keydown-F", () => toggleFullscreen(this));
     });

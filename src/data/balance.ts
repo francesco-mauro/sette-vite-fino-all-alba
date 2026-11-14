@@ -28,8 +28,9 @@ export const CAT = {
   // in mezzo alla folla (Francesco, 13 novembre 2026: «ci si passa semplicemente attraverso»).
   contactMs: 700,
   hitGapMs: 250,
-  // alla ripresa dopo la scelta di una carta o una pausa, per riprendere in mano il gatto
-  resumeInvulnerabilityMs: 1000,
+  // alla ripresa dopo la scelta di una carta, una cassa, la pausa o la mappa, per riprendere in mano il gatto.
+  // Un secondo e mezzo dal 13 novembre 2026, scelta di Francesco (prima 1000)
+  resumeInvulnerabilityMs: 1500,
 };
 
 // I quattro nemici della 1.0. L'id è anche il nome dello sprite in public/assets/.

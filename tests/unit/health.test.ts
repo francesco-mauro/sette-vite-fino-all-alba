@@ -1,5 +1,6 @@
 // I test della vita: il danno, l'attimo di invulnerabilità dopo un colpo e quello alla ripresa del gioco.
 import { describe, expect, it } from "vitest";
+import { CAT } from "../../src/data/balance";
 import { contactHit, createHealth, heal, isDead, protect, regenerate, takeHit } from "../../src/logic/health";
 
 describe("la vita del gatto", () => {
@@ -52,6 +53,15 @@ describe("l'attimo di protezione alla ripresa", () => {
   it("non tocca la vita", () => {
     const hurt = takeHit(createHealth(100), 30, 0, 800).health;
     expect(protect(hurt, 5000, 1000).current).toBe(70);
+  });
+
+  // Francesco, 13 novembre 2026: «Andiamo un secondo e mezzo ad impulnerabilità sia quando selezioniamo il
+  // potenziamento sia quando usciamo dalla pausa».
+  it("dura un secondo e mezzo, dopo la carta come dopo la pausa", () => {
+    expect(CAT.resumeInvulnerabilityMs).toBe(1500);
+    const safe = protect(createHealth(100), 5000, CAT.resumeInvulnerabilityMs);
+    expect(takeHit(safe, 10, 6400, 800).hit).toBe(false);
+    expect(takeHit(safe, 10, 6500, 800).hit).toBe(true);
   });
 });
 

@@ -45,8 +45,9 @@ export class ChestScene extends Phaser.Scene {
     this.tweens.add({ targets: chest, angle: { from: -8, to: 8 }, duration: 70, yoyo: true, repeat: 3, onComplete: () => this.open(chest) });
 
     const kb = this.input.keyboard;
+    // un tasto tenuto premuto (Esc per 2 secondi esce dallo schermo intero) manda ripetizioni: non chiudono
     kb?.on("keydown", (e: KeyboardEvent) => {
-      if (e.key === " " || e.key === "Enter" || e.key === "Escape") this.close();
+      if (!e.repeat && (e.key === " " || e.key === "Enter" || e.key === "Escape")) this.close();
     });
     // il dito che stava sul joystick quando si è presa la cassa non ha un "giù" qui: alzandolo non chiude
     this.input.on("pointerdown", (p: Phaser.Input.Pointer) => {

@@ -5,6 +5,7 @@ import { integerZoom } from "./logic/zoom";
 import { BootScene } from "./scenes/BootScene";
 import { ChestScene } from "./scenes/ChestScene";
 import { EndScene } from "./scenes/EndScene";
+import { watchFullscreen } from "./scenes/fullscreen";
 import { GameScene } from "./scenes/GameScene";
 import { LevelUpScene } from "./scenes/LevelUpScene";
 import { MapScene } from "./scenes/MapScene";
@@ -67,3 +68,6 @@ function adatta() {
 }
 addEventListener("resize", adatta);
 adatta();
+
+// Le uscite dallo schermo intero e il blocco di Esc (src/scenes/fullscreen.ts)
+watchFullscreen(game);

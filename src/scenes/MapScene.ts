@@ -60,7 +60,10 @@ export class MapScene extends Phaser.Scene {
     this.time.delayedCall(300, () => {
       this.input.on("pointerup", close);
       this.input.keyboard?.on("keydown-M", close);
-      this.input.keyboard?.on("keydown-ESC", close);
+      // Esc tenuto premuto (2 secondi per uscire dallo schermo intero) manda ripetizioni: non chiudono
+      this.input.keyboard?.on("keydown-ESC", (e: KeyboardEvent) => {
+        if (!e.repeat) close();
+      });
     });
   }
 }
