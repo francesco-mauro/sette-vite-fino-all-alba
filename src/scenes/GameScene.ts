@@ -36,6 +36,7 @@ import { chestPoint, chestTimes, openChest } from "../logic/chest";
 import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { dashStep, peckStep, startDash, startPeck, zigzag, type DashState, type PeckState } from "../logic/patterns";
 import { formatClock } from "../logic/clock";
+import { lostFocus } from "../logic/focus";
 import { createHalt, type Halt } from "../logic/halt";
 import { inReach, knockback } from "../logic/knockback";
 import { DEFAULT_NIGHT } from "../logic/night";
@@ -157,6 +158,9 @@ export class GameScene extends Phaser.Scene {
   private pendingLevels = 0;
   // nel livello triplo del quadrifoglio: quale delle tre carte si è aperta (1, 2), 0 se nessun livello triplo è a metà
   private triplePick = 0;
+  // la pausa sul fuoco perso, solo sui telefoni: se la pagina aveva il fuoco al fotogramma prima
+  private readonly touchDevice = navigator.maxTouchPoints > 0;
+  private hadFocus = true;
   // chi tiene ferma la partita (scelta al livello, cassa, pausa, mappa): una scena sopra alla volta
   private halt: Halt = createHalt();
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
@@ -327,9 +331,20 @@ export class GameScene extends Phaser.Scene {
     // 14 novembre 2026: «una pausa pure quando si abbassa la tendina delle opzioni del telefono»)
     this.game.events.on(Phaser.Core.Events.HIDDEN, this.openPause, this);
     this.game.events.on(Phaser.Core.Events.BLUR, this.openPause, this);
+    // Sul telefono la tendina può non mandare né l'uno né l'altro (prova di Francesco, 14 novembre 2026): la partita
+    // si ferma anche quando il sistema si prende il dito (pointercancel, touchcancel) e quando, a un fotogramma,
+    // la pagina non ha più il fuoco (update, lostFocus). Solo sui telefoni: sul computer bastano gli eventi.
+    const onCancel = () => this.openPause();
+    if (this.touchDevice) {
+      window.addEventListener("pointercancel", onCancel);
+      window.addEventListener("touchcancel", onCancel);
+    }
+    this.hadFocus = document.hasFocus();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.game.events.off(Phaser.Core.Events.HIDDEN, this.openPause, this);
       this.game.events.off(Phaser.Core.Events.BLUR, this.openPause, this);
+      window.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("touchcancel", onCancel);
     });
 
     this.createInput();
@@ -456,6 +471,15 @@ export class GameScene extends Phaser.Scene {
     // L'orologio di tutto è il tempo della notte (elapsed): si ferma durante la scelta delle carte e la pausa
     // e corre quattro volte con «veloce», quindi armi, invulnerabilità, ciuffi e ondate restano d'accordo tra loro.
     // this.time.now no: è l'ora vera, che corre anche in pausa.
+    if (this.touchDevice) {
+      const focused = document.hasFocus();
+      const lost = lostFocus(this.hadFocus, focused);
+      this.hadFocus = focused;
+      if (lost) {
+        this.openPause();
+        return;
+      }
+    }
     const step = delta * this.time.timeScale;
     this.elapsed += step;
     const time = this.elapsed;
@@ -1347,6 +1371,8 @@ export class GameScene extends Phaser.Scene {
     this.halt.release();
     if (this.over) return;
     this.game.canvas.dataset.scena = "partita";
+    // si riparte dal fuoco di adesso: se manca ancora, la partita non si ferma di nuovo da sola
+    this.hadFocus = document.hasFocus();
     this.health = protect(this.health, this.elapsed, CAT.resumeInvulnerabilityMs);
     if (this.levelWaiting()) this.time.delayedCall(50, () => this.openLevelUp());
   }

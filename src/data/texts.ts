@@ -39,9 +39,6 @@ export const TEXTS = {
   chestTriple: "cassa tripla!",
   chestContinue: "tocca o premi spazio per continuare",
   mapClose: "tocca o premi m per tornare",
-  // la descrizione del quadrifoglio sulla carta: quante casse e quante salite di livello su cento sono triple al
-  // livello che dà
-  luckOdds: (chests: number, levels: number) => `casse triple ${chests} su 100, livelli tripli ${levels} su 100, più carte rare`,
   // il titolo della scelta nel livello triplo del quadrifoglio: tre carte, una dopo l'altra
   levelTriple: (pick: number) => `livello triplo! carta ${pick} di 3`,
 };
@@ -66,8 +63,8 @@ export const CARD_TEXTS: Record<string, { name: string; first: string; more: str
   haste: { name: "riflessi pronti", first: "tutte le armi partono più spesso", more: "tutte le armi partono più spesso" },
   area: { name: "pelo gonfio", first: "graffio, coda e miagolio arrivano più lontano", more: "graffio, coda e miagolio arrivano più lontano" },
   // il nome come la sua icona: «zampa fortunata» si confondeva con zampe veloci e unghie affilate (13 novembre
-  // 2026). Sulla carta la descrizione vera dice anche quanto è probabile la cassa tripla (luckOdds)
-  luck: { name: "quadrifoglio", first: "più carte rare e più casse triple", more: "più carte rare e più casse triple" },
+  // 2026). Dice cosa fa, senza le probabilità (Francesco, 14 novembre 2026)
+  luck: { name: "quadrifoglio", first: "più carte rare, più casse e livelli tripli", more: "più carte rare, più casse e livelli tripli" },
   heal: { name: "supplì", first: "cura 30 di vita", more: "cura 30 di vita" },
   points: { name: "spicci", first: "100 punti", more: "100 punti" },
 };

@@ -20,5 +20,6 @@ export function updateStatus(current: string, latest: string | null): UpdateStat
 }
 
 export function versionLabel(build: Build): string {
-  return `versione ${build.hash} del ${build.time}`;
+  // senza la parola «versione»: intera, nel titolo, copriva un po' il record (Francesco, 14 novembre 2026)
+  return `${build.hash} del ${build.time}`;
 }

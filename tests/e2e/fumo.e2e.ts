@@ -90,3 +90,24 @@ test("quando la finestra perde il fuoco la partita va in pausa", async ({ page }
   await expect(canvas).toHaveAttribute("data-scena", "pausa", { timeout: 2000 });
   expect(errors).toEqual([]);
 });
+
+// Se il blur non basta per la tendina: su un telefono, quando il sistema si prende il dito (pointercancel), la
+// partita si ferma lo stesso.
+test.describe("su un telefono", () => {
+  test.use({ hasTouch: true });
+
+  test("quando il sistema si prende il tocco la partita va in pausa", async ({ page }) => {
+    const errors = watchErrors(page);
+    await page.goto("/");
+    const canvas = page.locator("#gioco canvas");
+    await expect(canvas).toHaveAttribute("data-scena", "pronta");
+    await expect(async () => {
+      await page.keyboard.press("Space");
+      await expect(canvas).toHaveAttribute("data-scena", "partita", { timeout: 500 });
+    }).toPass({ timeout: 5000 });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => window.dispatchEvent(new Event("pointercancel")));
+    await expect(canvas).toHaveAttribute("data-scena", "pausa", { timeout: 2000 });
+    expect(errors).toEqual([]);
+  });
+});

@@ -17,7 +17,8 @@ describe("il controllo degli aggiornamenti", () => {
 });
 
 describe("la versione nel titolo", () => {
-  it("codice del commit e data di pubblicazione", () => {
-    expect(versionLabel({ id: "x", hash: "27015bc", time: "12 nov, 21:55" })).toBe("versione 27015bc del 12 nov, 21:55");
+  // senza la parola «versione»: intera copriva un po' il record (Francesco, 14 novembre 2026)
+  it("codice del commit e data di pubblicazione, corta", () => {
+    expect(versionLabel({ id: "x", hash: "27015bc", time: "12 nov, 21:55" })).toBe("27015bc del 12 nov, 21:55");
   });
 });

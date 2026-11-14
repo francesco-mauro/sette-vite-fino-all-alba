@@ -333,7 +333,7 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 ## Da fare
 - I capi con una persona che gioca: se la vita è giusta, adesso che il graffio li sceglie.
 - Il miagolio con una persona che gioca: il danno è salito a 3, 3, 4, 5, 6 dopo la sua prova del 14 novembre; se basta, se la spinta più lunga va bene, e se l'onda ingrandita va bene o va ridisegnata più grande.
-- Il livello triplo del quadrifoglio e la pausa con la tendina del telefono, provati da Francesco sul telefono.
+- Il livello triplo del quadrifoglio e la pausa con la tendina del telefono, provati da Francesco sul telefono. La prima prova (14 novembre): la tendina non fermava la partita; aggiunti `pointercancel`, `touchcancel` e il controllo del fuoco a ogni fotogramma, da riprovare.
 - I tre passivi con una persona che gioca: nomi, rarità e numeri sono di partenza. Da guardare se con undici carte le armi arrivano troppo tardi.
 - Separare, con le partite automatiche, quanto pesano sulle vite perse la mira nuova del graffio, le tre carte in più e la spinta più lunga.
 - Capire perché, con il miagolio regalato dal primo secondo, il gatto in tondo sale tanto di livello e perde più vite: serve una partita di controllo.

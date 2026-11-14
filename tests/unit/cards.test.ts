@@ -154,9 +154,10 @@ describe("il quadrifoglio", () => {
     expect(CARD_TEXTS.luck.name).toBe("quadrifoglio");
   });
 
-  it("la carta dice quanto è probabile la cassa tripla al livello che dà", () => {
-    expect(cardDescription("luck", 1)).toBe("casse triple 25 su 100, livelli tripli 3 su 100, più carte rare");
-    expect(cardDescription("luck", 5)).toBe("casse triple 65 su 100, livelli tripli 15 su 100, più carte rare");
+  // Francesco, 14 novembre 2026: «togliamo le probabilità come lettura, diciamo semplicemente quello che fa»
+  it("la carta dice cosa fa, senza numeri", () => {
+    expect(cardDescription("luck", 1)).toBe("più carte rare, più casse e livelli tripli");
+    expect(cardDescription("luck", 5)).toBe("più carte rare, più casse e livelli tripli");
   });
 
   it("le altre carte dicono la frase della prima volta, poi quella delle volte dopo", () => {
