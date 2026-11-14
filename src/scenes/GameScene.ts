@@ -44,7 +44,7 @@ import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
-import { crowding, largestClump, separation, withPush } from "../logic/separation";
+import { alignment, crowding, largestClump, separation, withPush } from "../logic/separation";
 import { dropsSnack, isHungry } from "../logic/snack";
 import { nextSide, sidePoint, spawnPoint, tooFar, type Side } from "../logic/spawn";
 import { centroid, flockSlot, followSlot, groupPushes, groupRadius, swarmSlot, trailTarget } from "../logic/flock";
@@ -1436,13 +1436,21 @@ export class GameScene extends Phaser.Scene {
   // che misura il bilanciamento (quante vite perse, a che livello, quanti nemici insieme, quanti sullo schermo,
   // quanti riportati vicino, quanti spinti via dal miagolio, a che livello è ogni carta, quando è nato e quando
   // è caduto ogni capo, quanti supplì sono caduti e quanti ne ha mangiati, e il mucchio: su cento nemici, quanti
-  // ne hanno un altro quasi addosso; la massa: su cento nemici in vista, quanti stanno nella massa più grande).
+  // ne hanno un altro quasi addosso; la massa: su cento nemici in vista, quanti stanno nella massa più grande;
+  // l'allineamento: su cento nemici in vista, quanti vanno verso il gatto). La corsa dell'allineamento è quella data
+  // con setVelocity, con dentro le spinte dei vicini e del miagolio: misura dove si muovono, non dove vorrebbero andare.
   private writeDebugState(fps: number, alive: number) {
     const view = this.cameras.main.worldView;
     const inView = this.aliveEnemies().filter((e) => view.contains(e.x, e.y)).length;
     const pile = Math.round(crowding(this.crowd().map((e) => ({ x: e.x, y: e.y })), CROWD.overlapDistance) * 100);
-    const seen = this.crowd().filter((e) => view.contains(e.x, e.y)).map((e) => ({ x: e.x, y: e.y }));
+    const seenSprites = this.crowd().filter((e) => view.contains(e.x, e.y));
+    const seen = seenSprites.map((e) => ({ x: e.x, y: e.y }));
     const clump = seen.length ? Math.round((largestClump(seen, CROWD.clumpDistance) / seen.length) * 100) : 0;
+    const movers = seenSprites.map((e) => {
+      const v = (e.body as Phaser.Physics.Arcade.Body).velocity;
+      return { x: e.x, y: e.y, vx: v.x, vy: v.y };
+    });
+    const align = movers.length ? Math.round(alignment(movers, { x: this.cat.x, y: this.cat.y }, CROWD.alignAngle) * 100) : 0;
     for (const b of this.bosses) {
       const log = b.getData("log") as BossLogEntry | null | undefined;
       if (log) log.vita = Math.round(b.getData("hp") as number);
@@ -1450,7 +1458,7 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.dataset.stato = JSON.stringify({
       ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
       presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, spinti: this.pushes, carte: this.levels,
-      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, massa: clump, fps,
+      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, massa: clump, allineamento: align, fps,
     });
   }
 }

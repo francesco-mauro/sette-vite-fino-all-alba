@@ -119,3 +119,27 @@ export function largestClump(points: readonly Vec[], distance: number): number {
   }
   return best;
 }
+
+// Un nemico per la misura dell'allineamento: dove sta e come si muove.
+export type Mover = { x: number; y: number; vx: number; vy: number };
+
+// alignment: la parte dei nemici, da 0 a 1, che si muovono verso `target` entro `maxAngleDeg` gradi. È la misura
+// del «tutti verso il gatto» (Francesco, 14 novembre 2026): la massa dice quanto sono stretti, questa dice quanto
+// vanno tutti nella stessa direzione. Si confrontano i coseni invece degli angoli: un nemico è allineato se il
+// prodotto della sua corsa con la direzione verso il gatto è almeno le due lunghezze per il coseno dell'angolo.
+// Chi sta fermo, o sta proprio sul gatto, conta nel totale ma non è allineato. La piccola tolleranza fa contare
+// anche l'angolo esatto, che con gli arrotondamenti può uscire di un soffio.
+export function alignment(movers: readonly Mover[], target: Vec, maxAngleDeg: number): number {
+  if (movers.length === 0) return 0;
+  const cos = Math.cos((maxAngleDeg * Math.PI) / 180);
+  let aligned = 0;
+  for (const m of movers) {
+    const dx = target.x - m.x;
+    const dy = target.y - m.y;
+    const speed = Math.hypot(m.vx, m.vy);
+    const dist = Math.hypot(dx, dy);
+    if (speed === 0 || dist === 0) continue;
+    if (m.vx * dx + m.vy * dy >= speed * dist * cos - 1e-9) aligned++;
+  }
+  return aligned / movers.length;
+}

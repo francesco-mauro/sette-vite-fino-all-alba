@@ -11,7 +11,7 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 - Le tecnologie di questa tappa, e perché
 - I concetti, in parole semplici
 - Cosa è stato difficile
-- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi, il supplì a terra, le spinte leggere, i modi di camminare, i gruppi con le orde e la folla che fa male
+- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi, il supplì a terra, le spinte leggere, i modi di camminare, i gruppi con le orde e la folla che fa male, la partenza contro il blob con l'allineamento
 - La domanda da colloquio
 - Lo spunto per il post
 - Da fare
@@ -278,6 +278,16 @@ Con i gruppi, le orde e la folla che fa male, notte da 5 minuti, stessi semi. La
 
 Cosa dicono. La palla unica si scioglie dove il gatto si muove: in tondo la massa scende da 86-90 a 44-56 nemici su cento. Col gatto fermo no: tutti i gruppi vanno sullo stesso punto, e la massa resta 82. Il prezzo è grosso: il gatto automatico finisce le vite molto prima, in tondo a 110-121 secondi invece che a 195-252. La riga di mezzo, con il tetto di prima (un colpo ogni 0,7 secondi), dice che pesano tutte e due le cose, le orde e la folla che fa male, più o meno allo stesso modo. Il gatto automatico non schiva e prende sempre la prima carta: quanto debba essere difficile lo dice una partita vera. La leva più semplice è il tetto, `CAT.hitGapMs`. Due foto col gatto fermo e invincibile, a due minuti: con i gruppi ma senza le spinte tra gruppi, una palla compatta di 80 nemici; con le spinte tra gruppi, 110 nemici più sparsi, uno sciame di zanzare riconoscibile e le pantegane in fila. Nelle dieci partite nessun errore in console. Dopo, una correzione trovata rileggendo il codice: un gruppo riportato vicino nasceva a ridosso dello schermo e una parte spuntava in vista; adesso nasce più in fuori, di quanto è largo. Tre partite dritto, il modo con più ritorni, per vedere se cambiava qualcosa: senza vite a 224, 187 e 155 secondi, massa 31, 29 e 30. La massa resta nella fascia di prima (27-30); le vite finite si allargano verso l'alto (prima 158-187), e con tre partite è poco per dire che cambi qualcosa. Nessun errore.
 
+Il 14 novembre, la misura di partenza contro il blob: la folla che diventa un'unica massa che va tutta verso il gatto. Da qui si misura ogni passo del disegno approvato da Francesco. Notte da 5 minuti, semi 11, 22 e 33, tre partite insieme, con la partita automatica ora nel repository (`tools/partita.cjs`). La misura nuova è l'allineamento: su cento nemici in vista, quanti si muovono entro 30 gradi dalla direzione del gatto (`alignment`). Si conta come la massa, dal trentesimo secondo con almeno 10 nemici in vista. Questi numeri non si confrontano con quelli del 13: dopo, il codice è cambiato (un secondo e mezzo di protezione dopo un potenziamento e dopo la pausa, nel commit `23742be`).
+
+| Gatto | Partite | Come finisce | Prima vita persa | Nemici presi | Massa media | Allineamento medio | Fotogrammi al secondo, il più basso |
+|---|---|---|---|---|---|---|---|
+| In tondo | 3 | senza vite a 134, 120 e 113 secondi | 48, 51, 49 s | 249, 119, 89 | 62, 71, 62 | 54, 52, 49 | 58, 57, 57 |
+| Dritto | 3 | senza vite a 154, 180 e 148 secondi | 68, 69, 74 s | 164, 175, 177 | 34, 30, 31 | 68, 70, 69 | 57, 58, 58 |
+| Fermo | 3 | senza vite a 87, 88 e 110 secondi | 24, 32, 27 s | 110, 160, 232 | 81, 70, 61 | 34, 43, 46 | 57, 57, 57 |
+
+Cosa dicono. Le due misure vedono due cose diverse, ed è per questo che servono tutte e due. Col gatto che scappa dritto la massa è bassa, 30-34, ma l'allineamento è il più alto, 68-70: i nemici sono sparsi in una lunga coda, e tutti lo inseguono nella stessa direzione. Il punto più alto arriva a 95-100: per qualche istante tutti quelli in vista vanno verso di lui. Col gatto fermo è il contrario: la massa è la più alta, 61-81, e l'allineamento scende a 34-46. Sono arrivati e gli stanno addosso; probabilmente le spinte tra vicini li muovono di lato più che verso di lui, ma questo non è misurato. In tondo stanno in mezzo, massa 62-71 e allineamento 49-54. Il blob che Francesco vedeva giocando, tutti verso il gatto in un'unica massa, è la somma delle due cose: i passi successivi devono abbassarle insieme. Nessuna partita arriva all'alba, come nelle ultime misure del 13. Nelle nove partite nessun errore in console, e i fotogrammi non scendono mai sotto 57.
+
 ## La domanda da colloquio
 «Come hai tenuto 500 nemici a 60 fotogrammi al secondo?» La risposta completa arriva con la prova dei 500, che è ancora da fare. Quello che c'è già: i nemici vivono in un pool con un tetto, quindi il gioco non crea e non butta oggetti mentre si gioca; ogni nemico fa pochi conti a fotogramma, la distanza dal gatto e la direzione per raggiungerlo; le collisioni con il gatto e con i ciuffi di pelo le cerca l'indice spaziale di Phaser, e i nemici tra loro non si urtano con la fisica: si scostano con una spinta calcolata su una griglia, che guarda solo le caselle vicine. Con 300 nemici vivi, nelle partite automatiche il punto più basso è stato tra 52 e 59 fotogrammi al secondo, con tre partite insieme sullo stesso computer.
 
@@ -295,5 +305,5 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 - I modi di camminare con una persona che gioca: se si riconoscono, e quanto cambiano la difficoltà.
 - La prova con 500 nemici sul computer e sul telefono, con i numeri qui.
 - Il tetto dei 300: con il gatto in tondo si tocca quasi sempre. Da decidere insieme alla prova dei 500.
-- Portare la partita automatica nel repository, come strumento.
+- I passi 1-6 contro il blob, misurati contro la partenza del 14 novembre.
 - La bilanciatura, con i numeri scelti da Francesco, e una partita di prova con una persona che non conosce il gioco.

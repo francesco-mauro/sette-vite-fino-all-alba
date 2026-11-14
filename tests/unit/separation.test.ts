@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { CROWD, ENEMIES } from "../../src/data/balance";
 import type { Vec } from "../../src/logic/movement";
 import { createRng } from "../../src/logic/rng";
-import { crowding, largestClump, separation, withPush } from "../../src/logic/separation";
+import { alignment, crowding, largestClump, separation, withPush } from "../../src/logic/separation";
 
 // la stessa regola fatta nel modo più semplice, tutte le coppie: serve a controllare quella con la griglia
 function separationByPairs(points: readonly Vec[], radius: number, strength: number): Vec[] {
@@ -188,5 +188,47 @@ describe("i numeri delle spinte", () => {
     expect(CROWD.radius).toBeLessThanOrEqual(24);
     expect(CROWD.overlapDistance).toBeGreaterThan(0);
     expect(CROWD.overlapDistance).toBeLessThan(CROWD.radius);
+  });
+});
+
+// un nemico a 100 pixel a destra del gatto che corre `deg` gradi fuori dalla direzione del gatto
+const at = (deg: number) => ({ x: 100, y: 0, vx: -Math.cos((deg * Math.PI) / 180), vy: Math.sin((deg * Math.PI) / 180) });
+
+// L'allineamento: su tutti i nemici, quanti vanno verso il gatto entro un angolo. È il «tutti verso il gatto».
+describe("la misura dell'allineamento", () => {
+  const cat = { x: 0, y: 0 };
+  it("tutti dritti verso il gatto: 1", () => {
+    expect(alignment([{ x: 100, y: 0, vx: -10, vy: 0 }, { x: 0, y: 50, vx: 0, vy: -5 }], cat, 30)).toBe(1);
+  });
+  it("di traverso: 0", () => {
+    expect(alignment([{ x: 100, y: 0, vx: 0, vy: 10 }], cat, 30)).toBe(0);
+  });
+  it("30 gradi esatti contano, 31 no", () => {
+    expect(alignment([at(30)], cat, 30)).toBe(1);
+    expect(alignment([at(31)], cat, 30)).toBe(0);
+  });
+  it("chi sta fermo conta nel totale e non è allineato", () => {
+    expect(alignment([{ x: 100, y: 0, vx: -10, vy: 0 }, { x: -100, y: 0, vx: 0, vy: 0 }], cat, 30)).toBe(0.5);
+  });
+  it("chi sta sul gatto non è allineato e non dà NaN", () => {
+    expect(alignment([{ x: 0, y: 0, vx: 5, vy: 0 }], cat, 30)).toBe(0);
+  });
+  it("nessuno: 0", () => {
+    expect(alignment([], cat, 30)).toBe(0);
+  });
+  it("due su quattro: 0,5", () => {
+    const movers = [
+      { x: 100, y: 0, vx: -10, vy: 0 },
+      { x: 0, y: 100, vx: 0, vy: -10 },
+      { x: 100, y: 0, vx: 10, vy: 0 },
+      { x: 0, y: 100, vx: 10, vy: 0 },
+    ];
+    expect(alignment(movers, cat, 30)).toBe(0.5);
+  });
+});
+
+describe("l'angolo dell'allineamento", () => {
+  it("è 30 gradi, come nel disegno del 14 novembre", () => {
+    expect(CROWD.alignAngle).toBe(30);
   });
 });

@@ -8,3 +8,6 @@ test-results/
 playwright-report/
 # le copie compilate che Python crea da solo quando si importa uno script di art/
 __pycache__/
+
+# i risultati della partita automatica (tools/partita.cjs): si rifanno quando servono
+tools/risultati/

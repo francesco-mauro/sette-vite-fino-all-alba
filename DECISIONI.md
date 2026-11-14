@@ -17,6 +17,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Dal PC: scritte nette, schermo intero, sampietrini più calmi, 12 novembre 2026
 - Il pulsante dello schermo intero segue lo stato, la scritta «muoviti» va via al primo passo, 13 novembre 2026
 - Tappa 4, 13 novembre 2026: sette vite e non nove, tre nemici nuovi e la tabella delle ondate con un orologio per tipo, i nemici lontani che tornano vicino, i due capi (il gabbiano che carica, il gabbiano reale che urla), il miagolio che spinge via con poco danno, il graffio che sceglie il capo, la spinta più lunga, i tre passivi che mancavano, il supplì a terra, le spinte leggere tra nemici, i modi di camminare, le carte di ripiego con un'icona loro e la mancia che diventa spicci, i gruppi che restano gruppi con le orde da un lato, la folla che fa male, il quadrifoglio, lo schermo intero in pausa e una scena sopra la partita alla volta
+- Contro il blob, 14 novembre 2026: la partita automatica nel repository, la misura dell'allineamento, i semi fissi
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -313,3 +314,13 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** la folla che blocca il passo come un muro, con lo schermo pieno rischiava la trappola; tenere la pioggia continua da tutti i lati. Per la carta, un controllo che taglia i livelli oltre il massimo, che avrebbe nascosto la causa.
 - **Perché:** i gruppi si riconoscono e chiedono cose diverse; un'onda alla volta dà un ritmo, affronti e respiri; attraversare la folla deve costare. Una probabilità scritta sulla carta si capisce, una fortuna invisibile no.
 - **Cosa comporta:** 38 test nuovi e uno tolto (i posti a file di tre, sostituiti dalla spirale): 324 in tutto, in 33 file, più una prova nel browser vero, la quarta. La misura della massa (`largestClump`, nello stato di debug) dice quanti nemici in vista stanno nella massa più grande. Nelle partite automatiche da 5 minuti, al gatto in tondo, è scesa da 86-90 su cento a 44-56. Il gioco però è molto più duro: il gatto automatico in tondo finisce le vite a 110-121 secondi invece che a 195-252. Con il tetto di prima ci arriva a 156-180: pesano sia le orde sia la folla che fa male. Quanto debba essere difficile si decide giocando: la leva più semplice è `CAT.hitGapMs`. Le misure sono nel [diario della tappa 4](docs/tappe/tappa-4.md).
+
+## 2026-11-14 · La partita automatica nel repository e la misura dell'allineamento
+- **Contesto:** Francesco ha approvato il disegno contro il blob, la folla che diventa un'unica massa che va tutta verso il gatto: sei passi, uno alla volta, ognuno misurato prima e dopo. Lo script della partita automatica viveva fuori dal repository, e la massa da sola non bastava.
+- **Scelta:**
+  - **La partita automatica in `tools/`.** `partita.cjs` gioca una notte senza finestra e scrive una riga JSON; `riassunto.py` stampa una riga per partita. Se il gioco non risponde lo dice ed esce con codice 1, invece di restare appeso. I risultati vanno in `tools/risultati/`, fuori da git.
+  - **L'allineamento.** Su cento nemici in vista, quanti si muovono entro 30 gradi dalla direzione del gatto (`alignment` in `src/logic/separation.ts`, `CROWD.alignAngle`). Si legge con `?debug` accanto alla massa, e la partita automatica la conta con le stesse regole della massa: dal trentesimo secondo, con almeno 10 nemici in vista.
+  - **Semi fissi.** Le misure si fanno con i semi 11, 22 e 33, nei tre modi del gatto automatico. I semi delle misure del 13 novembre non erano scritti.
+- **Alternative scartate:** misurare solo con la massa; contare gli angoli con `atan2` invece del coseno; tenere lo script fuori dal repository.
+- **Perché:** la massa dice quanto i nemici sono stretti, non quanto vanno tutti nella stessa direzione. Una folla larga che punta il gatto è ancora il blob. Con lo script nel repository ogni passo si misura nello stesso modo.
+- **Cosa comporta:** 8 test nuovi, 344 in tutto, in 35 file. L'allineamento usa la corsa data a ogni nemico, con dentro le spinte dei vicini e del miagolio: misura dove si muovono, non dove vorrebbero andare. La misura di partenza è nel [diario della tappa 4](docs/tappe/tappa-4.md).

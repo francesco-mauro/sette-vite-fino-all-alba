@@ -443,6 +443,9 @@ export const CROWD = {
   // (src/logic/separation.ts, largestClump). Poco più del raggio delle spinte: in una folla spinta i vicini stanno
   // a 14-16 pixel
   clumpDistance: 20,
+  // la misura dell'allineamento, nello stato di debug: chi si muove entro questi gradi dalla direzione del gatto
+  // va «verso il gatto» (src/logic/separation.ts, alignment; disegno contro il blob del 14 novembre 2026)
+  alignAngle: 30,
 };
 
 // Le casse del tesoro: compaiono sulla mappa lontano dal gatto, da cercare con la minimappa.
