@@ -414,6 +414,25 @@ export const HORDE = {
   arriveMs: 8_000,
   // gruppi così tante volte più grandi, e così tante volte più rari, dei numeri della tabella delle ondate
   sizeScale: 2,
+  // il passo 2 contro il blob (14 novembre 2026): quanto prima dell'orda lampeggia il segno sul bordo da cui arriva.
+  // Gli schemi (un lato, due lati opposti, alle spalle) sono in src/logic/hordes.ts
+  warnMs: 500,
+};
+
+// Il rimescolo (src/logic/hordes.ts), idea di Francesco del 14 novembre 2026: a ogni orda una parte dei nemici rimasti
+// fuori schermo dietro al gatto, la coda che lo segue quando gira in tondo, esce dalla minimappa e torna dal lato
+// dell'orda. Sono gli stessi nemici, con la vita che avevano. Numeri di partenza di Guardiana.
+export const RESHUFFLE = {
+  // la probabilità di ognuno dei candidati, e quanti al massimo per orda (un gruppo conta come uno)
+  share: 0.5,
+  max: 60,
+  // a che distanza dal gatto tornano, in pixel: oltre il bordo della minimappa, che arriva a 400 per parte
+  beyondMin: 410,
+  beyondMax: 440,
+  // quanto è larga la striscia, lungo il lato, in cui si spargono
+  spread: 120,
+  // per quanto il richiamo dei lontani (SPAWN.recallDistance) non li tocca: a 420 pixel li riporterebbe subito vicino
+  graceMs: 8000,
 };
 
 export const SPAWN = {

@@ -7,11 +7,11 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 **Fatto quando:** la misura con 500 nemici c'è, con numeri veri; i quindici minuti si giocano con la difficoltà che sale e tutti i contenuti; la partita di prova con una persona che non conosce il gioco è fatta e annotata; test verdi; online.
 
 ## Contenuti
-- Cosa c'è di nuovo: i tre nemici, la picchiata, la tabella delle ondate, chi resta lontano, i due capi, il miagolio, il graffio che sceglie il capo, i tre passivi nuovi, il supplì a terra, chi urta chi e le spinte leggere tra nemici, i modi di camminare, le icone delle carte di ripiego, i gruppi e le orde, la folla che fa male, il quadrifoglio, lo schermo intero in pausa, una scena sopra la partita alla volta
+- Cosa c'è di nuovo: i tre nemici, la picchiata, la tabella delle ondate, chi resta lontano, i due capi, il miagolio, il graffio che sceglie il capo, i tre passivi nuovi, il supplì a terra, chi urta chi e le spinte leggere tra nemici, i modi di camminare, le icone delle carte di ripiego, i gruppi e le orde, la folla che fa male, il quadrifoglio, lo schermo intero in pausa, una scena sopra la partita alla volta, le orde in tre modi e il rimescolo
 - Le tecnologie di questa tappa, e perché
 - I concetti, in parole semplici
 - Cosa è stato difficile
-- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi, il supplì a terra, le spinte leggere, i modi di camminare, i gruppi con le orde e la folla che fa male, la partenza contro il blob con l'allineamento
+- Cosa abbiamo misurato: prima e dopo i nemici nuovi, prima e dopo il ritorno dei lontani, i due capi, il miagolio, il graffio sul capo con i passivi nuovi, il supplì a terra, le spinte leggere, i modi di camminare, i gruppi con le orde e la folla che fa male, la partenza contro il blob con l'allineamento, il tetto a 200, i ritocchi dopo la prova del passo 1, le orde in tre modi e il rimescolo
 - La domanda da colloquio
 - Lo spunto per il post
 - Da fare
@@ -100,6 +100,7 @@ L'obiettivo della tappa: il gioco diventa difficile, ha tutti i contenuti della 
 - **Il quadrifoglio.** La zampa fortunata si chiama come la sua icona e aggiunge 8 punti su cento di cassa tripla a livello invece di 4. Sulla carta c'è scritto quante casse su cento saranno triple: dal 18 al primo livello al 50 al quinto.
 - **Lo schermo intero in pausa.** Sul PC Esc fa uscire dallo schermo intero, e lo fa il browser; nella pausa F non funzionava e non c'era un pulsante. Adesso ci sono tutti e due, e il pulsante non riprende la partita.
 - **Una scena sopra la partita alla volta.** Francesco ha visto tornare la zampa fortunata al massimo. In Phaser `this.scene.pause()` e `launch` chiamati dentro una scena valgono dal passo dopo: una crocchetta che faceva salire di livello e una cassa toccate nello stesso istante aprivano insieme la scelta e la cassa, con le carte della scelta estratte prima della cassa. Adesso un blocco che vale subito (`src/logic/halt.ts`) lascia aprire una scena sola tra scelta, cassa, pausa e mappa, e il livello che aspetta si apre alla ripresa.
+- **Le orde in tre modi e il rimescolo** (passo 2 contro il blob, 14 novembre). Ogni onda arriva da un lato solo, da due lati opposti (i gruppi si alternano, metà per parte) o alle spalle del gatto, il lato opposto a dove guarda; mai lo stesso modo due volte di fila e mai più di due lati, così un varco resta sempre. Mezzo secondo prima una linea rossa di 2 pixel lampeggia sul bordo dello schermo da cui arriva. All'inizio dell'onda, il rimescolo, idea di Francesco: tra i nemici fuori dalla vista e dietro al gatto, capi esclusi, ognuno con una probabilità su due e al massimo 60 tra nemici sciolti e gruppi (un gruppo conta uno e si sposta intero), vanno oltre la minimappa, tra 410 e 440 pixel dal gatto dal lato dell'onda, e tornano con lei. Per 8 secondi il richiamo dei lontani non li tocca, se no li riporterebbe subito vicino. La logica è in `src/logic/hordes.ts`, i numeri in `HORDE.warnMs` e `RESHUFFLE`.
 
 - **Nella schermata finale** c'è scritto «nemici», non più «piccioni».
 - **Per provare.** Nel pannello di debug il pulsante «+ nemici» fa nascere un gruppo di ogni tipo, anche di quelli che a quell'ora della notte non ci sarebbero, «+ capo» fa nascere un capo, a turno, e «+ miagolio» dà un livello di miagolio a ogni tocco. Con `?debug` lo stato della partita si legge anche da fuori, sul canvas: serve alla partita automatica che misura il bilanciamento, e dice anche a che livello è ogni carta e quanti nemici ha spinto il miagolio.
@@ -324,6 +325,21 @@ I ritocchi dopo la prova del passo 1 (14 novembre): casse triple più spesso, il
 
 Nessuna partita arriva all'alba, nessun errore in console, fotogrammi mai sotto 54. Cosa dicono. Senza miagolio le partite stanno nella fascia di prima. Con il miagolio il gatto è un po' più forte, 154 secondi in media invece di 143, ma resta lontano dal livello 35-40 che dava il danno 4-10. Il livello triplo le partite automatiche non lo contano: è da provare giocando. Le partite sono state giocate con il livello triplo a 2 su 100 per livello del quadrifoglio; alle 15:02 Francesco l'ha voluto un po' più alto, 3 su 100, senza nuove partite.
 
+Il passo 2 contro il blob (14 novembre): le orde in tre modi, l'avviso sul bordo e il rimescolo. Stesse partite: notte da 5 minuti, semi 11, 22 e 33, tetto 200, con i ritocchi. La riga «ritocchi» è il gioco senza il passo 2, il confronto più vicino; l'unica altra differenza è il livello triplo, alzato da 2 a 3 su 100 dopo quelle partite, che le partite automatiche non contano. I rimescolati sono gli spostamenti oltre la minimappa in tutta la partita, uno per nemico anche dentro i gruppi; lo stesso nemico può essere spostato in onde diverse.
+
+| Gatto | Prova | Durata media (s) | Nemici in vista, media | Massa media | Allineamento medio | Rimescolati |
+|---|---|---|---|---|---|---|
+| In tondo | ritocchi | 126 | 68 | 56 | 55 | |
+| In tondo | passo 2 | 125 | 68 | 58 | 54 | 101, 36, 4 |
+| Dritto | ritocchi | 213 | 61 | 26 | 70 | |
+| Dritto | passo 2 | 192 | 54 | 28 | 69 | 364, 349, 335 |
+| Fermo | ritocchi | 93 | 48 | 69 | 42 | |
+| Fermo | passo 2 | 101 | 66 | 80 | 37 | 0, 0, 0 |
+
+Le partite una per una: in tondo 141, 126 e 108 secondi, dritto 203, 183 e 190, fermo 108, 108 e 87. Nessuna arriva all'alba, nessun errore in console, fotogrammi mai sotto 57.
+
+Cosa dicono. Il rimescolo scatta soprattutto col gatto che scappa dritto: 335-364 spostamenti a partita, contro 4-101 in tondo e nessuno col gatto fermo. Col gatto dritto i nemici in vista scendono da 61 a 54 e la durata da 213 a 192 secondi: rispetto alla partenza (161) è il 19% in più, dentro la soglia del 25%, che col solo tetto a 200 era superata. Quanto di questo venga dal rimescolo e quanto dalle orde in tre modi non è separato: servirebbe una partita con le orde nuove e senza rimescolo. In tondo resta quasi tutto uguale; il disegno pensava alla coda che segue il gatto quando gira in tondo, e lì gli spostamenti sono pochi. Col gatto fermo la folla peggiora: nemici in vista da 48 a 66, massa da 69 a 80, allineamento da 42 a 37, durata da 93 a 101 secondi. Una lettura possibile, non misurata: con due lati opposti i gruppi arrivano da più parti sullo stesso punto. Con tre partite per riga può essere anche il caso: col seme 11 i nemici in vista sono 83, con gli altri due 58 e 56. In tondo e dritto l'allineamento cambia di uno o due punti, come atteso: chi torna punta il gatto lo stesso. Mi aspettavo la massa un po' più bassa: non è scesa da nessuna parte.
+
 ## La domanda da colloquio
 «Come hai tenuto 500 nemici a 60 fotogrammi al secondo?» La risposta completa arriva con la prova dei 500, che è ancora da fare. Quello che c'è già: i nemici vivono in un pool con un tetto, quindi il gioco non crea e non butta oggetti mentre si gioca; ogni nemico fa pochi conti a fotogramma, la distanza dal gatto e la direzione per raggiungerlo; le collisioni con il gatto e con i ciuffi di pelo le cerca l'indice spaziale di Phaser, e i nemici tra loro non si urtano con la fisica: si scostano con una spinta calcolata su una griglia, che guarda solo le caselle vicine. Con 300 nemici vivi, nelle partite automatiche il punto più basso è stato tra 52 e 59 fotogrammi al secondo, con tre partite insieme sullo stesso computer.
 
@@ -333,7 +349,7 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 ## Da fare
 - I capi con una persona che gioca: se la vita è giusta, adesso che il graffio li sceglie.
 - Il miagolio con una persona che gioca: il danno è salito a 3, 3, 4, 5, 6 dopo la sua prova del 14 novembre; se basta, se la spinta più lunga va bene, e se l'onda ingrandita va bene o va ridisegnata più grande.
-- Il livello triplo del quadrifoglio e la pausa con la tendina del telefono, provati da Francesco sul telefono. La prima prova (14 novembre): la tendina non fermava la partita; aggiunti `pointercancel`, `touchcancel` e il controllo del fuoco a ogni fotogramma, da riprovare.
+- Il livello triplo del quadrifoglio con una persona che gioca: le partite automatiche non lo contano. La pausa con la tendina del telefono funziona (Francesco, 14 novembre).
 - I tre passivi con una persona che gioca: nomi, rarità e numeri sono di partenza. Da guardare se con undici carte le armi arrivano troppo tardi.
 - Separare, con le partite automatiche, quanto pesano sulle vite perse la mira nuova del graffio, le tre carte in più e la spinta più lunga.
 - Capire perché, con il miagolio regalato dal primo secondo, il gatto in tondo sale tanto di livello e perde più vite: serve una partita di controllo.
@@ -341,6 +357,6 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 - Le spinte leggere con una persona che gioca: se la folla si legge meglio, e se il gatto regge come prima.
 - I modi di camminare con una persona che gioca: se si riconoscono, e quanto cambiano la difficoltà.
 - La prova con 500 nemici sul computer e sul telefono, con i numeri qui.
-- Il tetto: 200 dal passo 1 contro il blob (14 novembre). Il gatto che scappa dritto dura il 31% in più: da riguardare dopo il passo 2, le nascite. La prova dei 500 si fa con `?tetto=500`.
-- I passi 1-6 contro il blob, misurati contro la partenza del 14 novembre.
+- Il tetto: 200 dal passo 1 contro il blob (14 novembre). Il gatto che scappa dritto durava il 31% in più; col passo 2 il 19%, dentro la soglia. Resta la ritaratura: la vita del gatto, che per Francesco è ancora un po' alta, e la folla col gatto fermo, cresciuta col passo 2. Da fare anche la partita con le orde in tre modi senza rimescolo, per separare i due pezzi. La prova dei 500 si fa con `?tetto=500`.
+- I passi 3-6 contro il blob (l'1 e il 2 sono fatti, 14 novembre), misurati contro la partenza del 14 novembre.
 - La bilanciatura, con i numeri scelti da Francesco, e una partita di prova con una persona che non conosce il gioco.

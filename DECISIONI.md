@@ -21,6 +21,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Il tetto dei nemici a 200, 14 novembre 2026: il passo 1 contro il blob, `?tetto=N` per le prove, la durata del gatto che scappa da ritarare dopo il passo 2
 - Dopo la prova del passo 1, 14 novembre 2026: la pausa quando la finestra perde il fuoco, casse triple più spesso, il livello triplo del quadrifoglio, più danno al miagolio
 - Dopo la prova dei ritocchi, 14 novembre 2026: la versione corta nel titolo, il quadrifoglio senza numeri, la pausa sul telefono quando il sistema si prende il dito o la pagina perde il fuoco
+- Le orde in tre modi e il rimescolo, 14 novembre 2026: il passo 2 contro il blob, l'avviso sul bordo, i nemici rimasti dietro che tornano con l'onda
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -355,3 +356,14 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** alzare il record (tra i tasti delle notti e il fondo c'è poco spazio); la pausa sul fuoco perso anche sul computer (bastano gli eventi, e le partite automatiche senza finestra potrebbero fermarsi).
 - **Perché:** sono le sue tre osservazioni. Se la tendina mandi uno di questi segnali alla pagina lo dice solo la prova sul suo telefono.
 - **Cosa comporta:** 355 test, 6 prove nel browser (una nuova: `pointercancel` su un telefono emulato mette in pausa). Se nessuno dei segnali arriva, resta il tasto della pausa.
+
+## 2026-11-14 · Le orde in tre modi e il rimescolo
+- **Contesto:** il passo 2 del disegno contro il blob, le nascite. Dopo la prova del passo 1 Francesco ha proposto di portare una parte dei nemici che non si vedono «all'esterno del campo visivo e all'esterno della minimappa» e farli tornare «come un'altra orda che sta arrivando in un'altra direzione»; ha scelto di farlo dentro il passo 2.
+- **Scelta:**
+  - **Tre modi per l'onda.** Un lato solo (diverso dal primo lato dell'onda prima), due lati opposti con i gruppi divisi a metà, o alle spalle del gatto, il lato opposto a dove guarda. A ogni onda uno dei due modi diversi da quello di prima, metà e metà. Mai più di due lati: due restano liberi.
+  - **L'avviso.** 500 ms prima dell'onda una linea rossa di 2 pixel lampeggia sul bordo dello schermo da cui arriva (`HORDE.warnMs`).
+  - **Il rimescolo.** All'inizio di ogni onda, tra i nemici fuori dalla vista e dietro al gatto, capi esclusi, ognuno con probabilità 1/2, al massimo 60 tra nemici sciolti e gruppi (un gruppo conta uno): vanno tra 410 e 440 pixel dal gatto, oltre la minimappa (400), dal lato dell'onda, sparsi per 120 pixel lungo il lato. I gruppi si spostano interi. Per 8 secondi il richiamo dei lontani (420 pixel) non li tocca (`RESHUFFLE`).
+  - La logica è in `src/logic/hordes.ts`, con 13 test scritti prima. I numeri sono di Guardiana, da correggere giocando.
+- **Alternative scartate:** far sparire i nemici fuori dalla vista (si perde la minaccia e si vede il buco); tre o quattro lati insieme (con quattro nessun varco, con tre ne resta uno solo); rimescolare anche chi sta davanti al gatto (gli arriverebbe addosso da dove sta andando).
+- **Perché:** il rimescolo è l'idea di Francesco: serve a spezzare la coda dei nemici rimasti dietro al gatto e la fa tornare da un'altra parte, senza nemici in più. I tre modi cambiano la direzione da cui arriva la folla, anche questo senza aggiungere nemici.
+- **Cosa comporta:** 368 test in 38 file, 6 prove nel browser. Contro le partite dei ritocchi (il gioco senza il passo 2, col livello triplo ancora a 2 su 100), nelle nove partite di sempre: il gatto che scappa dritto dura 192 secondi invece di 213, il 19% in più della partenza (161), dentro la soglia del 25%; in tondo resta quasi tutto uguale; col gatto fermo la folla cresce (nemici in vista da 48 a 66, massa da 69 a 80, allineamento da 42 a 37) e il rimescolo non scatta mai: da guardare nella ritaratura. La massa non scende da nessuna parte. Quanto pesino il rimescolo e le orde in tre modi, ognuno per conto suo, non è separato. Numeri nel [diario della tappa 4](docs/tappe/tappa-4.md).

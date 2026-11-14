@@ -24,7 +24,7 @@ import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
   BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, CROWD, ENEMIES, FALLBACK, FUR_LEVELS, HORDE, KIBBLE, MEOW, MEOW_LEVELS, PIGEON,
-  RUN, SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
+  RESHUFFLE, RUN, SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
   type BossId, type EnemyId, type EnemyKind, type FoeKind, type GroupConfig, type ScreamConfig,
 } from "../data/balance";
 import { BOSS_TEXTS, TEXTS } from "../data/texts";
@@ -37,6 +37,7 @@ import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { dashStep, peckStep, startDash, startPeck, zigzag, type DashState, type PeckState } from "../logic/patterns";
 import { formatClock } from "../logic/clock";
 import { lostFocus } from "../logic/focus";
+import { hordeSides, nextPattern, pickReshuffle, reshufflePoint, type HordePattern } from "../logic/hordes";
 import { createHalt, type Halt } from "../logic/halt";
 import { inReach, knockback } from "../logic/knockback";
 import { DEFAULT_NIGHT } from "../logic/night";
@@ -48,7 +49,7 @@ import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
 import { alignment, crowding, largestClump, separation, withPush } from "../logic/separation";
 import { dropsSnack, isHungry } from "../logic/snack";
-import { nextSide, sidePoint, spawnPoint, tooFar, type Side } from "../logic/spawn";
+import { sidePoint, spawnPoint, tooFar, type Side } from "../logic/spawn";
 import { centroid, flockSlot, followSlot, groupPushes, groupRadius, swarmSlot, trailTarget } from "../logic/flock";
 import { computeStats, levelPicks, tuneWeapon, type Stats } from "../logic/stats";
 import { farthestIndex, preferredIndex } from "../logic/targeting";
@@ -176,7 +177,17 @@ export class GameScene extends Phaser.Scene {
   private nextSpawnAt: Partial<Record<EnemyId, number>> = {};
   // l'onda di adesso: quale giro di HORDE.cycleMs e da che lato arriva
   private hordeCycle = -1;
-  private hordeSide: Side = "left";
+  private hordeSides: Side[] = ["left"];
+  // il passo 2 contro il blob: lo schema dell'orda di adesso, i lati dell'orda dopo scelti all'avviso, a che giro
+  // è stato dato l'avviso, fino a quando lampeggia e da dove, a quale lato tocca il prossimo gruppo
+  private hordePattern: HordePattern = "behind";
+  private pendingSides: Side[] | null = null;
+  private warnedCycle = -1;
+  private warnUntil = 0;
+  private warnSides: Side[] = [];
+  private hordeGroup = 0;
+  private hordeWarnFx!: Phaser.GameObjects.Graphics;
+  private reshuffled = 0;
   // i gruppi vivi (src/logic/flock.ts): per ognuno il passo comune, lo scatto della fila o la sosta dello stormo
   private flocks = new Map<number, FlockState>();
   private nextFlock = 0;
@@ -227,7 +238,14 @@ export class GameScene extends Phaser.Scene {
     this.elapsed = 0;
     this.nextSpawnAt = {};
     this.hordeCycle = -1;
-    this.hordeSide = "left";
+    this.hordeSides = ["left"];
+    this.hordePattern = "behind";
+    this.pendingSides = null;
+    this.warnedCycle = -1;
+    this.warnUntil = 0;
+    this.warnSides = [];
+    this.hordeGroup = 0;
+    this.reshuffled = 0;
     this.flocks = new Map();
     this.nextFlock = 0;
     this.chestsTaken = 0;
@@ -307,6 +325,8 @@ export class GameScene extends Phaser.Scene {
     this.chests = this.physics.add.group({ maxSize: CHEST.maxOnGround + BOSS_ORDER.length });
     this.effects = this.add.group({ maxSize: 60 });
     this.bossFx = this.add.graphics().setDepth(3);
+    // il segno sul bordo da cui arriva l'orda: fisso sullo schermo, sopra il mondo e sotto le scritte
+    this.hordeWarnFx = this.add.graphics().setScrollFactor(0).setDepth(90);
 
     // Chi urta chi: solo queste cinque coppie, perché Arcade controlla soltanto le coppie dichiarate. I nemici tra
     // loro non si urtano (si scostano con le spinte leggere di moveEnemies), e graffio, coda e miagolio colpiscono
@@ -495,6 +515,7 @@ export class GameScene extends Phaser.Scene {
     this.expireFur();
     this.fireWeapons(time);
     this.spawnOnSchedule();
+    this.drawHordeWarning();
     this.spawnBossOnSchedule();
     this.spawnChestOnSchedule();
     this.scrollWorld();
@@ -558,7 +579,7 @@ export class GameScene extends Phaser.Scene {
       const enemy = child as Sprite;
       // chi sta in un gruppo lo muove moveFlocks
       if (!enemy.active || enemy.getData("flock") !== null) continue;
-      if (tooFar(enemy, target, SPAWN.recallDistance)) this.recall(enemy);
+      if (tooFar(enemy, target, SPAWN.recallDistance) && !this.returning(enemy)) this.recall(enemy);
       // chi è stato spinto dal miagolio scivola all'indietro finché dura la spinta: qui nessuno gli cambia la velocità
       if (this.elapsed < ((enemy.getData("pushedUntil") as number | undefined) ?? 0)) continue;
       const from = { x: enemy.x, y: enemy.y };
@@ -628,7 +649,7 @@ export class GameScene extends Phaser.Scene {
       // in ordine di posto: la prima della fila è quella col posto più basso tra le vive
       group.sort((a, b) => (a.getData("slot") as number) - (b.getData("slot") as number));
       const center = centroid(group.map((e) => ({ x: e.x, y: e.y })));
-      if (tooFar(center, target, SPAWN.recallDistance)) {
+      if (tooFar(center, target, SPAWN.recallDistance) && !group.some((e) => this.returning(e))) {
         this.recallFlock(group, center, state);
         continue;
       }
@@ -823,12 +844,22 @@ export class GameScene extends Phaser.Scene {
   // Le ondate: la riga della tabella per questo momento della notte dice chi c'è; ogni tipo ha il suo orologio,
   // e quando tocca a lui nasce il suo gruppo (dueSpawns). Con le orde (HORDE) l'orologio corre a onde (hordeTime),
   // i gruppi sono più grandi e più rari (scaleRow), e ogni onda arriva da un lato solo, mai lo stesso di fila.
+  // Dal passo 2 contro il blob l'onda ha uno schema (src/logic/hordes.ts), scelto mezzo secondo prima, quando
+  // lampeggia il segno sul bordo; all'inizio dell'onda parte il rimescolo.
   private spawnOnSchedule() {
     const plan = spawnPlan(this.elapsed / this.duration);
     const cycle = Math.floor(this.elapsed / HORDE.cycleMs);
+    const next = this.hordeCycle + 1;
+    if (this.warnedCycle !== next && this.elapsed >= next * HORDE.cycleMs - HORDE.warnMs) {
+      this.warnedCycle = next;
+      this.planHorde();
+    }
     if (cycle !== this.hordeCycle) {
       this.hordeCycle = cycle;
-      this.hordeSide = nextSide(this.hordeSide, this.rng());
+      if (!this.pendingSides) this.planHorde();
+      this.hordeSides = this.pendingSides ?? this.hordeSides;
+      this.pendingSides = null;
+      this.reshuffle();
     }
     const clock = hordeTime(this.elapsed, HORDE.cycleMs, HORDE.arriveMs);
     const due = dueSpawns(scaleRow(plan.row, HORDE.sizeScale), this.nextSpawnAt, clock);
@@ -861,7 +892,75 @@ export class GameScene extends Phaser.Scene {
   private hordePoint(radius: number): Vec {
     const cam = this.cameras.main;
     const center = { x: cam.midPoint.x, y: cam.midPoint.y };
-    return sidePoint(center, this.scale.width / 2, this.scale.height / 2, SPAWN.margin + 2 * radius, this.hordeSide, this.rng());
+    // con due lati opposti i gruppi si alternano, metà da una parte e metà dall'altra
+    const side = this.hordeSides[this.hordeGroup++ % this.hordeSides.length];
+    return sidePoint(center, this.scale.width / 2, this.scale.height / 2, SPAWN.margin + 2 * radius, side, this.rng());
+  }
+
+  // Lo schema dell'onda dopo, e da quali lati arriva: mai lo stesso schema di fila (nextPattern), al massimo due lati
+  // (hordeSides). Il segno sul bordo lampeggia per HORDE.warnMs.
+  private planHorde() {
+    this.hordePattern = nextPattern(this.hordePattern, this.rng());
+    this.pendingSides = hordeSides(this.hordePattern, this.hordeSides[0], this.facing, this.rng());
+    this.warnSides = this.pendingSides;
+    this.warnUntil = this.elapsed + HORDE.warnMs;
+  }
+
+  // Il segno: una linea di 2 pixel sul bordo dello schermo da cui arriva l'onda, che lampeggia.
+  private drawHordeWarning() {
+    const g = this.hordeWarnFx;
+    g.clear();
+    if (this.elapsed >= this.warnUntil || Math.floor(this.elapsed / 100) % 2 === 1) return;
+    const { width, height } = this.scale;
+    g.fillStyle(0xe23a4f, 0.9);
+    for (const side of this.warnSides) {
+      if (side === "left") g.fillRect(0, 0, 2, height);
+      else if (side === "right") g.fillRect(width - 2, 0, 2, height);
+      else if (side === "top") g.fillRect(0, 0, width, 2);
+      else g.fillRect(0, height - 2, width, 2);
+    }
+  }
+
+  // Il rimescolo, all'inizio di ogni onda: una parte dei nemici fuori dalla vista e dietro al gatto (pickReshuffle),
+  // capi esclusi, va oltre la minimappa dal lato dell'onda (reshufflePoint) e torna da lì. I gruppi si spostano interi.
+  // Per RESHUFFLE.graceMs il richiamo dei lontani non li tocca (returning).
+  private reshuffle() {
+    const cat = { x: this.cat.x, y: this.cat.y };
+    const units: Sprite[][] = [];
+    const groups = new Map<number, Sprite[]>();
+    for (const child of this.enemies.getChildren()) {
+      const enemy = child as Sprite;
+      if (!enemy.active || this.bosses.includes(enemy)) continue;
+      const flock = enemy.getData("flock") as number | null;
+      if (flock === null) units.push([enemy]);
+      else {
+        const members = groups.get(flock);
+        if (members) members.push(enemy);
+        else groups.set(flock, [enemy]);
+      }
+    }
+    for (const members of groups.values()) units.push(members);
+    const centers = units.map((u) => centroid(u.map((e) => ({ x: e.x, y: e.y }))));
+    const picked = pickReshuffle(centers, cat, this.facing, this.scale.width / 2, this.scale.height / 2, RESHUFFLE.share, RESHUFFLE.max, this.rng);
+    picked.forEach((index, k) => {
+      const side = this.hordeSides[k % this.hordeSides.length];
+      const beyond = RESHUFFLE.beyondMin + this.rng() * (RESHUFFLE.beyondMax - RESHUFFLE.beyondMin);
+      const p = reshufflePoint(cat, side, beyond, this.rng(), RESHUFFLE.spread);
+      const c = centers[index];
+      for (const enemy of units[index]) {
+        enemy.body?.reset(enemy.x + p.x - c.x, enemy.y + p.y - c.y);
+        enemy.setData("returnUntil", this.elapsed + RESHUFFLE.graceMs);
+        // una cornacchia ricomincia dall'avvicinamento, una pantegana ripunta il gatto dal punto nuovo
+        enemy.setData("dive", startDive());
+        enemy.setData("dash", startDash());
+        this.reshuffled++;
+      }
+    });
+  }
+
+  // un nemico rimescolato che sta ancora tornando: il richiamo dei lontani lo lascia stare
+  private returning(enemy: Sprite): boolean {
+    return this.elapsed < ((enemy.getData("returnUntil") as number | undefined) ?? 0);
   }
 
   // Lo sprite esce dal pool: prima poteva essere un altro nemico, anche un capo grande il doppio, quindi
@@ -883,6 +982,7 @@ export class GameScene extends Phaser.Scene {
     enemy.setData("jitter", (this.born++ * 0.6180339887) % 1);
     enemy.setData("log", null);
     enemy.setData("pushedUntil", 0);
+    enemy.setData("returnUntil", 0);
     enemy.setData("hitReadyAt", 0);
     // fuori da ogni gruppo finché spawnGroup non lo mette nel suo (i capi restano soli)
     enemy.setData("flock", null);
@@ -1510,7 +1610,7 @@ export class GameScene extends Phaser.Scene {
     }
     this.game.canvas.dataset.stato = JSON.stringify({
       ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
-      presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, spinti: this.pushes, carte: this.levels,
+      presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, rimescolati: this.reshuffled, spinti: this.pushes, carte: this.levels,
       capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, massa: clump, allineamento: align, fps,
     });
   }
