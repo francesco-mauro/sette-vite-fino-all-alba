@@ -85,13 +85,19 @@ describe("i numeri del miagolio", () => {
     }
   });
 
-  it("è una difesa, non un'arma di punta: colpisce tutti quelli intorno, quindi il danno di base non supera mai la vita di una zanzara", () => {
-    for (const lv of MEOW_LEVELS) expect(lv.damage).toBeLessThanOrEqual(ENEMIES.zanzara.health);
+  // Francesco, 14 novembre 2026: il miagolio «potrebbe fare anche un po' di danno oltre solamente allo spingere».
+  // Era 2, 2, 3, 3, 4: ora 3, 3, 4, 5, 6. Con 4-10 il gatto automatico arrivava al livello 35-40 in cinque minuti.
+  it("il danno di base è 3, 3, 4, 5, 6", () => {
+    expect(MEOW_LEVELS.map((lv) => lv.damage)).toEqual([3, 3, 4, 5, 6]);
   });
 
-  it("all'ultimo livello il danno di base basta per una zanzara, al primo no", () => {
-    expect(MEOW_LEVELS[MEOW_LEVELS.length - 1].damage).toBeGreaterThanOrEqual(ENEMIES.zanzara.health);
-    expect(MEOW_LEVELS[0].damage).toBeLessThan(ENEMIES.zanzara.health);
+  it("resta una difesa: colpisce tutti quelli intorno, quindi il danno di base sta sotto la vita di un piccione", () => {
+    for (const lv of MEOW_LEVELS) expect(lv.damage).toBeLessThan(ENEMIES.piccione.health);
+  });
+
+  it("dal terzo livello il danno di base basta per una zanzara, ai primi due no", () => {
+    expect(MEOW_LEVELS[2].damage).toBeGreaterThanOrEqual(ENEMIES.zanzara.health);
+    expect(MEOW_LEVELS[1].damage).toBeLessThan(ENEMIES.zanzara.health);
   });
 
   it("la spinta è più lunga di quella provata all'inizio (24 pixel al primo livello, 42 all'ultimo)", () => {

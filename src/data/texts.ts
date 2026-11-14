@@ -39,8 +39,11 @@ export const TEXTS = {
   chestTriple: "cassa tripla!",
   chestContinue: "tocca o premi spazio per continuare",
   mapClose: "tocca o premi m per tornare",
-  // la descrizione del quadrifoglio sulla carta: quante casse su cento sono triple al livello che dà
-  luckOdds: (perHundred: number) => `casse triple ${perHundred} su 100, più carte rare`,
+  // la descrizione del quadrifoglio sulla carta: quante casse e quante salite di livello su cento sono triple al
+  // livello che dà
+  luckOdds: (chests: number, levels: number) => `casse triple ${chests} su 100, livelli tripli ${levels} su 100, più carte rare`,
+  // il titolo della scelta nel livello triplo del quadrifoglio: tre carte, una dopo l'altra
+  levelTriple: (pick: number) => `livello triplo! carta ${pick} di 3`,
 };
 
 // I capi: il nome sopra la barra della vita e la scritta che li annuncia.

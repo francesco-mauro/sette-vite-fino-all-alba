@@ -49,7 +49,7 @@ import { alignment, crowding, largestClump, separation, withPush } from "../logi
 import { dropsSnack, isHungry } from "../logic/snack";
 import { nextSide, sidePoint, spawnPoint, tooFar, type Side } from "../logic/spawn";
 import { centroid, flockSlot, followSlot, groupPushes, groupRadius, swarmSlot, trailTarget } from "../logic/flock";
-import { computeStats, tuneWeapon, type Stats } from "../logic/stats";
+import { computeStats, levelPicks, tuneWeapon, type Stats } from "../logic/stats";
 import { farthestIndex, preferredIndex } from "../logic/targeting";
 import { dueSpawns, hordeTime, scaleRow, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
@@ -155,6 +155,8 @@ export class GameScene extends Phaser.Scene {
   private snacksDropped = 0;
   private snacksEaten = 0;
   private pendingLevels = 0;
+  // nel livello triplo del quadrifoglio: quale delle tre carte si è aperta (1, 2), 0 se nessun livello triplo è a metà
+  private triplePick = 0;
   // chi tiene ferma la partita (scelta al livello, cassa, pausa, mappa): una scena sopra alla volta
   private halt: Halt = createHalt();
   // l'ultima direzione in cui il gatto si è mosso, in radianti: la coda a frusta colpisce da quella parte
@@ -215,6 +217,7 @@ export class GameScene extends Phaser.Scene {
     this.levels = {};
     this.stats = computeStats({});
     this.pendingLevels = 0;
+    this.triplePick = 0;
     this.halt = createHalt();
     this.facing = 0;
     this.elapsed = 0;
@@ -319,9 +322,15 @@ export class GameScene extends Phaser.Scene {
     // dopo una carta o una pausa la partita riprende: un attimo di protezione per riprendere in mano il gatto
     this.events.off(Phaser.Scenes.Events.RESUME, this.onResume, this);
     this.events.on(Phaser.Scenes.Events.RESUME, this.onResume, this);
-    // quando la scheda o l'app passano in secondo piano, la partita si mette in pausa da sola
+    // quando la scheda o l'app passano in secondo piano, la partita si mette in pausa da sola. Anche quando la
+    // finestra perde il fuoco: la tendina del telefono non nasconde la pagina, le toglie solo il fuoco (Francesco,
+    // 14 novembre 2026: «una pausa pure quando si abbassa la tendina delle opzioni del telefono»)
     this.game.events.on(Phaser.Core.Events.HIDDEN, this.openPause, this);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.game.events.off(Phaser.Core.Events.HIDDEN, this.openPause, this));
+    this.game.events.on(Phaser.Core.Events.BLUR, this.openPause, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off(Phaser.Core.Events.HIDDEN, this.openPause, this);
+      this.game.events.off(Phaser.Core.Events.BLUR, this.openPause, this);
+    });
 
     this.createInput();
     this.createHud();
@@ -1068,19 +1077,33 @@ export class GameScene extends Phaser.Scene {
     this.pendingLevels += levelsGained;
     this.drawHud();
     // con la partita già ferma (una cassa presa nello stesso istante) la scelta aspetta che riprenda (openLevelUp)
-    if (this.pendingLevels > 0) this.openLevelUp();
+    if (this.levelWaiting()) this.openLevelUp();
+  }
+
+  // c'è una scelta che aspetta: un livello non ancora aperto, o una delle tre carte di un livello triplo
+  private levelWaiting(): boolean {
+    return this.pendingLevels > 0 || this.triplePick > 0;
   }
 
   // Si sale di livello: la partita si ferma e sopra compare la scelta tra tre carte. Se la partita è già ferma
   // (una cassa, la pausa, la mappa, o un'altra scelta nello stesso istante) il livello aspetta: lo riapre onResume.
+  // Con il quadrifoglio una salita può essere tripla (levelPicks): tre scelte una dopo l'altra, contate da triplePick.
   private openLevelUp() {
-    if (this.over || this.pendingLevels <= 0 || !this.halt.stop("LevelUp")) return;
-    this.pendingLevels--;
+    if (this.over || !this.levelWaiting() || !this.halt.stop("LevelUp")) return;
+    if (this.triplePick > 0) {
+      this.triplePick++;
+    } else {
+      this.pendingLevels--;
+      this.triplePick = levelPicks(this.levels.luck ?? 0, this.rng) === 3 ? 1 : 0;
+    }
+    const triplePick = this.triplePick > 0 ? this.triplePick : null;
+    // la terza scelta è l'ultima del livello triplo
+    if (this.triplePick >= 3) this.triplePick = 0;
     this.joystick = null;
     this.joystickGfx.clear();
     this.pullAllKibbles();
     const choices = drawCards(CARDS, this.levels, this.rng, luckyWeights(CARD_WEIGHTS, this.stats.rareWeightBonus), FALLBACK_CARDS);
-    const data: LevelUpData = { choices, levels: { ...this.levels } };
+    const data: LevelUpData = { choices, levels: { ...this.levels }, triplePick };
     this.scene.pause();
     this.scene.launch("LevelUp", data);
   }
@@ -1323,8 +1346,9 @@ export class GameScene extends Phaser.Scene {
   private onResume() {
     this.halt.release();
     if (this.over) return;
+    this.game.canvas.dataset.scena = "partita";
     this.health = protect(this.health, this.elapsed, CAT.resumeInvulnerabilityMs);
-    if (this.pendingLevels > 0) this.time.delayedCall(50, () => this.openLevelUp());
+    if (this.levelWaiting()) this.time.delayedCall(50, () => this.openLevelUp());
   }
 
   // La pausa: la partita si ferma e sopra compare PauseScene. Non si apre sopra la scelta delle carte, la cassa o
@@ -1335,6 +1359,8 @@ export class GameScene extends Phaser.Scene {
     this.joystickGfx.clear();
     this.scene.pause();
     this.scene.launch("Pause");
+    // un segno sul canvas per la prova di fumo (tests/e2e), come «partita»
+    this.game.canvas.dataset.scena = "pausa";
   }
 
   // La fine: all'alba (dawn) o senza più vite. Il punteggio e il record li fa EndScene.

@@ -285,18 +285,19 @@ export const FUR_LEVELS = [
 
 // Il miagolio: un'onda tonda intorno al gatto. Fa poco danno a tutti quelli entro `radius` e li spinge via
 // di `push` pixel: è la difesa per quando il gatto è circondato. Il danno è basso apposta, perché colpisce
-// tutti quelli intorno insieme: solo all'ultimo livello basta, da solo, per una zanzara (unghie affilate lo alza
-// come per le altre armi). Con il primo danno provato
+// tutti quelli intorno insieme: resta sotto la vita di un piccione, e dal terzo livello basta, da solo, per una
+// zanzara (unghie affilate lo alza come per le altre armi). Era 2, 2, 3, 3, 4: Francesco, 14 novembre 2026, «potrebbe
+// fare anche un po' di danno oltre solamente allo spingere», quindi 3, 3, 4, 5, 6. Con il primo danno provato
 // (4, 5, 6, 8, 10) e l'onda al livello 3 dal primo secondo, il gatto automatico in tondo prendeva da 2002 a 2440
 // nemici e arrivava al livello 35-40 in una notte da 5 minuti, contro 189-657 nemici e livello 9-19 senza miagolio
 // (misura del 13 novembre 2026). La spinta all'inizio era 24, 28, 32, 36, 42: dopo averci giocato Francesco
 // l'ha voluta un po' più lunga (13 novembre 2026). Resta entro il raggio dell'onda.
 export const MEOW_LEVELS = [
-  { cooldownMs: 3000, damage: 2, radius: 40, push: 32 },
-  { cooldownMs: 2800, damage: 2, radius: 44, push: 36 },
-  { cooldownMs: 2600, damage: 3, radius: 48, push: 42 },
-  { cooldownMs: 2400, damage: 3, radius: 54, push: 48 },
-  { cooldownMs: 2200, damage: 4, radius: 60, push: 56 },
+  { cooldownMs: 3000, damage: 3, radius: 40, push: 32 },
+  { cooldownMs: 2800, damage: 3, radius: 44, push: 36 },
+  { cooldownMs: 2600, damage: 4, radius: 48, push: 42 },
+  { cooldownMs: 2400, damage: 5, radius: 54, push: 48 },
+  { cooldownMs: 2200, damage: 6, radius: 60, push: 56 },
 ];
 
 export const MEOW = {
@@ -325,9 +326,16 @@ export const PASSIVES = {
   // CARD_WEIGHTS.rare, le comuni restano ferme), e quanta probabilità in più ha una cassa di essere tripla.
   // Era 0,04 (3 casse su 10 triple al livello 5): con otto casse per notte, anche al massimo dall'inizio una notte
   // su venti finiva senza nessuna tripla, e la carta sembrava non fare niente (Francesco, 13 novembre 2026: «poco
-  // efficiente perchè non si è attivata mai»). Con 0,08 al livello 5 è tripla una cassa su due.
+  // efficiente perchè non si è attivata mai»). Con 0,08 al livello 5 era tripla una cassa su due. Il 14 novembre
+  // 2026 Francesco l'ha voluta «un altro pochino» più alta: 0,10, e con CHEST.tripleChance a 0,15 al livello 5 è
+  // tripla il 65% delle casse.
   luckRareWeightPerLevel: 1,
-  luckTriplePerLevel: 0.08,
+  luckTriplePerLevel: 0.1,
+  // quadrifoglio: quanta probabilità ha una salita di livello di essere tripla (tre carte da scegliere, una dopo
+  // l'altra), per livello. Francesco, 14 novembre 2026: «funziona anche per un triplo potenziamento al salire di
+  // livello». Le salite sono molte più delle casse (otto per notte), quindi il numero è piccolo. Era 0,02; alle 15:02
+  // dello stesso giorno l'ha voluto «un pochino» più alto: 0,03, al livello 5 15 su 100.
+  luckLevelTriplePerLevel: 0.03,
 };
 
 // Le crocchette: quanta esperienza vale ognuna, e da che distanza la calamita le tira verso il gatto.
@@ -460,6 +468,7 @@ export const CHEST = {
   // quanto lontano dal gatto nascono, in pixel: lo schermo è largo 480, quindi sempre fuori vista
   minDistance: 300,
   maxDistance: 600,
-  // la probabilità che la cassa dia tre poteri invece di uno
-  tripleChance: 0.1,
+  // la probabilità che la cassa dia tre poteri invece di uno. Era 0,1; 0,15 dal 14 novembre 2026 (Francesco: la
+  // fortuna delle casse «va alzata un altro pochino»)
+  tripleChance: 0.15,
 };

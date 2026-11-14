@@ -10,9 +10,12 @@ import { CARD_W, FONT, drawCard } from "./cardView";
 export interface LevelUpData {
   choices: string[];
   levels: Record<string, number>;
+  // nel livello triplo del quadrifoglio: quale delle tre carte si sceglie (1, 2 o 3); senza, null
+  triplePick: number | null;
 }
 
 export class LevelUpScene extends Phaser.Scene {
+  private triplePick: number | null = null;
   private choices: string[] = [];
   private frames: Phaser.GameObjects.Rectangle[] = [];
   private selected = 0;
@@ -30,13 +33,15 @@ export class LevelUpScene extends Phaser.Scene {
     this.frames = [];
     this.ready = false;
     this.levels = data.levels;
+    this.triplePick = data.triplePick;
     this.tap = createTapGuard();
   }
 
   create() {
     const { width, height } = this.scale;
     this.add.rectangle(0, 0, width, height, 0x0e0c16, 0.7).setOrigin(0, 0);
-    this.add.text(width / 2, 34, TEXTS.chooseCard, { ...FONT, fontSize: "16px" }).setOrigin(0.5);
+    const title = this.triplePick === null ? TEXTS.chooseCard : TEXTS.levelTriple(this.triplePick);
+    this.add.text(width / 2, 34, title, { ...FONT, fontSize: "16px" }).setOrigin(0.5);
 
     const gap = 16;
     const total = this.choices.length * CARD_W + (this.choices.length - 1) * gap;

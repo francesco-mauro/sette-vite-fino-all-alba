@@ -1,7 +1,7 @@
 // I test delle statistiche: dai livelli delle carte ai numeri del gatto e delle armi.
 import { describe, expect, it } from "vitest";
-import { FUR_LEVELS, MEOW_LEVELS, SCRATCH_LEVELS, TAIL_LEVELS } from "../../src/data/balance";
-import { computeStats, tripleChance, tuneWeapon } from "../../src/logic/stats";
+import { CHEST, FUR_LEVELS, MEOW_LEVELS, SCRATCH_LEVELS, TAIL_LEVELS } from "../../src/data/balance";
+import { computeStats, levelPicks, levelTripleChance, tripleChance, tuneWeapon } from "../../src/logic/stats";
 
 describe("le statistiche dalle carte", () => {
   it("senza carte: il gatto di base e solo il graffio", () => {
@@ -56,16 +56,35 @@ describe("le statistiche dalle carte", () => {
     expect(computeStats({ area: 5 }).areaMultiplier).toBeCloseTo(1.4);
   });
 
-  it("quadrifoglio: ogni livello aggiunge peso alle carte rare e 8 punti su 100 alla cassa tripla", () => {
+  it("quadrifoglio: ogni livello aggiunge peso alle carte rare e 10 punti su 100 alla cassa tripla", () => {
     expect(computeStats({ luck: 1 }).rareWeightBonus).toBe(1);
     expect(computeStats({ luck: 5 }).rareWeightBonus).toBe(5);
-    expect(computeStats({ luck: 2 }).tripleChanceBonus).toBeCloseTo(0.16);
+    expect(computeStats({ luck: 2 }).tripleChanceBonus).toBeCloseTo(0.2);
   });
 
-  it("quadrifoglio: la cassa tripla va da 10 su 100 senza a 50 su 100 al livello 5", () => {
-    expect(tripleChance(0)).toBeCloseTo(0.1);
-    expect(tripleChance(1)).toBeCloseTo(0.18);
-    expect(tripleChance(5)).toBeCloseTo(0.5);
+  // Francesco, 14 novembre 2026: la fortuna delle casse «va alzata un altro pochino». Era 10 su 100 più 8 per livello.
+  it("quadrifoglio: la cassa tripla va da 15 su 100 senza a 65 su 100 al livello 5", () => {
+    expect(tripleChance(0)).toBeCloseTo(0.15);
+    expect(tripleChance(1)).toBeCloseTo(0.25);
+    expect(tripleChance(5)).toBeCloseTo(0.65);
+  });
+
+  // Francesco, 14 novembre 2026: il quadrifoglio «funziona anche per un triplo potenziamento al salire di livello».
+  it("quadrifoglio: il livello triplo è 3 su 100 per livello della carta, mai senza", () => {
+    expect(levelTripleChance(0)).toBe(0);
+    expect(levelTripleChance(1)).toBeCloseTo(0.03);
+    expect(levelTripleChance(5)).toBeCloseTo(0.15);
+  });
+
+  it("levelPicks: tre scelte sotto la probabilità del livello triplo, una sopra o senza quadrifoglio", () => {
+    expect(levelPicks(0, () => 0)).toBe(1);
+    expect(levelPicks(5, () => 0.05)).toBe(3);
+    expect(levelPicks(5, () => 0.15)).toBe(1);
+    expect(levelPicks(1, () => 0.029)).toBe(3);
+  });
+
+  it("quadrifoglio: la cassa tripla senza carta è CHEST.tripleChance", () => {
+    expect(tripleChance(0)).toBeCloseTo(CHEST.tripleChance);
   });
 
   it("il miagolio parte da zero e sale con la sua carta", () => {

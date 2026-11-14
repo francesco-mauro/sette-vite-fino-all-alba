@@ -73,3 +73,20 @@ test("in pausa F rimette lo schermo intero", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => document.fullscreenElement !== null), { timeout: 2000 }).toBe(true);
   expect(errors).toEqual([]);
 });
+
+// Francesco, 14 novembre 2026: «Sarebbe bello mettere una pausa pure quando si abbassa la tendina delle opzioni
+// del telefono». La tendina non nasconde la pagina, le toglie il fuoco: la partita si ferma anche così.
+test("quando la finestra perde il fuoco la partita va in pausa", async ({ page }) => {
+  const errors = watchErrors(page);
+  await page.goto("/");
+  const canvas = page.locator("#gioco canvas");
+  await expect(canvas).toHaveAttribute("data-scena", "pronta");
+  await expect(async () => {
+    await page.keyboard.press("Space");
+    await expect(canvas).toHaveAttribute("data-scena", "partita", { timeout: 500 });
+  }).toPass({ timeout: 5000 });
+  await page.waitForTimeout(500);
+  await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+  await expect(canvas).toHaveAttribute("data-scena", "pausa", { timeout: 2000 });
+  expect(errors).toEqual([]);
+});

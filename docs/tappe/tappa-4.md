@@ -306,6 +306,24 @@ Le partite una per una: a 200, in tondo 156, 119 e 112 secondi, dritto 249, 204 
 
 Cosa dicono. Il tetto toglie nemici dallo schermo e un po' di massa, ma non cambia l'allineamento: quelli che restano vanno verso il gatto come prima. Era atteso, la direzione la cambiano i passi dei ruoli e delle nascite. In tondo, a 200, i nemici in vista scendono da 85 a 70 e la massa da 65 a 60; a 150 scendono a 63 e 55, e la durata resta nel 25% in più o in meno, la soglia del disegno. Col gatto fermo non cambia quasi niente: quando sta fermo i nemici in vista sono una cinquantina, lontani dal tetto. Il gatto che scappa dritto invece dura molto di più: da 161 a 211 secondi con il tetto a 200, il 31% in più, e a 218 con il tetto a 150: tutte e due fuori dalla soglia. Con meno nemici vivi la coda dietro di lui è più corta e ne nascono di più davanti, dove li prende con le armi: è una lettura, non misurata. Tre partite per riga sono poche, e la partita dritto è quella che varia di più (a 200 va da 179 a 249 secondi).
 
+I ritocchi dopo la prova del passo 1 (14 novembre): casse triple più spesso, il livello triplo del quadrifoglio, il miagolio da 3, 3, 4, 5, 6 invece di 2, 2, 3, 3, 4, la pausa quando la finestra perde il fuoco. Stesse partite: notte da 5 minuti, semi 11, 22 e 33, tetto 200. Il gatto automatico prende la prima carta che esce: in sette partite su nove il miagolio o il quadrifoglio sono arrivati, al livello 1 o 2, quindi le nove partite di sempre dicono soprattutto se il resto si è mosso; per il miagolio ci sono tre partite in tondo con l'onda al livello 3 dal primo secondo, una volta col danno vecchio e una col nuovo.
+
+| Gatto | Prova | Durata media (s) | Nemici in vista, media | Massa media | Allineamento medio |
+|---|---|---|---|---|---|
+| In tondo | tetto 200 | 129 | 70 | 60 | 53 |
+| In tondo | ritocchi | 126 | 68 | 56 | 55 |
+| Dritto | tetto 200 | 211 | 67 | 26 | 71 |
+| Dritto | ritocchi | 213 | 61 | 26 | 70 |
+| Fermo | tetto 200 | 102 | 50 | 70 | 44 |
+| Fermo | ritocchi | 93 | 48 | 69 | 42 |
+
+| Miagolio dal primo secondo, in tondo | Durata (s) | Livello alla fine | Nemici presi |
+|---|---|---|---|
+| Livello 3, danno 2, 2, 3, 3, 4 | 132, 123, 175 | 10, 11, 20 | 205, 256, 730 |
+| Livello 3, danno 3, 3, 4, 5, 6 | 156, 159, 146 | 15, 16, 12 | 442, 502, 345 |
+
+Nessuna partita arriva all'alba, nessun errore in console, fotogrammi mai sotto 54. Cosa dicono. Senza miagolio le partite stanno nella fascia di prima. Con il miagolio il gatto è un po' più forte, 154 secondi in media invece di 143, ma resta lontano dal livello 35-40 che dava il danno 4-10. Il livello triplo le partite automatiche non lo contano: è da provare giocando. Le partite sono state giocate con il livello triplo a 2 su 100 per livello del quadrifoglio; alle 15:02 Francesco l'ha voluto un po' più alto, 3 su 100, senza nuove partite.
+
 ## La domanda da colloquio
 «Come hai tenuto 500 nemici a 60 fotogrammi al secondo?» La risposta completa arriva con la prova dei 500, che è ancora da fare. Quello che c'è già: i nemici vivono in un pool con un tetto, quindi il gioco non crea e non butta oggetti mentre si gioca; ogni nemico fa pochi conti a fotogramma, la distanza dal gatto e la direzione per raggiungerlo; le collisioni con il gatto e con i ciuffi di pelo le cerca l'indice spaziale di Phaser, e i nemici tra loro non si urtano con la fisica: si scostano con una spinta calcolata su una griglia, che guarda solo le caselle vicine. Con 300 nemici vivi, nelle partite automatiche il punto più basso è stato tra 52 e 59 fotogrammi al secondo, con tre partite insieme sullo stesso computer.
 
@@ -314,7 +332,8 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 
 ## Da fare
 - I capi con una persona che gioca: se la vita è giusta, adesso che il graffio li sceglie.
-- Il miagolio con una persona che gioca: quanto danno deve fare, se la spinta più lunga va bene, e se l'onda ingrandita va bene o va ridisegnata più grande.
+- Il miagolio con una persona che gioca: il danno è salito a 3, 3, 4, 5, 6 dopo la sua prova del 14 novembre; se basta, se la spinta più lunga va bene, e se l'onda ingrandita va bene o va ridisegnata più grande.
+- Il livello triplo del quadrifoglio e la pausa con la tendina del telefono, provati da Francesco sul telefono.
 - I tre passivi con una persona che gioca: nomi, rarità e numeri sono di partenza. Da guardare se con undici carte le armi arrivano troppo tardi.
 - Separare, con le partite automatiche, quanto pesano sulle vite perse la mira nuova del graffio, le tre carte in più e la spinta più lunga.
 - Capire perché, con il miagolio regalato dal primo secondo, il gatto in tondo sale tanto di livello e perde più vite: serve una partita di controllo.

@@ -1,11 +1,26 @@
 // Le statistiche: dai livelli delle carte scelte ai numeri che usa la partita, e i numeri di un'arma
 // dopo i potenziamenti. Logica pura, senza Phaser.
 import { CHEST, PASSIVES } from "../data/balance";
+import type { Rng } from "./rng";
 
 // tripleChance: la probabilità che una cassa sia tripla con il quadrifoglio a `luckLevel`, da 0 a 1.
 // Senza è CHEST.tripleChance; ogni livello aggiunge PASSIVES.luckTriplePerLevel. La carta la scrive (cardDescription).
 export function tripleChance(luckLevel: number): number {
   return CHEST.tripleChance + PASSIVES.luckTriplePerLevel * luckLevel;
+}
+
+// levelTripleChance: la probabilità che una salita di livello sia tripla, con il quadrifoglio a `luckLevel`.
+// Senza carta è zero: il livello triplo è solo della fortuna.
+export function levelTripleChance(luckLevel: number): number {
+  return PASSIVES.luckLevelTriplePerLevel * luckLevel;
+}
+
+// levelPicks: quante carte si scelgono a questa salita di livello, 3 se il tiro cade sotto levelTripleChance, se no 1.
+// Senza quadrifoglio non tira nemmeno: la sequenza dei numeri a caso resta quella di prima, e le partite automatiche
+// con gli stessi semi restano confrontabili.
+export function levelPicks(luckLevel: number, rng: Rng): 1 | 3 {
+  const chance = levelTripleChance(luckLevel);
+  return chance > 0 && rng() < chance ? 3 : 1;
 }
 
 export interface Stats {
