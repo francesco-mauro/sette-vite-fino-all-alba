@@ -18,6 +18,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Il pulsante dello schermo intero segue lo stato, la scritta «muoviti» va via al primo passo, 13 novembre 2026
 - Tappa 4, 13 novembre 2026: sette vite e non nove, tre nemici nuovi e la tabella delle ondate con un orologio per tipo, i nemici lontani che tornano vicino, i due capi (il gabbiano che carica, il gabbiano reale che urla), il miagolio che spinge via con poco danno, il graffio che sceglie il capo, la spinta più lunga, i tre passivi che mancavano, il supplì a terra, le spinte leggere tra nemici, i modi di camminare, le carte di ripiego con un'icona loro e la mancia che diventa spicci, i gruppi che restano gruppi con le orde da un lato, la folla che fa male, il quadrifoglio, lo schermo intero in pausa e una scena sopra la partita alla volta
 - Contro il blob, 14 novembre 2026: la partita automatica nel repository, la misura dell'allineamento, i semi fissi
+- Il tetto dei nemici a 200, 14 novembre 2026: il passo 1 contro il blob, `?tetto=N` per le prove, la durata del gatto che scappa da ritarare dopo il passo 2
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -324,3 +325,10 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** misurare solo con la massa; contare gli angoli con `atan2` invece del coseno; tenere lo script fuori dal repository.
 - **Perché:** la massa dice quanto i nemici sono stretti, non quanto vanno tutti nella stessa direzione. Una folla larga che punta il gatto è ancora il blob. Con lo script nel repository ogni passo si misura nello stesso modo.
 - **Cosa comporta:** 8 test nuovi, 344 in tutto, in 35 file. L'allineamento usa la corsa data a ogni nemico, con dentro le spinte dei vicini e del miagolio: misura dove si muovono, non dove vorrebbero andare. La misura di partenza è nel [diario della tappa 4](docs/tappe/tappa-4.md).
+
+## 2026-11-14 · Il tetto dei nemici da 300 a 200
+- **Contesto:** il passo 1 del disegno contro il blob: meno nemici vivi insieme, senza dare più vita a quelli che restano. Provati 200 e 150 con le stesse nove partite della misura di partenza.
+- **Scelta:** `SPAWN.maxEnemies` a 200. Per le prove il tetto si cambia con `?tetto=N` nell'indirizzo, da 1 a 1000 (`src/logic/capParam.ts`); la partita automatica lo prende come ultimo argomento. Francesco ha scelto di pubblicare a 200 e ritarare dopo il passo 2.
+- **Alternative scartate:** 150, che toglie più massa in tondo ma fa durare ancora di più il gatto che scappa (36% in più) e rischia uno schermo vuoto; ritarare subito, prima di sapere cosa cambiano le nascite da più lati del passo 2; più vita ai nemici, esclusa dal disegno.
+- **Perché:** in tondo i nemici in vista scendono da 85 a 70 e la massa da 65 a 60, e il gatto resiste come prima. Il passo 2 colpisce proprio il gatto che scappa, quindi ritarare ora rischiava di essere lavoro da rifare.
+- **Cosa comporta:** il gatto automatico che scappa dritto resiste il 31% in più (da 161 a 211 secondi), oltre la soglia del 25% del disegno: un'eccezione decisa da Francesco, da ritarare dopo il passo 2. L'allineamento non cambia. 5 test nuovi, 349 in tutto, in 36 file. Numeri nel [diario della tappa 4](docs/tappe/tappa-4.md).

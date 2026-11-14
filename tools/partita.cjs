@@ -1,6 +1,7 @@
 // La partita automatica: gioca da sola una notte da 5 minuti a velocità quadrupla, senza finestra,
 // e scrive una riga JSON con com'è andata. Serve a misurare il bilanciamento.
-// Uso: node partita.cjs <cartella del gioco> <indirizzo> <tondo|dritto|fermo> <seme> [minuti: 5, 10 o 15] [livelli di miagolio dati subito]
+// Uso: node partita.cjs <cartella del gioco> <indirizzo> <tondo|dritto|fermo> <seme> [minuti: 5, 10 o 15] [livelli di miagolio dati subito] [tetto dei nemici]
+// Il tetto, se c'è, va nell'indirizzo come ?tetto=N; senza, vale quello del gioco (SPAWN.maxEnemies).
 // Il gatto «tondo» gira in quadrato (WASD, mezzo secondo vero per lato), «fermo» non si muove.
 // A ogni livello prende la prima carta. Legge lo stato dal canvas (dataset.stato, scritto con ?debug).
 // Misure: il mucchio, la massa e l'allineamento (su cento nemici in vista, quanti vanno verso il gatto), medie e
@@ -12,7 +13,7 @@
 const { createRequire } = require("node:module");
 const path = require("node:path");
 
-const [, , root, url, mode = "tondo", seed = "11", minutes = "5", meow = "0"] = process.argv;
+const [, , root, url, mode = "tondo", seed = "11", minutes = "5", meow = "0", cap = ""] = process.argv;
 // il tasto della durata nel titolo: 1 per 5 minuti, 2 per 10, 3 per 15
 const nightKey = { 5: "1", 10: "2", 15: "3" }[minutes] ?? "1";
 const nightMs = Number(minutes) * 60_000;
@@ -31,7 +32,7 @@ const { chromium } = createRequire(path.join(path.resolve(root), "package.json")
     process.exit(1);
   };
   try {
-    await page.goto(`${url}/?debug&seme=${seed}`);
+    await page.goto(`${url}/?debug&seme=${seed}${cap ? `&tetto=${cap}` : ""}`);
   } catch {
     await giveUp();
   }
@@ -118,7 +119,7 @@ const { chromium } = createRequire(path.join(path.resolve(root), "package.json")
   if (held) await page.keyboard.up(held);
   const end = (await stato()) ?? last;
   console.log(JSON.stringify({
-    modo: mode, seme: Number(seed), finita: (await scena()) === "fine", secondiDiNotte: Math.round(end.ms / 1000),
+    modo: mode, seme: Number(seed), tetto: cap ? Number(cap) : null, finita: (await scena()) === "fine", secondiDiNotte: Math.round(end.ms / 1000),
     minuti: Number(minutes), alba: end.ms >= nightMs - 1000 && end.vite > 0, vitePerse: 7 - end.vite, quando: lost, livello: end.livello,
     livelloPerMinuto: levelAt, presi: end.presi, viviMax: maxAlive, inVistaMedia: viewCount ? Math.round(viewSum / viewCount) : null, inVistaMax: viewMax, richiami: end.richiami, spinti: end.spinti, carte: end.carte, miagolioSubito: Number(meow), capi: end.capi, suppli: end.suppli, vitaAllaFine: end.vita, mucchioMedio: pileCount ? Math.round(pileSum / pileCount) : null, mucchioMax: pileMax, massaMedia: clumpCount ? Math.round(clumpSum / clumpCount) : null, massaMax: clumpMax, allineamentoMedio: alignCount ? Math.round(alignSum / alignCount) : null, allineamentoMax: alignMax, fpsMin: minFps, secondiVeri: Math.round((Date.now() - started) / 1000), errori: errors,
   }));

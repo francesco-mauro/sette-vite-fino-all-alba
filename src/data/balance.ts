@@ -411,8 +411,10 @@ export const HORDE = {
 export const SPAWN = {
   // quanto lontano, fuori dallo schermo, nascono
   margin: 32,
-  // il tetto dei nemici vivi insieme: il pool non cresce oltre
-  maxEnemies: 300,
+  // il tetto dei nemici vivi insieme: il pool non cresce oltre. Era 300; 200 dal 14 novembre 2026, il passo 1 del
+  // disegno contro il blob: meno nemici, senza dare più vita a quelli che restano. Per le prove si cambia con
+  // ?tetto=N nell'indirizzo (src/logic/capParam.ts)
+  maxEnemies: 200,
   // oltre questa distanza dal gatto un nemico viene riportato in un punto di nascita nuovo, appena fuori dallo
   // schermo. Deve stare oltre il punto più lontano in cui si nasce (circa 340, c'è un test); è più o meno il bordo
   // della minimappa (400 per lato), quindi i puntini che si vedono lì sono quasi tutti i nemici vivi.

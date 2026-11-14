@@ -31,6 +31,7 @@ import { BOSS_TEXTS, TEXTS } from "../data/texts";
 import { inArc } from "../logic/arc";
 import { bossHealth, dueBoss } from "../logic/boss";
 import { drawCards, luckyWeights } from "../logic/cards";
+import { parseCapParam } from "../logic/capParam";
 import { chestPoint, chestTimes, openChest } from "../logic/chest";
 import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { dashStep, peckStep, startDash, startPeck, zigzag, type DashState, type PeckState } from "../logic/patterns";
@@ -290,8 +291,8 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.cat, true);
 
     // I pool: gruppi con un tetto. Gli oggetti si prendono con get() e si rimettono via con disableBody,
-    // senza crearli e distruggerli ogni volta.
-    this.enemies = this.physics.add.group({ maxSize: SPAWN.maxEnemies });
+    // senza crearli e distruggerli ogni volta. Il tetto dei nemici si cambia con ?tetto=N, per le prove.
+    this.enemies = this.physics.add.group({ maxSize: parseCapParam(location.search, SPAWN.maxEnemies) });
     this.kibbles = this.physics.add.group({ maxSize: KIBBLE.maxOnGround });
     this.snacks = this.physics.add.group({ maxSize: SNACK.maxOnGround });
     this.furs = this.physics.add.group({ maxSize: 60 });

@@ -288,6 +288,24 @@ Il 14 novembre, la misura di partenza contro il blob: la folla che diventa un'un
 
 Cosa dicono. Le due misure vedono due cose diverse, ed è per questo che servono tutte e due. Col gatto che scappa dritto la massa è bassa, 30-34, ma l'allineamento è il più alto, 68-70: i nemici sono sparsi in una lunga coda, e tutti lo inseguono nella stessa direzione. Il punto più alto arriva a 95-100: per qualche istante tutti quelli in vista vanno verso di lui. Col gatto fermo è il contrario: la massa è la più alta, 61-81, e l'allineamento scende a 34-46. Sono arrivati e gli stanno addosso; probabilmente le spinte tra vicini li muovono di lato più che verso di lui, ma questo non è misurato. In tondo stanno in mezzo, massa 62-71 e allineamento 49-54. Il blob che Francesco vedeva giocando, tutti verso il gatto in un'unica massa, è la somma delle due cose: i passi successivi devono abbassarle insieme. Nessuna partita arriva all'alba, come nelle ultime misure del 13. Nelle nove partite nessun errore in console, e i fotogrammi non scendono mai sotto 57.
 
+Il passo 1 contro il blob: il tetto dei nemici vivi insieme da 300 a 200, e una prova a 150, senza dare più vita ai nemici. Stesse partite della partenza: notte da 5 minuti, semi 11, 22 e 33, tre partite insieme. Il 150 si prova con `?tetto=150` nell'indirizzo, senza cambiare il gioco. Le colonne sono le medie delle tre partite di ogni riga; la durata è quanto resiste il gatto automatico prima di finire le vite.
+
+| Gatto | Tetto | Durata media (s) | Nemici in vista, media | Massa media | Allineamento medio |
+|---|---|---|---|---|---|
+| In tondo | 300 | 122 | 85 | 65 | 52 |
+| In tondo | 200 | 129 | 70 | 60 | 53 |
+| In tondo | 150 | 117 | 63 | 55 | 53 |
+| Dritto | 300 | 161 | 63 | 32 | 69 |
+| Dritto | 200 | 211 | 67 | 26 | 71 |
+| Dritto | 150 | 218 | 47 | 24 | 73 |
+| Fermo | 300 | 95 | 48 | 71 | 41 |
+| Fermo | 200 | 102 | 50 | 70 | 44 |
+| Fermo | 150 | 95 | 53 | 72 | 40 |
+
+Le partite una per una: a 200, in tondo 156, 119 e 112 secondi, dritto 249, 204 e 179, fermo 91, 104 e 111; a 150, in tondo 116, 136 e 100, dritto 283, 182 e 189, fermo 76, 98 e 110. Nessuna arriva all'alba, nessun errore in console, fotogrammi mai sotto 56.
+
+Cosa dicono. Il tetto toglie nemici dallo schermo e un po' di massa, ma non cambia l'allineamento: quelli che restano vanno verso il gatto come prima. Era atteso, la direzione la cambiano i passi dei ruoli e delle nascite. In tondo, a 200, i nemici in vista scendono da 85 a 70 e la massa da 65 a 60; a 150 scendono a 63 e 55, e la durata resta nel 25% in più o in meno, la soglia del disegno. Col gatto fermo non cambia quasi niente: quando sta fermo i nemici in vista sono una cinquantina, lontani dal tetto. Il gatto che scappa dritto invece dura molto di più: da 161 a 211 secondi con il tetto a 200, il 31% in più, e a 218 con il tetto a 150: tutte e due fuori dalla soglia. Con meno nemici vivi la coda dietro di lui è più corta e ne nascono di più davanti, dove li prende con le armi: è una lettura, non misurata. Tre partite per riga sono poche, e la partita dritto è quella che varia di più (a 200 va da 179 a 249 secondi).
+
 ## La domanda da colloquio
 «Come hai tenuto 500 nemici a 60 fotogrammi al secondo?» La risposta completa arriva con la prova dei 500, che è ancora da fare. Quello che c'è già: i nemici vivono in un pool con un tetto, quindi il gioco non crea e non butta oggetti mentre si gioca; ogni nemico fa pochi conti a fotogramma, la distanza dal gatto e la direzione per raggiungerlo; le collisioni con il gatto e con i ciuffi di pelo le cerca l'indice spaziale di Phaser, e i nemici tra loro non si urtano con la fisica: si scostano con una spinta calcolata su una griglia, che guarda solo le caselle vicine. Con 300 nemici vivi, nelle partite automatiche il punto più basso è stato tra 52 e 59 fotogrammi al secondo, con tre partite insieme sullo stesso computer.
 
@@ -304,6 +322,6 @@ Credevo di sapere perché era troppo facile. Poi ho fatto giocare il gioco da so
 - Le spinte leggere con una persona che gioca: se la folla si legge meglio, e se il gatto regge come prima.
 - I modi di camminare con una persona che gioca: se si riconoscono, e quanto cambiano la difficoltà.
 - La prova con 500 nemici sul computer e sul telefono, con i numeri qui.
-- Il tetto dei 300: con il gatto in tondo si tocca quasi sempre. Da decidere insieme alla prova dei 500.
+- Il tetto: 200 dal passo 1 contro il blob (14 novembre). Il gatto che scappa dritto dura il 31% in più: da riguardare dopo il passo 2, le nascite. La prova dei 500 si fa con `?tetto=500`.
 - I passi 1-6 contro il blob, misurati contro la partenza del 14 novembre.
 - La bilanciatura, con i numeri scelti da Francesco, e una partita di prova con una persona che non conosce il gioco.
