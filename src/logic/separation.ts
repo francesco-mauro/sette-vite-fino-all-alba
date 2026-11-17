@@ -143,3 +143,26 @@ export function alignment(movers: readonly Mover[], target: Vec, maxAngleDeg: nu
   }
   return aligned / movers.length;
 }
+
+// spreadAway: lo spread del passo 3 contro il blob. Chi ha almeno `minNeighbors` vicini più stretti di `radius` riceve
+// una direzione lunga 1, lontano dalla media dei suoi vicini: si stacca dal mucchio per un attimo. Gli altri zero.
+// Se i vicini gli stanno intorno in modo pari e la media cade su di lui, va a destra.
+export function spreadAway(points: readonly Vec[], radius: number, minNeighbors: number): Vec[] {
+  const sum = points.map(() => ({ x: 0, y: 0, n: 0 }));
+  forEachClosePair(points, radius, (i, j) => {
+    sum[i].x += points[j].x;
+    sum[i].y += points[j].y;
+    sum[i].n++;
+    sum[j].x += points[i].x;
+    sum[j].y += points[i].y;
+    sum[j].n++;
+  });
+  return sum.map((s, i) => {
+    if (s.n < minNeighbors) return { x: 0, y: 0 };
+    const dx = points[i].x - s.x / s.n;
+    const dy = points[i].y - s.y / s.n;
+    const d = Math.hypot(dx, dy);
+    if (d === 0) return { x: 1, y: 0 };
+    return { x: dx / d, y: dy / d };
+  });
+}

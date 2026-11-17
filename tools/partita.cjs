@@ -5,7 +5,8 @@
 // Il gatto «tondo» gira in quadrato (WASD, mezzo secondo vero per lato), «fermo» non si muove.
 // A ogni livello prende la prima carta. Legge lo stato dal canvas (dataset.stato, scritto con ?debug).
 // Misure: il mucchio, la massa e l'allineamento (su cento nemici in vista, quanti vanno verso il gatto), medie e
-// punto più alto dal trentesimo secondo, con almeno 10 nemici in vista. Il gioco va acceso prima (npm run dev o
+// punto più alto dal trentesimo secondo, con almeno 10 nemici in vista. Dal passo 3: quanti nemici senza gettone
+// stanno dentro l'anello intorno al gatto (nellAnello), medio e massimo dal trentesimo secondo. Il gioco va acceso prima (npm run dev o
 // npx vite --port 5199); se non risponde, lo script lo dice ed esce con codice 1.
 // Esempio: node tools/partita.cjs . http://localhost:5199 tondo 11 5 > tools/risultati/prova.json
 /* oxlint-disable no-await-in-loop -- la partita va giocata un passo dopo l'altro: ogni giro aspetta lo stato
@@ -79,6 +80,10 @@ const { chromium } = createRequire(path.join(path.resolve(root), "package.json")
   let alignSum = 0;
   let alignCount = 0;
   let alignMax = 0;
+  // il passo 3: quanti senza gettone dentro l'anello (dal trentesimo secondo)
+  let ringSum = 0;
+  let ringCount = 0;
+  let ringMax = 0;
   const lost = [];
   const levelAt = {};
   const started = Date.now();
@@ -93,6 +98,7 @@ const { chromium } = createRequire(path.join(path.resolve(root), "package.json")
       if (s.mucchio !== undefined && s.ms > 30_000) { pileSum += s.mucchio; pileCount++; pileMax = Math.max(pileMax, s.mucchio); }
       if (s.massa !== undefined && s.ms > 30_000 && s.inVista >= 10) { clumpSum += s.massa; clumpCount++; clumpMax = Math.max(clumpMax, s.massa); }
       if (s.allineamento !== undefined && s.ms > 30_000 && s.inVista >= 10) { alignSum += s.allineamento; alignCount++; alignMax = Math.max(alignMax, s.allineamento); }
+      if (s.nellAnello !== undefined && s.ms > 30_000) { ringSum += s.nellAnello; ringCount++; ringMax = Math.max(ringMax, s.nellAnello); }
       const minute = Math.floor(s.ms / 60_000) + 1;
       levelAt[minute] = s.livello;
       last = s;
@@ -121,7 +127,7 @@ const { chromium } = createRequire(path.join(path.resolve(root), "package.json")
   console.log(JSON.stringify({
     modo: mode, seme: Number(seed), tetto: cap ? Number(cap) : null, finita: (await scena()) === "fine", secondiDiNotte: Math.round(end.ms / 1000),
     minuti: Number(minutes), alba: end.ms >= nightMs - 1000 && end.vite > 0, vitePerse: 7 - end.vite, quando: lost, livello: end.livello,
-    livelloPerMinuto: levelAt, presi: end.presi, viviMax: maxAlive, inVistaMedia: viewCount ? Math.round(viewSum / viewCount) : null, inVistaMax: viewMax, richiami: end.richiami, rimescolati: end.rimescolati, spinti: end.spinti, carte: end.carte, miagolioSubito: Number(meow), capi: end.capi, suppli: end.suppli, vitaAllaFine: end.vita, mucchioMedio: pileCount ? Math.round(pileSum / pileCount) : null, mucchioMax: pileMax, massaMedia: clumpCount ? Math.round(clumpSum / clumpCount) : null, massaMax: clumpMax, allineamentoMedio: alignCount ? Math.round(alignSum / alignCount) : null, allineamentoMax: alignMax, fpsMin: minFps, secondiVeri: Math.round((Date.now() - started) / 1000), errori: errors,
+    livelloPerMinuto: levelAt, presi: end.presi, viviMax: maxAlive, inVistaMedia: viewCount ? Math.round(viewSum / viewCount) : null, inVistaMax: viewMax, richiami: end.richiami, rimescolati: end.rimescolati, spinti: end.spinti, carte: end.carte, miagolioSubito: Number(meow), capi: end.capi, suppli: end.suppli, vitaAllaFine: end.vita, mucchioMedio: pileCount ? Math.round(pileSum / pileCount) : null, mucchioMax: pileMax, massaMedia: clumpCount ? Math.round(clumpSum / clumpCount) : null, massaMax: clumpMax, allineamentoMedio: alignCount ? Math.round(alignSum / alignCount) : null, allineamentoMax: alignMax, nellAnelloMedio: ringCount ? Math.round((ringSum / ringCount) * 10) / 10 : null, nellAnelloMax: ringMax, fpsMin: minFps, secondiVeri: Math.round((Date.now() - started) / 1000), errori: errors,
   }));
   await browser.close();
 })();

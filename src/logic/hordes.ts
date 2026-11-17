@@ -64,3 +64,13 @@ export function reshufflePoint(cat: Vec, side: Side, beyond: number, along: numb
   if (side === "top") return { x: cat.x + offset, y: cat.y - beyond };
   return { x: cat.x + offset, y: cat.y + beyond };
 }
+
+// bubblePoint: dove sta il fumetto del passo 3 che avvisa dell'orda, sullo schermo largo `width` e alto `height`: al
+// centro del lato `side`, dentro di `radius` più `margin`, così il tondo si vede intero.
+export function bubblePoint(side: Side, width: number, height: number, radius: number, margin: number): Vec {
+  const inset = radius + margin;
+  if (side === "left") return { x: inset, y: height / 2 };
+  if (side === "right") return { x: width - inset, y: height / 2 };
+  if (side === "top") return { x: width / 2, y: inset };
+  return { x: width / 2, y: height - inset };
+}

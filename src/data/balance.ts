@@ -15,6 +15,7 @@
 // - HORDE: le orde, un'onda da un lato solo e poi il respiro
 // - SPAWN: dove nascono, quanti al massimo e da che distanza tornano vicino
 // - CROWD: le spinte leggere tra nemici, perché non finiscano uno sopra l'altro
+// - TOKENS, BUBBLE: il passo 3 contro il blob (gettoni, anello, varietà, spread, ruoli) e il fumetto delle orde
 // - CHEST: le casse del tesoro
 
 export const CAT = {
@@ -415,8 +416,50 @@ export const HORDE = {
   // gruppi così tante volte più grandi, e così tante volte più rari, dei numeri della tabella delle ondate
   sizeScale: 2,
   // il passo 2 contro il blob (14 novembre 2026): quanto prima dell'orda lampeggia il segno sul bordo da cui arriva.
-  // Gli schemi (un lato, due lati opposti, alle spalle) sono in src/logic/hordes.ts
-  warnMs: 500,
+  // Gli schemi (un lato, due lati opposti, alle spalle) sono in src/logic/hordes.ts. Dal passo 3 (17 novembre 2026)
+  // l'avviso è il fumetto (BUBBLE) e dura un secondo invece di mezzo
+  warnMs: 1000,
+};
+
+// Il fumetto del passo 3 contro il blob, richiesta di Francesco del 14 novembre 2026 alle 17:09 al posto della linea
+// rossa: un tondo in trasparenza sul bordo da cui arriva l'orda, con dentro il nemico che arriva. Numeri di Guardiana.
+export const BUBBLE = {
+  // il raggio del tondo e quanto sta dentro dal bordo dello schermo
+  radius: 12,
+  margin: 4,
+  // la trasparenza, e ogni quanto pulsa (un giro intero di più grande e più piccolo)
+  alpha: 0.55,
+  pulseMs: 400,
+};
+
+// Il passo 3 contro il blob (piano approvato da Francesco il 17 novembre 2026, numeri del disegno del 14 novembre e di
+// Guardiana): al massimo `max` nemici alla volta possono toccare il gatto, gli altri restano fuori da un anello di
+// `ring` pixel; ognuno ha la sua velocità e il suo angolo d'arrivo; chi è troppo stretto nel mucchio si stacca.
+// Senza gettone non si fa male. Per le prove ?gettoni=N cambia `max`.
+export const TOKENS = {
+  max: 8,
+  ring: 28,
+  // entro che distanza dal gatto il gettone si prende e si tiene, per quanto al massimo, e quanto si riposa dopo.
+  // Il riposo era 1000: con pochi nemici ognuno attaccava solo il 60% del tempo e la notte da fermo durava troppo
+  // (le partite del 17 novembre, tools/risultati/prova-*)
+  range: 60,
+  holdMs: 1500,
+  restMs: 500,
+  // la varietà: velocità più o meno il 10%. Chi non ha il gettone, entro `aimDistance` dal gatto, punta il punto
+  // dell'anello al suo angolo invece del centro del gatto
+  speedSpread: 0.1,
+  aimDistance: 80,
+  // lo spread: chi ha almeno `spreadNeighbors` vicini entro `spreadRadius` si stacca per `spreadMs`
+  spreadRadius: 12,
+  spreadNeighbors: 3,
+  spreadMs: 500,
+  // il giro dello stormo di piccioni: entro `ringNear` dal gatto, se il gatto va al massimo a `slowFactor` volte la
+  // velocità dello stormo, il centro va sull'anello di raggio `flockRing`
+  ringNear: 90,
+  flockRing: 48,
+  slowFactor: 1.5,
+  // la pantegana punta dove il gatto sarà fra tanto
+  leadMs: 1000,
 };
 
 // Il rimescolo (src/logic/hordes.ts), idea di Francesco del 14 novembre 2026: a ogni orda una parte dei nemici rimasti

@@ -63,8 +63,8 @@ describe("gli schemi delle orde", () => {
     }
   });
 
-  it("l'avviso arriva mezzo secondo prima, dentro il respiro tra due onde", () => {
-    expect(HORDE.warnMs).toBe(500);
+  it("l'avviso (il fumetto, dal passo 3) arriva un secondo prima, dentro il respiro tra due onde", () => {
+    expect(HORDE.warnMs).toBe(1000);
     expect(HORDE.warnMs).toBeLessThan(HORDE.cycleMs - HORDE.arriveMs);
   });
 });

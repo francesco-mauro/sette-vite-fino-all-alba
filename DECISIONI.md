@@ -22,6 +22,7 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - Dopo la prova del passo 1, 14 novembre 2026: la pausa quando la finestra perde il fuoco, casse triple più spesso, il livello triplo del quadrifoglio, più danno al miagolio
 - Dopo la prova dei ritocchi, 14 novembre 2026: la versione corta nel titolo, il quadrifoglio senza numeri, la pausa sul telefono quando il sistema si prende il dito o la pagina perde il fuoco
 - Le orde in tre modi e il rimescolo, 14 novembre 2026: il passo 2 contro il blob, l'avviso sul bordo, i nemici rimasti dietro che tornano con l'onda
+- Il passo 3 contro il blob, 17 novembre 2026: il fumetto dell'orda, i gettoni d'attacco e l'anello, la varietà, lo spread, i ruoli di piccione, pantegana e zanzara, il riposo dei gettoni
 
 ## 2026-11-08 · Vite e TypeScript montati a mano
 - **Contesto:** la tappa 1a prevedeva il modello ufficiale di Phaser (`npm create @phaserjs/game`).
@@ -367,3 +368,19 @@ Ogni scelta del progetto, sempre nello stesso ordine: data, contesto, scelta, al
 - **Alternative scartate:** far sparire i nemici fuori dalla vista (si perde la minaccia e si vede il buco); tre o quattro lati insieme (con quattro nessun varco, con tre ne resta uno solo); rimescolare anche chi sta davanti al gatto (gli arriverebbe addosso da dove sta andando).
 - **Perché:** il rimescolo è l'idea di Francesco: serve a spezzare la coda dei nemici rimasti dietro al gatto e la fa tornare da un'altra parte, senza nemici in più. I tre modi cambiano la direzione da cui arriva la folla, anche questo senza aggiungere nemici.
 - **Cosa comporta:** 368 test in 38 file, 6 prove nel browser. Contro le partite dei ritocchi (il gioco senza il passo 2, col livello triplo ancora a 2 su 100), nelle nove partite di sempre: il gatto che scappa dritto dura 192 secondi invece di 213, il 19% in più della partenza (161), dentro la soglia del 25%; in tondo resta quasi tutto uguale; col gatto fermo la folla cresce (nemici in vista da 48 a 66, massa da 69 a 80, allineamento da 42 a 37) e il rimescolo non scatta mai: da guardare nella ritaratura. La massa non scende da nessuna parte. Quanto pesino il rimescolo e le orde in tre modi, ognuno per conto suo, non è separato. Numeri nel [diario della tappa 4](docs/tappe/tappa-4.md).
+
+## 2026-11-17 · Il passo 3 contro il blob: il fumetto, i gettoni, l'anello e i ruoli
+- **Contesto:** il passo 3 del disegno contro il blob, col piano approvato da Francesco il 17 novembre («vai così»). Lo stesso giorno ha scelto di pubblicare tutto il passo 3 in una volta e poi mettere il gioco in pausa.
+- **Scelta:**
+  - **Il fumetto.** Al posto della linea rossa, un secondo prima dell'onda (`HORDE.warnMs` da 500 a 1000) un tondo trasparente pulsa sul bordo da cui arriva, con dentro il nemico più numeroso dell'onda (`BUBBLE`, `bubblePoint` in `src/logic/hordes.ts`).
+  - **I gettoni e l'anello.** Al massimo 8 nemici della folla alla volta hanno il gettone d'attacco: si prende entro 60 pixel dal gatto, si tiene al massimo 1,5 secondi, poi si riposa mezzo secondo. Senza gettone non si fa male, e chi non ce l'ha resta fuori da un anello di 28 pixel intorno al gatto. I capi colpiscono come prima (`TOKENS`, `src/logic/tokens.ts`).
+  - **La varietà e lo spread.** Ogni nemico nasce con la velocità più o meno il 10% e un angolo d'arrivo suo; vicino al gatto, senza gettone, punta il punto dell'anello al suo angolo. Chi ha almeno 3 vicini entro 12 pixel si stacca per mezzo secondo (`spreadAway` in `src/logic/separation.ts`).
+  - **I ruoli.** Lo stormo di piccioni, vicino a un gatto lento, si mette su un anello di 48 pixel e, quando becca (400 ms ogni 2,4 secondi circa: la camminata varia da piccione a piccione), chi ha il gettone si lancia sul gatto; il resto del tempo tiene il suo posto. La pantegana punta dove il gatto sarà fra un secondo (`leadTarget`). Lo sciame di zanzare, appena entra in vista, prende la direzione del gatto e va dritto senza girarsi.
+  - Per le prove `?gettoni=N`; nello stato di debug e nella partita automatica `gettoni` e `nellAnello`.
+- **Alternative scartate:**
+  - la beccata sempre, la prima versione: chi aveva il gettone restava attaccato al gatto, e col gatto fermo la notte durava 61 secondi invece di 101 (il 40% in meno, fuori dal 25%);
+  - la beccata sempre ma alla velocità normale: 65 secondi, quindi il guaio era stare attaccati, non la velocità;
+  - il riposo di 1 secondo: con la beccata sistemata il gatto fermo durava 144 secondi, il 43% in più. Con pochi nemici ognuno attaccava solo il 60% del tempo, perché nel riposo l'anello lo tiene fuori;
+  - alzare il danno di chi ha il gettone, la leva del piano per una notte troppo facile: non provata, perché la causa misurata era il riposo, un numero aggiunto da Guardiana e non del disegno.
+- **Perché:** il gatto deve vedersi sempre, e la folla deve smettere di arrivare tutta insieme sullo stesso punto. Il riposo da 1 a 0,5 secondi è una scelta di Guardiana: se Francesco preferisce la leva del piano, si torna a 1 secondo e si alza il danno.
+- **Cosa comporta:** 382 test in 39 file, 6 prove nel browser. Contro il passo 2, nelle nove partite di sempre, la massa scende in tutti e tre i modi (fermo da 80 a 51, tondo da 58 a 45, dritto da 28 a 25) e le durate restano dentro il 25%: fermo 122 secondi invece di 101, tondo 111 invece di 125, dritto 222 invece di 192. L'allineamento quasi non si muove. Numeri nel [diario della tappa 4](docs/tappe/tappa-4.md).

@@ -10,7 +10,8 @@
 // - campi: lo stato della partita
 // - init, create, createStill, createPlay: la durata dal titolo, la scena ferma della misura o la partita
 // - createAnimations, makeStreetTexture, createInput, createHud: animazioni, strada infinita con erba e tombino, comandi, interfaccia
-// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici), moveFlocks e recallFlock (i gruppi che restano gruppi: stormo, sciame, fila), walk (chi cammina da solo), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule (le orde): un fotogramma di gioco
+// - update e regenerate, moveCat, moveEnemies (con la picchiata della cornacchia e le spinte leggere tra nemici; dal passo 3
+//   contro il blob i gettoni d'attacco, l'anello di respiro e lo spread: handOutTokens, crowdSpreads, ringed), moveFlocks e recallFlock (i gruppi che restano gruppi: stormo, sciame, fila), walk (chi cammina da solo), crowdPushes, kindOf, scream (l'urlo del reale), recall e spawnCenter (chi è rimasto lontano torna vicino), moveKibbles, expireFur, scrollWorld, spawnOnSchedule (le orde): un fotogramma di gioco
 // - spawnGroup, hordePoint, dress: un gruppo di nemici di un tipo, dal lato dell'onda; lo sprite del pool rivestito da capo
 // - i capi: spawnBossOnSchedule, spawnBoss, makeRoom, e più sotto dropBossChest, drawBossBars, hurt
 // - le armi: fireWeapons, scratch, tail, fur, furHit, meow (l'onda che spinge via), damageEnemy, killEnemy
@@ -23,8 +24,8 @@
 import * as Phaser from "phaser";
 import { CARDS, FALLBACK_CARDS } from "../data/cards";
 import {
-  BOSS, BOSS_ORDER, BOSSES, CARD_WEIGHTS, CAT, CHEST, CROWD, ENEMIES, FALLBACK, FUR_LEVELS, HORDE, KIBBLE, MEOW, MEOW_LEVELS, PIGEON,
-  RESHUFFLE, RUN, SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS,
+  BOSS, BOSS_ORDER, BOSSES, BUBBLE, CARD_WEIGHTS, CAT, CHEST, CROWD, ENEMIES, FALLBACK, FUR_LEVELS, HORDE, KIBBLE, MEOW, MEOW_LEVELS, PIGEON,
+  RESHUFFLE, RUN, SCRATCH_LEVELS, SNACK, SPAWN, TAIL_LEVELS, TOKENS,
   type BossId, type EnemyId, type EnemyKind, type FoeKind, type GroupConfig, type ScreamConfig,
 } from "../data/balance";
 import { BOSS_TEXTS, TEXTS } from "../data/texts";
@@ -37,7 +38,7 @@ import { diveStep, startDive, type DiveState } from "../logic/dive";
 import { dashStep, peckStep, startDash, startPeck, zigzag, type DashState, type PeckState } from "../logic/patterns";
 import { formatClock } from "../logic/clock";
 import { lostFocus } from "../logic/focus";
-import { hordeSides, nextPattern, pickReshuffle, reshufflePoint, type HordePattern } from "../logic/hordes";
+import { bubblePoint, hordeSides, nextPattern, pickReshuffle, reshufflePoint, type HordePattern } from "../logic/hordes";
 import { createHalt, type Halt } from "../logic/halt";
 import { inReach, knockback } from "../logic/knockback";
 import { DEFAULT_NIGHT } from "../logic/night";
@@ -47,12 +48,13 @@ import { toMinimap } from "../logic/minimap";
 import { addXp, xpToNext, type XpState } from "../logic/progression";
 import { createRng, type Rng } from "../logic/rng";
 import { inScream, screamStep, startScream, windupProgress, type ScreamState } from "../logic/scream";
-import { alignment, crowding, largestClump, separation, withPush } from "../logic/separation";
+import { alignment, crowding, largestClump, separation, spreadAway, withPush } from "../logic/separation";
 import { dropsSnack, isHungry } from "../logic/snack";
 import { sidePoint, spawnPoint, tooFar, type Side } from "../logic/spawn";
 import { centroid, flockSlot, followSlot, groupPushes, groupRadius, swarmSlot, trailTarget } from "../logic/flock";
 import { computeStats, levelPicks, tuneWeapon, type Stats } from "../logic/stats";
-import { farthestIndex, preferredIndex } from "../logic/targeting";
+import { farthestIndex, leadTarget, preferredIndex } from "../logic/targeting";
+import { arrivalAngle, assignTokens, flockGoal, keepRing, lockHeading, parseTokensParam, ringTarget, variedSpeed, type Token } from "../logic/tokens";
 import { dueSpawns, hordeTime, scaleRow, spawnPlan } from "../logic/waves";
 import type { ChestData } from "./ChestScene";
 import { toggleFullscreen } from "./fullscreen";
@@ -73,7 +75,10 @@ interface FlockState {
   dash: DashState;
   peck: PeckState;
   phase: number;
+  // lo sciame che passa (passo 3): la direzione presa quando è entrato in vista, null prima
+  heading: number | null;
 }
+const NO_TOKEN: Token = { until: 0, rest: 0 };
 // lo spazio tra chi nasce insieme in un gruppo senza forma sua (le cornacchie): come la scatola della pantegana
 const LOOSE_SPACING = 14;
 // di quanto al massimo un gruppo riportato vicino nasce più in fuori: con 70 il centro resta sotto i 420 pixel del
@@ -187,6 +192,11 @@ export class GameScene extends Phaser.Scene {
   private warnSides: Side[] = [];
   private hordeGroup = 0;
   private hordeWarnFx!: Phaser.GameObjects.Graphics;
+  // il fumetto del passo 3: dentro, il nemico dell'orda che arriva (uno per lato, al massimo due lati)
+  private bubbleIcons: Phaser.GameObjects.Image[] = [];
+  private warnKind: EnemyId = "piccione";
+  // i gettoni d'attacco del passo 3: quanti (TOKENS.max, o ?gettoni=N per le prove)
+  private tokenMax = TOKENS.max;
   private reshuffled = 0;
   // i gruppi vivi (src/logic/flock.ts): per ognuno il passo comune, lo scatto della fila o la sosta dello stormo
   private flocks = new Map<number, FlockState>();
@@ -327,6 +337,8 @@ export class GameScene extends Phaser.Scene {
     this.bossFx = this.add.graphics().setDepth(3);
     // il segno sul bordo da cui arriva l'orda: fisso sullo schermo, sopra il mondo e sotto le scritte
     this.hordeWarnFx = this.add.graphics().setScrollFactor(0).setDepth(90);
+    this.bubbleIcons = [0, 1].map(() => this.add.image(0, 0, "piccione", 0).setScrollFactor(0).setDepth(91).setVisible(false));
+    this.tokenMax = parseTokensParam(location.search, TOKENS.max);
 
     // Chi urta chi: solo queste cinque coppie, perché Arcade controlla soltanto le coppie dichiarate. I nemici tra
     // loro non si urtano (si scostano con le spinte leggere di moveEnemies), e graffio, coda e miagolio colpiscono
@@ -574,7 +586,9 @@ export class GameScene extends Phaser.Scene {
     const target = { x: this.cat.x, y: this.cat.y };
     this.bossFx.clear();
     const pushes = this.crowdPushes();
-    this.moveFlocks(target, pushes);
+    this.handOutTokens(target);
+    const spreads = this.crowdSpreads();
+    this.moveFlocks(target, pushes, spreads);
     for (const child of this.enemies.getChildren()) {
       const enemy = child as Sprite;
       // chi sta in un gruppo lo muove moveFlocks
@@ -590,8 +604,9 @@ export class GameScene extends Phaser.Scene {
         continue;
       }
       if (!kind.dive) {
-        const v = this.walk(enemy, kind, from, target, speed);
-        const moved = withPush(v, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push);
+        if (this.spreading(enemy, spreads, speed)) continue;
+        const v = this.walk(enemy, kind, from, this.aimPoint(enemy, from, target), speed);
+        const moved = this.ringed(enemy, withPush(v, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push), speed);
         enemy.setVelocity(moved.x, moved.y);
         // guarda il gatto, non dove lo spingono né dove ondeggia: così non si gira avanti e indietro. La pantegana
         // guarda dove corre, che in uno scatto è una linea dritta
@@ -603,7 +618,7 @@ export class GameScene extends Phaser.Scene {
       enemy.setData("dive", step.state);
       // la spinta solo mentre si avvicina: in picchiata va a 190, e withPush la riporterebbe alla sua velocità
       if (step.state.phase === "approach") {
-        const moved = withPush(step.velocity, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push);
+        const moved = this.ringed(enemy, withPush(step.velocity, pushes.get(enemy) ?? NO_PUSH, speed, CROWD.push), speed);
         enemy.setVelocity(moved.x, moved.y);
       } else {
         enemy.setVelocity(step.velocity.x, step.velocity.y);
@@ -628,7 +643,7 @@ export class GameScene extends Phaser.Scene {
   // suo: lo stormo cammina e becca tutto insieme, il centro dello sciame ondeggia verso il gatto, la prima della fila
   // decide lo scatto. Ognuno rincorre il suo posto: nello stormo intorno al centro, nello sciame girandogli intorno,
   // nella fila dietro a quella davanti. Un gruppo rimasto troppo lontano torna vicino tutto insieme.
-  private moveFlocks(target: Vec, pushes: Map<Sprite, Vec>) {
+  private moveFlocks(target: Vec, pushes: Map<Sprite, Vec>, spreads: Map<Sprite, Vec>) {
     const members = new Map<number, Sprite[]>();
     for (const child of this.enemies.getChildren()) {
       const enemy = child as Sprite;
@@ -661,18 +676,27 @@ export class GameScene extends Phaser.Scene {
     live.forEach(({ group, state, kind, cfg, center }, g) => {
       const speed = (group[0].getData("speed") as number | undefined) ?? kind.speed;
       const maxSpeed = speed * cfg.catchUp;
-      // il passo comune del gruppo
+      // il passo comune del gruppo; pecking: lo stormo è fermo a beccare
       let pace: Vec;
+      let pecking = false;
       if (cfg.formation === "line" && kind.dash) {
-        const step = dashStep(state.dash, { x: group[0].x, y: group[0].y }, target, this.elapsed, speed, kind.dash);
+        // la pantegana taglia la strada: punta dove il gatto sarà fra un secondo (passo 3)
+        const step = dashStep(state.dash, { x: group[0].x, y: group[0].y }, this.leadPoint(target), this.elapsed, speed, kind.dash);
         state.dash = step.state;
         pace = step.velocity;
       } else if (cfg.formation === "swarm" && kind.zigzag) {
-        pace = zigzag(center, target, speed, this.elapsed + state.phase * kind.zigzag.periodMs, kind.zigzag);
+        // lo sciame passa: entrato in vista prende la direzione del gatto e va dritto, senza girarsi (passo 3)
+        state.heading = lockHeading(state.heading, center, target, this.cameras.main.worldView.contains(center.x, center.y));
+        pace = state.heading === null
+          ? zigzag(center, target, speed, this.elapsed + state.phase * kind.zigzag.periodMs, kind.zigzag)
+          : { x: Math.cos(state.heading) * speed, y: Math.sin(state.heading) * speed };
       } else if (kind.peck) {
         const step = peckStep(state.peck, this.elapsed, kind.peck, state.phase);
         state.peck = step.state;
-        pace = step.moving ? chase(center, target, speed) : NO_PUSH;
+        // lo stormo gira intorno: vicino a un gatto lento va sull'anello, al suo angolo (passo 3)
+        const goal = flockGoal(center, target, this.catSpeed(), speed, state.phase * Math.PI * 2, { near: TOKENS.ringNear, radius: TOKENS.flockRing, slowFactor: TOKENS.slowFactor });
+        pace = step.moving ? chase(center, goal, speed) : NO_PUSH;
+        pecking = !step.moving;
       } else {
         pace = chase(center, target, speed);
       }
@@ -684,9 +708,14 @@ export class GameScene extends Phaser.Scene {
       group.forEach((enemy, i) => {
         // chi è stato spinto dal miagolio scivola all'indietro finché dura la spinta
         if (this.elapsed < ((enemy.getData("pushedUntil") as number | undefined) ?? 0)) return;
+        if (this.spreading(enemy, spreads, maxSpeed)) return;
         const pos = { x: enemy.x, y: enemy.y };
         let v: Vec;
-        if (cfg.formation === "line") {
+        if (cfg.formation === "flock" && pecking && this.hasToken(enemy)) {
+          // quando lo stormo becca, chi ha il gettone si lancia sul gatto (passo 3); il resto del tempo tiene il
+          // suo posto, come prima: lanciarsi sempre lo teneva attaccato al gatto e la notte da fermo durava 61 secondi
+          v = chase(pos, target, maxSpeed);
+        } else if (cfg.formation === "line") {
           v = i === 0 ? pace : followSlot(pos, trailTarget(group[i - 1], pos, cfg.spacing), pace, maxSpeed, cfg.pull);
         } else if (cfg.formation === "swarm") {
           const orbit = swarmSlot(enemy.getData("slot") as number, this.elapsed, cfg.radius ?? cfg.spacing * 2, cfg.periodMs ?? 2500);
@@ -694,7 +723,7 @@ export class GameScene extends Phaser.Scene {
         } else {
           v = followSlot(pos, { x: center.x + slots[i].x - mid.x, y: center.y + slots[i].y - mid.y }, pace, maxSpeed, cfg.pull);
         }
-        const moved = withPush(v, pushes.get(enemy) ?? NO_PUSH, maxSpeed, CROWD.push);
+        const moved = this.ringed(enemy, withPush(v, pushes.get(enemy) ?? NO_PUSH, maxSpeed, CROWD.push), maxSpeed);
         enemy.setVelocity(moved.x, moved.y);
         // guarda il gatto; la pantegana guarda dove corre
         const look = cfg.formation === "line" ? v.x : target.x - pos.x;
@@ -713,6 +742,7 @@ export class GameScene extends Phaser.Scene {
     const p = spawnPoint({ x: cam.midPoint.x, y: cam.midPoint.y }, this.scale.width / 2, this.scale.height / 2, SPAWN.margin + 2 * spread, this.rng);
     for (const enemy of group) enemy.body?.reset(enemy.x + p.x - center.x, enemy.y + p.y - center.y);
     state.dash = startDash();
+    state.heading = null;
     this.recalls += group.length;
   }
 
@@ -722,7 +752,7 @@ export class GameScene extends Phaser.Scene {
     const jitter = (enemy.getData("jitter") as number | undefined) ?? 0;
     if (kind.zigzag) return zigzag(from, target, speed, this.elapsed + jitter * kind.zigzag.periodMs, kind.zigzag);
     if (kind.dash) {
-      const step = dashStep((enemy.getData("dash") as DashState | undefined) ?? startDash(), from, target, this.elapsed, speed, kind.dash);
+      const step = dashStep((enemy.getData("dash") as DashState | undefined) ?? startDash(), from, this.leadPoint(target), this.elapsed, speed, kind.dash);
       enemy.setData("dash", step.state);
       return step.velocity;
     }
@@ -742,6 +772,73 @@ export class GameScene extends Phaser.Scene {
     const out = new Map<Sprite, Vec>();
     crowd.forEach((e, i) => out.set(e, pushes[i]));
     return out;
+  }
+
+  // Il passo 3 contro il blob. I gettoni d'attacco di questo fotogramma (src/logic/tokens.ts): al massimo
+  // this.tokenMax nemici della folla alla volta possono toccare il gatto; ai capi non servono.
+  private handOutTokens(target: Vec) {
+    const crowd = this.crowd();
+    const distances = crowd.map((e) => Math.hypot(e.x - target.x, e.y - target.y));
+    const held = crowd.map((e) => (e.getData("token") as Token | undefined) ?? NO_TOKEN);
+    const next = assignTokens(distances, held, this.elapsed, { max: this.tokenMax, range: TOKENS.range, holdMs: TOKENS.holdMs, restMs: TOKENS.restMs });
+    crowd.forEach((e, i) => e.setData("token", next[i]));
+  }
+
+  // chi ha il gettone; i capi sì sempre: fuori dalla folla, colpiscono come prima
+  private hasToken(enemy: Sprite): boolean {
+    if (BOSSES[enemy.getData("kind") as BossId]) return true;
+    return ((enemy.getData("token") as Token | undefined)?.until ?? 0) > 0;
+  }
+
+  // L'anello di respiro: chi non ha il gettone, dentro TOKENS.ring dal gatto, viene spinto fuori.
+  private ringed(enemy: Sprite, v: Vec, speed: number): Vec {
+    if (this.hasToken(enemy)) return v;
+    return withPush(v, keepRing({ x: enemy.x, y: enemy.y }, { x: this.cat.x, y: this.cat.y }, TOKENS.ring), speed, CROWD.push);
+  }
+
+  // Dove punta chi cammina da solo: col gettone, o lontano, il gatto; senza gettone e vicino, il punto dell'anello al
+  // suo angolo d'arrivo (la varietà), così due uguali non fanno la stessa strada.
+  private aimPoint(enemy: Sprite, from: Vec, target: Vec): Vec {
+    if (this.hasToken(enemy)) return target;
+    if (Math.hypot(from.x - target.x, from.y - target.y) > TOKENS.aimDistance) return target;
+    return ringTarget(target, (enemy.getData("angle") as number | undefined) ?? 0, TOKENS.ring);
+  }
+
+  // Lo spread: per chi ha troppi vicini stretti, la direzione per staccarsi (src/logic/separation.ts, spreadAway).
+  private crowdSpreads(): Map<Sprite, Vec> {
+    const crowd = this.crowd();
+    const dirs = spreadAway(crowd.map((e) => ({ x: e.x, y: e.y })), TOKENS.spreadRadius, TOKENS.spreadNeighbors);
+    const out = new Map<Sprite, Vec>();
+    crowd.forEach((e, i) => {
+      if (dirs[i].x !== 0 || dirs[i].y !== 0) out.set(e, dirs[i]);
+    });
+    return out;
+  }
+
+  // Chi si sta staccando dal mucchio va per mezzo secondo dalla sua parte; chi ne ha bisogno adesso, e non ha il
+  // gettone, comincia. Restituisce true se in questo fotogramma lo muove lo spread.
+  private spreading(enemy: Sprite, spreads: Map<Sprite, Vec>, speed: number): boolean {
+    let dir = enemy.getData("spreadDir") as Vec | null | undefined;
+    if (this.elapsed >= ((enemy.getData("spreadUntil") as number | undefined) ?? 0)) {
+      dir = this.hasToken(enemy) ? undefined : spreads.get(enemy);
+      if (!dir) return false;
+      enemy.setData("spreadUntil", this.elapsed + TOKENS.spreadMs);
+      enemy.setData("spreadDir", dir);
+    }
+    if (!dir) return false;
+    enemy.setVelocity(dir.x * speed, dir.y * speed);
+    return true;
+  }
+
+  // dove sarà il gatto fra TOKENS.leadMs, alla velocità di adesso: la pantegana punta lì
+  private leadPoint(target: Vec): Vec {
+    const v = (this.cat.body as Phaser.Physics.Arcade.Body).velocity;
+    return leadTarget(target, { x: v.x, y: v.y }, TOKENS.leadMs);
+  }
+
+  private catSpeed(): number {
+    const v = (this.cat.body as Phaser.Physics.Arcade.Body).velocity;
+    return Math.hypot(v.x, v.y);
   }
 
   // Che nemico è questo sprite: un capo, uno dei quattro nemici, o il piccione di riserva.
@@ -876,7 +973,7 @@ export class GameScene extends Phaser.Scene {
     const spacing = kind.group?.spacing ?? LOOSE_SPACING;
     const center = this.hordePoint(groupRadius(size, spacing));
     const flock = kind.group ? this.nextFlock++ : null;
-    if (flock !== null) this.flocks.set(flock, { dash: startDash(), peck: startPeck(), phase: (flock * 0.6180339887) % 1 });
+    if (flock !== null) this.flocks.set(flock, { dash: startDash(), peck: startPeck(), phase: (flock * 0.6180339887) % 1, heading: null });
     for (let i = 0; i < size; i++) {
       const offset = flockSlot(i, spacing);
       const enemy = this.enemies.get(center.x + offset.x, center.y + offset.y, kind.key) as Sprite | null;
@@ -904,21 +1001,38 @@ export class GameScene extends Phaser.Scene {
     this.pendingSides = hordeSides(this.hordePattern, this.hordeSides[0], this.facing, this.rng());
     this.warnSides = this.pendingSides;
     this.warnUntil = this.elapsed + HORDE.warnMs;
+    // nel fumetto il nemico più numeroso dell'onda che arriva
+    const row = spawnPlan(Math.min(1, (this.elapsed + HORDE.warnMs) / this.duration)).row;
+    let best = 0;
+    for (const id of Object.keys(row) as EnemyId[]) {
+      const g = row[id];
+      if (g && g.size > best) {
+        best = g.size;
+        this.warnKind = id;
+      }
+    }
   }
 
-  // Il segno: una linea di 2 pixel sul bordo dello schermo da cui arriva l'onda, che lampeggia.
+  // Il segno, dal passo 3: un fumetto tondo in trasparenza al centro del bordo da cui arriva l'onda, con dentro il
+  // nemico che arriva, che pulsa (richiesta di Francesco del 14 novembre 2026, al posto della linea rossa).
   private drawHordeWarning() {
     const g = this.hordeWarnFx;
     g.clear();
-    if (this.elapsed >= this.warnUntil || Math.floor(this.elapsed / 100) % 2 === 1) return;
-    const { width, height } = this.scale;
-    g.fillStyle(0xe23a4f, 0.9);
-    for (const side of this.warnSides) {
-      if (side === "left") g.fillRect(0, 0, 2, height);
-      else if (side === "right") g.fillRect(width - 2, 0, 2, height);
-      else if (side === "top") g.fillRect(0, 0, width, 2);
-      else g.fillRect(0, height - 2, width, 2);
-    }
+    const on = this.elapsed < this.warnUntil;
+    this.bubbleIcons.forEach((icon, i) => {
+      if (!on || i >= this.warnSides.length) {
+        icon.setVisible(false);
+        return;
+      }
+      const pulse = 1 + 0.15 * Math.sin((this.elapsed / BUBBLE.pulseMs) * Math.PI * 2);
+      const r = BUBBLE.radius * pulse;
+      const p = bubblePoint(this.warnSides[i], this.scale.width, this.scale.height, BUBBLE.radius, BUBBLE.margin);
+      g.fillStyle(0xf2e9d8, BUBBLE.alpha);
+      g.fillCircle(p.x, p.y, r);
+      g.lineStyle(1, 0xe23a4f, BUBBLE.alpha + 0.3);
+      g.strokeCircle(p.x, p.y, r);
+      icon.setTexture(ENEMIES[this.warnKind].key, 0).setPosition(p.x, p.y).setAlpha(Math.min(1, BUBBLE.alpha + 0.35)).setScale(pulse).setVisible(true);
+    });
   }
 
   // Il rimescolo, all'inizio di ogni onda: una parte dei nemici fuori dalla vista e dietro al gatto (pickReshuffle),
@@ -955,6 +1069,10 @@ export class GameScene extends Phaser.Scene {
         enemy.setData("dash", startDash());
         this.reshuffled++;
       }
+      // lo sciame rimescolato ripassa da capo
+      const id = units[index][0].getData("flock") as number | null;
+      const st = id === null ? undefined : this.flocks.get(id);
+      if (st) st.heading = null;
     });
   }
 
@@ -973,7 +1091,13 @@ export class GameScene extends Phaser.Scene {
     enemy.setData("kind", kind.key);
     enemy.setData("hp", health);
     enemy.setData("damage", Math.round(kind.damage * scale.damageScale));
-    enemy.setData("speed", kind.speed * scale.speedScale);
+    // la varietà del passo 3: velocità più o meno il 10% e un angolo d'arrivo suo
+    const vary = (this.born * 0.7548776662) % 1;
+    enemy.setData("speed", variedSpeed(kind.speed * scale.speedScale, vary, TOKENS.speedSpread));
+    enemy.setData("angle", arrivalAngle(vary));
+    enemy.setData("token", NO_TOKEN);
+    enemy.setData("spreadUntil", 0);
+    enemy.setData("spreadDir", null);
     enemy.setData("dive", startDive());
     enemy.setData("scream", startScream());
     enemy.setData("dash", startDash());
@@ -1430,6 +1554,8 @@ export class GameScene extends Phaser.Scene {
   // folla fa più male di un nemico solo.
   private onTouch(enemy: Sprite) {
     if (this.over || this.invincible || !enemy.active) return;
+    // dal passo 3 fa male solo chi ha il gettone d'attacco
+    if (!this.hasToken(enemy)) return;
     const damage = (enemy.getData("damage") as number | undefined) ?? PIGEON.damage;
     const readyAt = (enemy.getData("hitReadyAt") as number | undefined) ?? 0;
     const step = contactHit(this.health, readyAt, damage, this.elapsed, CAT.contactMs, CAT.hitGapMs);
@@ -1604,6 +1730,10 @@ export class GameScene extends Phaser.Scene {
       return { x: e.x, y: e.y, vx: v.x, vy: v.y };
     });
     const align = movers.length ? Math.round(alignment(movers, { x: this.cat.x, y: this.cat.y }, CROWD.alignAngle) * 100) : 0;
+    // il passo 3: quanti gettoni sono in mano, e quanti senza gettone stanno dentro l'anello (deve stare vicino a zero)
+    const crowd = this.crowd();
+    const tokens = crowd.filter((e) => this.hasToken(e)).length;
+    const inRing = crowd.filter((e) => !this.hasToken(e) && Math.hypot(e.x - this.cat.x, e.y - this.cat.y) < TOKENS.ring).length;
     for (const b of this.bosses) {
       const log = b.getData("log") as BossLogEntry | null | undefined;
       if (log) log.vita = Math.round(b.getData("hp") as number);
@@ -1611,7 +1741,7 @@ export class GameScene extends Phaser.Scene {
     this.game.canvas.dataset.stato = JSON.stringify({
       ms: Math.round(this.elapsed), vite: this.lives, vita: Math.round(this.health.current), livello: this.xp.level,
       presi: this.kills, vivi: alive, inVista: inView, richiami: this.recalls, rimescolati: this.reshuffled, spinti: this.pushes, carte: this.levels,
-      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, massa: clump, allineamento: align, fps,
+      capi: this.bossLog, suppli: { caduti: this.snacksDropped, mangiati: this.snacksEaten }, mucchio: pile, massa: clump, allineamento: align, gettoni: tokens, nellAnello: inRing, fps,
     });
   }
 }

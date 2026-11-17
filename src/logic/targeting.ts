@@ -46,3 +46,9 @@ export function farthestIndex(origin: Vec, points: readonly Vec[]): number {
   }
   return best;
 }
+
+// leadTarget: dove sarà il gatto fra `leadMs` millisecondi, se tiene la velocità di adesso (in pixel al secondo).
+// La pantegana del passo 3 contro il blob punta lì: taglia la strada invece di inseguire.
+export function leadTarget(target: Vec, velocity: Vec, leadMs: number): Vec {
+  return { x: target.x + (velocity.x * leadMs) / 1000, y: target.y + (velocity.y * leadMs) / 1000 };
+}
